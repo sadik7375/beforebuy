@@ -1,0 +1,19 @@
+# This file stores configuration for your Shopify app.
+
+client_id = "16033dca3aae183dc7a59b7dae0586d1"
+name = "BeforeBuy private customer feedback"
+handle = "beforebuy-private-customer-feedback"
+application_url = "https://beforebuy.cannyapps.com"
+embedded = true
+
+[auth]
+redirect_urls = [
+  "https://beforebuy.cannyapps.com/auth/callback",
+  "https://beforebuy.cannyapps.com/auth/shopify/callback"
+]
+
+[webhooks]
+api_version = "2024-07"
+
+[access_scopes]
+scopes = "write_products,read_orders,read_customers,write_discounts"
