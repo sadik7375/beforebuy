@@ -1,7 +1,7 @@
 # This file stores configuration for your Shopify app.
 
 client_id = "16033dca3aae183dc7a59b7dae0586d1"
-name = "BeforeBuy private customer feedback"
+name = "BeforeBuy Private Feedback"
 handle = "beforebuy-private-customer-feedback"
 application_url = "https://beforebuy.cannyapps.com"
 embedded = true
