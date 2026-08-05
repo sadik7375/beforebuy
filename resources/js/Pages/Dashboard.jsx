@@ -69,6 +69,14 @@ export default function Dashboard() {
             }}
             secondaryActions={[
                 {
+                    content: 'Run DB Migration 🚀',
+                    onAction: () => window.open('/run-migrate', '_blank'),
+                },
+                {
+                    content: 'Clear Cache 🧹',
+                    onAction: () => window.open('/clear-cache', '_blank'),
+                },
+                {
                     content: isEnabled ? 'Pause Campaign' : 'Activate Campaign',
                     destructive: isEnabled,
                     onAction: () => setIsEnabled(!isEnabled),
