@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Page, BlockStack, Card, Text, TextField, Button, Banner, InlineStack } from '@shopify/polaris';
+import { Page, BlockStack, Card, Text, TextField, Button, Banner, InlineStack, Checkbox, Divider } from '@shopify/polaris';
 import { DeleteIcon, PlusIcon } from '@shopify/polaris-icons';
 import { router } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 
-export default function Settings({ reasons = [] }) {
+export default function Settings({ reasons = [], enable_email = true, require_email = false }) {
     const defaultReasons = [
         'Price is higher than expected',
         'Unsure about size / fit / dimensions',
@@ -13,6 +13,9 @@ export default function Settings({ reasons = [] }) {
     ];
 
     const [reasonList, setReasonList] = useState(reasons.length > 0 ? reasons : defaultReasons);
+    const [collectEmail, setCollectEmail] = useState(enable_email);
+    const [isEmailRequired, setIsEmailRequired] = useState(require_email);
+
     const [saved, setSaved] = useState(false);
     const [saving, setSaving] = useState(false);
 
@@ -38,7 +41,11 @@ export default function Settings({ reasons = [] }) {
         setSaving(true);
         const filteredReasons = reasonList.filter(r => r.trim() !== '');
 
-        router.post('/settings/save', { reasons: filteredReasons }, {
+        router.post('/settings/save', {
+            reasons: filteredReasons,
+            enable_email: collectEmail,
+            require_email: isEmailRequired,
+        }, {
             preserveState: true,
             preserveScroll: true,
             onSuccess: () => {
@@ -60,15 +67,16 @@ export default function Settings({ reasons = [] }) {
         <AppLayout>
             <Page
                 title="App Settings & Reasons"
-                subtitle="Customize choices shown to visitors when they click the feedback button on product pages."
+                subtitle="Customize choices and email collection options shown in the storefront popup."
             >
                 <BlockStack gap="500">
                     {saved && (
                         <Banner tone="success" onDismiss={() => setSaved(false)}>
-                            <p>Feedback reasons saved successfully! Storefront popup will now show these options.</p>
+                            <p>App settings saved successfully! Storefront popup will now show these options.</p>
                         </Banner>
                     )}
 
+                    {/* Pre-Defined Feedback Reasons Card */}
                     <Card>
                         <BlockStack gap="400">
                             <Text variant="headingMd" as="h2">Pre-Defined Feedback Reasons</Text>
@@ -104,6 +112,44 @@ export default function Settings({ reasons = [] }) {
                                 <Button icon={PlusIcon} onClick={handleAddReason}>
                                     Add New Reason Option
                                 </Button>
+                            </InlineStack>
+                        </BlockStack>
+                    </Card>
+
+                    {/* Customer Email Collection Settings Card */}
+                    <Card>
+                        <BlockStack gap="400">
+                            <Text variant="headingMd" as="h2">Customer Contact & Email Collection</Text>
+                            <Text tone="subdued" variant="bodySm">
+                                Control whether an email address field is displayed in the popup and if it is mandatory.
+                            </Text>
+
+                            <BlockStack gap="300">
+                                <Checkbox
+                                    label="Collect customer email address in feedback popup"
+                                    checked={collectEmail}
+                                    onChange={(newVal) => {
+                                        setCollectEmail(newVal);
+                                        if (!newVal) setIsEmailRequired(false);
+                                    }}
+                                    helpText="Adds an email input field to the feedback popup so customers can leave their contact info."
+                                />
+
+                                {collectEmail && (
+                                    <div style={{ paddingLeft: '24px' }}>
+                                        <Checkbox
+                                            label="Make Email Address Required / Mandatory"
+                                            checked={isEmailRequired}
+                                            onChange={(newVal) => setIsEmailRequired(newVal)}
+                                            helpText="If checked, customers must provide a valid email before submitting feedback."
+                                        />
+                                    </div>
+                                )}
+                            </BlockStack>
+
+                            <Divider />
+
+                            <InlineStack align="end">
                                 <Button variant="primary" loading={saving} onClick={handleSave}>
                                     Save Settings
                                 </Button>

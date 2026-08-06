@@ -4,6 +4,10 @@ document.addEventListener('DOMContentLoaded', function () {
   const closeBtn = document.getElementById('beforebuy-close-btn');
   const submitBtn = document.getElementById('beforebuy-submit-btn');
   const commentInput = document.getElementById('beforebuy-custom-comment');
+  const emailInput = document.getElementById('beforebuy-customer-email');
+  const emailGroup = document.getElementById('beforebuy-email-group');
+  const emailLabel = document.getElementById('beforebuy-email-label');
+  const emailError = document.getElementById('beforebuy-email-error');
   const modalBody = document.getElementById('beforebuy-modal-body');
   const successBox = document.getElementById('beforebuy-success-box');
   const reasonsContainer = document.querySelector('.beforebuy-reasons-grid');
@@ -11,6 +15,8 @@ document.addEventListener('DOMContentLoaded', function () {
   if (!triggerBtn || !modalOverlay) return;
 
   let selectedReason = 'Price is higher than expected';
+  let isEmailEnabled = true;
+  let isEmailRequired = false;
 
   function escapeHtml(text) {
     const div = document.createElement('div');
@@ -18,11 +24,35 @@ document.addEventListener('DOMContentLoaded', function () {
     return div.innerHTML;
   }
 
+  function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
   function fetchSettings() {
     fetch('https://beforebuy.cannyapps.com/api/settings')
       .then(res => res.json())
       .then(data => {
-        if (data && data.reasons && data.reasons.length > 0 && reasonsContainer) {
+        if (!data) return;
+
+        // Email settings
+        if (typeof data.enable_email !== 'undefined') isEmailEnabled = Boolean(data.enable_email);
+        if (typeof data.require_email !== 'undefined') isEmailRequired = Boolean(data.require_email);
+
+        if (emailGroup) {
+          if (isEmailEnabled) {
+            emailGroup.style.display = 'block';
+            if (emailLabel) {
+              emailLabel.innerText = isEmailRequired
+                ? 'Your Email Address * (Required):'
+                : 'Your Email Address (Optional):';
+            }
+          } else {
+            emailGroup.style.display = 'none';
+          }
+        }
+
+        // Reason settings
+        if (data.reasons && data.reasons.length > 0 && reasonsContainer) {
           reasonsContainer.innerHTML = '';
           data.reasons.forEach((reasonText, idx) => {
             const isChecked = idx === 0;
@@ -49,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function () {
           });
         }
       })
-      .catch(err => console.log('Using default reasons:', err));
+      .catch(err => console.log('Using default settings:', err));
   }
 
   function bindReasonEvents() {
@@ -71,6 +101,8 @@ document.addEventListener('DOMContentLoaded', function () {
   // Open Modal
   triggerBtn.addEventListener('click', function () {
     modalOverlay.classList.add('beforebuy-is-open');
+    if (emailError) emailError.style.display = 'none';
+    if (emailInput) emailInput.classList.remove('beforebuy-invalid');
     fetchSettings();
   });
 
@@ -88,6 +120,31 @@ document.addEventListener('DOMContentLoaded', function () {
   // Submit Feedback
   if (submitBtn) {
     submitBtn.addEventListener('click', function () {
+      if (emailError) emailError.style.display = 'none';
+      if (emailInput) emailInput.classList.remove('beforebuy-invalid');
+
+      const userEmail = emailInput ? emailInput.value.trim() : '';
+
+      // Validate email if enabled & required
+      if (isEmailEnabled && isEmailRequired) {
+        if (!userEmail || !isValidEmail(userEmail)) {
+          if (emailError) {
+            emailError.innerText = 'Please enter a valid email address.';
+            emailError.style.display = 'block';
+          }
+          if (emailInput) emailInput.classList.add('beforebuy-invalid');
+          return;
+        }
+      } else if (isEmailEnabled && userEmail && !isValidEmail(userEmail)) {
+        // Optional but invalid email format entered
+        if (emailError) {
+          emailError.innerText = 'Please enter a valid email address.';
+          emailError.style.display = 'block';
+        }
+        if (emailInput) emailInput.classList.add('beforebuy-invalid');
+        return;
+      }
+
       submitBtn.disabled = true;
       submitBtn.innerText = 'Sending...';
 
@@ -98,7 +155,7 @@ document.addEventListener('DOMContentLoaded', function () {
         product_handle: triggerBtn.dataset.productHandle || '',
         reason: selectedReason,
         custom_comment: commentInput ? commentInput.value : '',
-        customer_email: ''
+        customer_email: userEmail
       };
 
       fetch('https://beforebuy.cannyapps.com/api/feedback', {

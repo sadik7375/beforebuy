@@ -155,9 +155,51 @@
   accent-color: #2563eb;
 }
 
+/* Email Input Group */
+.beforebuy-email-group {
+  margin-top: 10px;
+  margin-bottom: 12px;
+}
+
+.beforebuy-email-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.beforebuy-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 12px;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.beforebuy-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.beforebuy-input.beforebuy-invalid {
+  border-color: #dc2626;
+  background-color: #fef2f2;
+}
+
+.beforebuy-error-msg {
+  font-size: 11px;
+  color: #dc2626;
+  margin-top: 3px;
+  margin-bottom: 0;
+}
+
 /* Textarea Comment */
 .beforebuy-comment-group {
-  margin-top: 12px;
+  margin-top: 10px;
   margin-bottom: 16px;
 }
 
@@ -166,7 +208,7 @@
   font-size: 12px;
   font-weight: 600;
   color: #374151;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
 }
 
 .beforebuy-textarea {
@@ -178,7 +220,7 @@
   box-sizing: border-box;
   font-family: inherit;
   resize: vertical;
-  min-height: 60px;
+  min-height: 55px;
 }
 
 .beforebuy-textarea:focus {

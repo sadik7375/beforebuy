@@ -11,17 +11,38 @@ use Inertia\Inertia;
 class ProductFeedbackController extends Controller
 {
     /**
-     * Get dynamic feedback reasons from DB or Storage fallback
+     * Get dynamic app config (reasons, email toggle, email required)
      */
-    private function getReasons()
+    private function getAppSettings()
     {
+        $default = [
+            'reasons' => [
+                'Price is higher than expected',
+                'Unsure about size / fit / dimensions',
+                'Shipping fee or delivery time is too high',
+                'Product information or reviews missing',
+            ],
+            'enable_email' => true,
+            'require_email' => false,
+        ];
+
         // 1. Try DB app_settings table
         try {
-            $setting = DB::table('app_settings')->where('key', 'reasons')->first();
+            $setting = DB::table('app_settings')->where('key', 'app_config')->first();
+            if (!$setting) {
+                // Fallback check old 'reasons' key
+                $setting = DB::table('app_settings')->where('key', 'reasons')->first();
+            }
+
             if ($setting && !empty($setting->value)) {
                 $decoded = json_decode($setting->value, true);
-                if (is_array($decoded) && !empty($decoded)) {
-                    return $decoded;
+                if (is_array($decoded)) {
+                    if (isset($decoded['reasons'])) {
+                        return array_merge($default, $decoded);
+                    } else {
+                        $default['reasons'] = $decoded;
+                        return $default;
+                    }
                 }
             }
         } catch (\Throwable $e) {
@@ -32,21 +53,17 @@ class ProductFeedbackController extends Controller
         try {
             if (Storage::disk('local')->exists('settings.json')) {
                 $data = json_decode(Storage::disk('local')->get('settings.json'), true);
-                if (!empty($data['reasons']) && is_array($data['reasons'])) {
-                    return $data['reasons'];
+                if (is_array($data)) {
+                    if (isset($data['reasons'])) {
+                        return array_merge($default, $data);
+                    }
                 }
             }
         } catch (\Throwable $e) {
             Log::warning('AppSetting File fetch error: ' . $e->getMessage());
         }
 
-        // 3. Fallback default reasons
-        return [
-            'Price is higher than expected',
-            'Unsure about size / fit / dimensions',
-            'Shipping fee or delivery time is too high',
-            'Product information or reviews missing',
-        ];
+        return $default;
     }
 
     /**
@@ -113,8 +130,11 @@ class ProductFeedbackController extends Controller
      */
     public function settings()
     {
+        $config = $this->getAppSettings();
         return Inertia::render('Settings', [
-            'reasons' => $this->getReasons(),
+            'reasons' => $config['reasons'],
+            'enable_email' => (bool)$config['enable_email'],
+            'require_email' => (bool)$config['require_email'],
         ]);
     }
 
@@ -126,13 +146,19 @@ class ProductFeedbackController extends Controller
         $validated = $request->validate([
             'reasons' => 'required|array',
             'reasons.*' => 'required|string',
+            'enable_email' => 'required|boolean',
+            'require_email' => 'required|boolean',
         ]);
 
-        $reasons = array_values(array_filter($validated['reasons']));
+        $config = [
+            'reasons' => array_values(array_filter($validated['reasons'])),
+            'enable_email' => (bool)$validated['enable_email'],
+            'require_email' => (bool)$validated['require_email'],
+        ];
 
         // 1. Save to File Storage Backup
         try {
-            Storage::disk('local')->put('settings.json', json_encode(['reasons' => $reasons]));
+            Storage::disk('local')->put('settings.json', json_encode($config));
         } catch (\Throwable $e) {
             Log::error('Settings file save error: ' . $e->getMessage());
         }
@@ -140,10 +166,10 @@ class ProductFeedbackController extends Controller
         // 2. Save to MySQL Database
         try {
             DB::table('app_settings')->updateOrInsert(
-                ['key' => 'reasons'],
+                ['key' => 'app_config'],
                 [
                     'shop_domain' => 'global',
-                    'value' => json_encode($reasons),
+                    'value' => json_encode($config),
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]
@@ -156,7 +182,7 @@ class ProductFeedbackController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Settings saved successfully!',
-                'reasons' => $reasons,
+                'settings' => $config,
             ]);
         }
 
@@ -168,9 +194,12 @@ class ProductFeedbackController extends Controller
      */
     public function getApiSettings()
     {
+        $config = $this->getAppSettings();
         return response()->json([
             'success' => true,
-            'reasons' => $this->getReasons(),
+            'reasons' => $config['reasons'],
+            'enable_email' => $config['enable_email'],
+            'require_email' => $config['require_email'],
         ]);
     }
 
@@ -212,7 +241,7 @@ class ProductFeedbackController extends Controller
             'product_handle' => 'nullable|string',
             'reason' => 'required|string',
             'custom_comment' => 'nullable|string',
-            'customer_email' => 'nullable|email',
+            'customer_email' => 'nullable|string',
         ]);
 
         $feedbackId = null;
