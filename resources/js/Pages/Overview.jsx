@@ -33,7 +33,6 @@ export default function Overview({ feedbacks = [], stats = {} }) {
     return (
         <AppLayout>
             <Page
-                fullWidth
                 title="Overview & Key Analytics"
                 subtitle="High-level performance summary of customer objections before checkout."
             >

@@ -40,7 +40,6 @@ export default function Settings({ reasons = [] }) {
     return (
         <AppLayout>
             <Page
-                fullWidth
                 title="App Settings & Reasons"
                 subtitle="Customize choices shown to visitors when they click the feedback button on product pages."
             >

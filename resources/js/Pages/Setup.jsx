@@ -6,7 +6,6 @@ export default function Setup() {
     return (
         <AppLayout>
             <Page
-                fullWidth
                 title="Setup & Activation Guide"
                 subtitle="Easily enable the BeforeBuy Feedback widget on your Shopify product pages."
             >
