@@ -1,4 +1,5 @@
 name = "BeforeBuy Feedback Block"
+handle = "beforebuy-feedback-block"
 type = "theme"
 
 [build]
