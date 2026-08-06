@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             label.innerHTML = `
               <input type="radio" name="beforebuy_reason" value="${escapeHtml(reasonText)}" class="beforebuy-reason-radio" ${isChecked ? 'checked' : ''}>
-              <span>💬 ${escapeHtml(reasonText)}</span>
+              <span>${escapeHtml(reasonText)}</span>
             `;
 
             label.addEventListener('click', function () {

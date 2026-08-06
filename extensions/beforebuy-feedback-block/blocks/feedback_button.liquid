@@ -29,27 +29,22 @@
       <div class="beforebuy-reasons-grid">
         <label class="beforebuy-reason-item beforebuy-selected" data-reason="Price is higher than expected">
           <input type="radio" name="beforebuy_reason" value="Price is higher than expected" class="beforebuy-reason-radio" checked>
-          <span>🏷️ Price is higher than expected</span>
+          <span>Price is higher than expected</span>
         </label>
 
         <label class="beforebuy-reason-item" data-reason="Unsure about size / fit / dimensions">
           <input type="radio" name="beforebuy_reason" value="Unsure about size / fit / dimensions" class="beforebuy-reason-radio">
-          <span>📏 Unsure about size / fit / dimensions</span>
+          <span>Unsure about size / fit / dimensions</span>
         </label>
 
         <label class="beforebuy-reason-item" data-reason="Shipping fee or delivery time is too high">
           <input type="radio" name="beforebuy_reason" value="Shipping fee or delivery time is too high" class="beforebuy-reason-radio">
-          <span>🚚 Shipping fee or delivery time is too high</span>
+          <span>Shipping fee or delivery time is too high</span>
         </label>
 
         <label class="beforebuy-reason-item" data-reason="Product information or reviews missing">
           <input type="radio" name="beforebuy_reason" value="Product information or reviews missing" class="beforebuy-reason-radio">
-          <span>❓ Product information or reviews missing</span>
-        </label>
-
-        <label class="beforebuy-reason-item" data-reason="Other reason">
-          <input type="radio" name="beforebuy_reason" value="Other reason" class="beforebuy-reason-radio">
-          <span>💬 Other reason</span>
+          <span>Product information or reviews missing</span>
         </label>
       </div>
 
@@ -68,11 +63,6 @@
       <div class="beforebuy-success-icon">🎉</div>
       <h4>Thank you for your feedback!</h4>
       <p>We appreciate your input to help us improve.</p>
-      {% if block.settings.discount_code != blank %}
-        <div class="beforebuy-coupon-badge">
-          Use Code: {{ block.settings.discount_code }}
-        </div>
-      {% endif %}
     </div>
   </div>
 </div>
@@ -88,7 +78,7 @@
       "type": "text",
       "id": "button_text",
       "label": "Button Label",
-      "default": "💬 Why aren't you buying today?"
+      "default": "Why aren't you buying today?"
     },
     {
       "type": "text",
@@ -101,12 +91,6 @@
       "id": "popup_subtitle",
       "label": "Popup Subtitle",
       "default": "Please tell us what prevented you from completing your purchase."
-    },
-    {
-      "type": "text",
-      "id": "discount_code",
-      "label": "Reward Discount Code (Optional)",
-      "default": "BEFOREBUY10"
     },
     {
       "type": "color",
