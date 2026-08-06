@@ -9,13 +9,11 @@ use Inertia\Inertia;
 class ProductFeedbackController extends Controller
 {
     /**
-     * Display the merchant feedback dashboard.
+     * Get shared stats helper
      */
-    public function index(Request $request)
+    private function getStats()
     {
-        $feedbacks = ProductFeedback::latest()->take(100)->get();
-
-        $stats = [
+        return [
             'total_feedbacks' => ProductFeedback::count(),
             'top_reason' => ProductFeedback::select('reason')
                 ->selectRaw('count(*) as total')
@@ -24,11 +22,75 @@ class ProductFeedbackController extends Controller
                 ->first()?->reason ?? 'Price too high',
             'pending_ai_analysis' => ProductFeedback::whereNull('ai_summary')->count(),
         ];
+    }
 
-        return Inertia::render('Dashboard', [
+    /**
+     * Overview Submenu Page
+     */
+    public function overview()
+    {
+        $feedbacks = ProductFeedback::latest()->take(10)->get();
+
+        return Inertia::render('Overview', [
             'feedbacks' => $feedbacks,
-            'stats' => $stats,
+            'stats' => $this->getStats(),
         ]);
+    }
+
+    /**
+     * Customer Feedback Submissions Submenu Page
+     */
+    public function submissions()
+    {
+        $feedbacks = ProductFeedback::latest()->paginate(50);
+
+        return Inertia::render('Submissions', [
+            'feedbacks' => $feedbacks,
+            'stats' => $this->getStats(),
+        ]);
+    }
+
+    /**
+     * App Settings Submenu Page
+     */
+    public function settings()
+    {
+        return Inertia::render('Settings', [
+            'reasons' => [
+                'Price is higher than expected',
+                'Unsure about size / fit / dimensions',
+                'Shipping fee or delivery time is too high',
+                'Product information or reviews missing',
+                'Other reason'
+            ],
+            'discount_code' => 'BEFOREBUY10',
+        ]);
+    }
+
+    /**
+     * Price Plan Submenu Page
+     */
+    public function pricing()
+    {
+        return Inertia::render('Pricing', [
+            'current_plan' => 'Free Trial',
+        ]);
+    }
+
+    /**
+     * Setup Guide Submenu Page
+     */
+    public function setup()
+    {
+        return Inertia::render('Setup');
+    }
+
+    /**
+     * Merchant Support Submenu Page
+     */
+    public function support()
+    {
+        return Inertia::render('Support');
     }
 
     /**

@@ -19,3 +19,4 @@ redirect_urls = [
   "https://beforebuy.cannyapps.com/auth/callback",
   "https://beforebuy.cannyapps.com/auth/shopify/callback"
 ]
+

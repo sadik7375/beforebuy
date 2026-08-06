@@ -1,0 +1,668 @@
+﻿shopify.cmd : 2026-08-06T16:16:22.665Z: Running command app deploy
+At line:1 char:1
++ & "C:\Users\wahid\AppData\Roaming\npm\shopify.cmd" app deploy --verbo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (2026-08-06T16:1...mand app deploy:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+2026-08-06T16:16:22.725Z: Running system process:
+  ┬╖ Command: C:\Program Files\nodejs\node.exe C:\Users\wahid\AppData\Roaming\npm\node_modules\@shopify\cli\bin\run.js 
+notifications list --ignore-errors
+  ┬╖ Working directory: D:/Shopify App/Private feedback pre-purchase
+
+2026-08-06T16:16:22.821Z: Notifications to show: 0
+2026-08-06T16:16:22.912Z: Reading the content of file at shopify.app.toml...
+2026-08-06T16:16:22.924Z: Reading the content of file at extensions/beforebuy-feedback-block/shopify.extension.toml...
+2026-08-06T16:16:23.083Z: Looking for a lockfile in D:/Shopify App/Private feedback pre-purchase...
+2026-08-06T16:16:23.086Z: Reading the content of file at package.json...
+2026-08-06T16:16:23.089Z: Reading the content of file at package.json...
+2026-08-06T16:16:23.096Z: Reading the .env file at .env
+2026-08-06T16:16:23.096Z: Reading the .env file at .env.example
+2026-08-06T16:16:23.097Z: Reading the content of file at .env...
+2026-08-06T16:16:23.098Z: Reading the content of file at .env.example...
+2026-08-06T16:16:23.102Z: Reading the content of file at .shopify/project.json...
+2026-08-06T16:16:23.107Z: Reading cached app information for directory D:/Shopify App/Private feedback pre-purchase...
+2026-08-06T16:16:23.114Z: Ensuring that the user is authenticated with the App Management API with the following 
+scopes:
+[]
+
+2026-08-06T16:16:23.115Z: Getting session store...
+2026-08-06T16:16:23.121Z: Getting current session ID...
+2026-08-06T16:16:23.125Z: Validating existing session against the scopes:
+[
+  "openid",
+  "https://api.shopify.com/auth/shop.admin.graphql",
+  "https://api.shopify.com/auth/shop.admin.themes",
+  "https://api.shopify.com/auth/partners.collaborator-relationships.readonly",
+  "https://api.shopify.com/auth/shop.storefront-renderer.devtools",
+  "https://api.shopify.com/auth/partners.app.cli.access",
+  "https://api.shopify.com/auth/destinations.readonly",
+  "https://api.shopify.com/auth/organization.store-management",
+  "https://api.shopify.com/auth/organization.on-demand-user-access",
+  "https://api.shopify.com/auth/organization.apps.manage"
+]
+For applications:
+{
+  "appManagementApi": {
+    "scopes": []
+  },
+  "businessPlatformApi": {
+    "scopes": []
+  }
+}
+
+2026-08-06T16:16:23.126Z: - Token validation -> It's expired: false
+2026-08-06T16:16:23.137Z: Sending "BusinessPlatform" GraphQL request:
+  query UserInfo {
+  currentUserAccount {
+    uuid
+    email
+    organizations(first: 2) {
+      nodes {
+        name
+        __typename
+      }
+      __typename
+    }
+    __typename
+  }
+}
+
+With request headers:
+ - User-Agent: Shopify CLI; v=4.6.0
+ - Keep-Alive: timeout=30
+ - Sec-CH-UA-PLATFORM: win32
+ - Content-Type: application/json
+
+to https://destinations.shopifysvc.com/destinations/api/2020-07/graphql
+2026-08-06T16:16:23.155Z: Sending "App Management" GraphQL request:
+  query ActiveAppReleaseFromApiKey($apiKey: String!) {
+  app: appByKey(key: $apiKey) {
+    ...AppVersionInfo
+    __typename
+  }
+}
+
+fragment ReleasedAppModule on AppModule {
+  uuid
+  userIdentifier
+  handle
+  config
+  target
+  specification {
+    identifier
+    externalIdentifier
+    name
+    experience
+    managementExperience
+  }
+}
+
+fragment AppVersionInfo on App {
+  id
+  key
+  organizationId
+  activeRoot {
+    clientCredentials {
+      secrets {
+        key
+      }
+    }
+    grantedShopifyApprovalScopes
+  }
+  activeRelease {
+    id
+    version {
+      name
+      appModules {
+        ...ReleasedAppModule
+      }
+    }
+  }
+}
+
+With variables:
+{
+  "apiKey": "*****"
+}
+
+With request headers:
+ - User-Agent: Shopify CLI; v=4.6.0
+ - Keep-Alive: timeout=30
+ - Sec-CH-UA-PLATFORM: win32
+ - Content-Type: application/json
+
+to https://app.shopify.com/app_management/unstable/graphql.json
+2026-08-06T16:16:23.909Z: Request to https://app.shopify.com/app_management/unstable/graphql.json completed in 752 ms
+With response headers:
+ - content-type: application/json; charset=utf-8
+ - server-timing: processing;dur=174, verdict_flag_enabled;desc="count=3";dur=0.078, 
+_y;desc="58a7968e-54be-4dfc-bf7d-1756f1ea1aa7", _s;desc="533c892a-c186-467e-a33b-8eeeaf62f4e9"
+ - x-request-id: f31c1d1d-18d3-4ee6-952e-8b299a75ebef-1786032983
+    
+2026-08-06T16:16:23.928Z: Sending "BusinessPlatform" GraphQL request:
+  query FindOrganizations($organizationId: OrganizationID!) {
+  currentUserAccount {
+    organization(id: $organizationId) {
+      id
+      name
+      __typename
+    }
+    __typename
+  }
+}
+
+With variables:
+{
+  "organizationId": "Z2lkOi8vb3JnYW5pemF0aW9uL09yZ2FuaXphdGlvbi8yMjQ2ODU0NTM="
+}
+
+With request headers:
+ - User-Agent: Shopify CLI; v=4.6.0
+ - Keep-Alive: timeout=30
+ - Sec-CH-UA-PLATFORM: win32
+ - Content-Type: application/json
+
+to https://destinations.shopifysvc.com/destinations/api/2020-07/graphql
+2026-08-06T16:16:23.948Z: Sending "App Management" GraphQL request:
+  query fetchSpecifications($organizationId: ID!) {
+  specifications(organizationId: $organizationId) {
+    name
+    identifier
+    externalIdentifier
+    experience
+    features
+    uidStrategy {
+      __typename
+      appModuleLimit
+      isClientProvided
+    }
+    validationSchema {
+      jsonSchema
+      __typename
+    }
+    __typename
+  }
+}
+
+With variables:
+{
+  "organizationId": "gid://shopify/Organization/224685453"
+}
+
+With request headers:
+ - User-Agent: Shopify CLI; v=4.6.0
+ - Keep-Alive: timeout=30
+ - Sec-CH-UA-PLATFORM: win32
+ - Content-Type: application/json
+
+to https://app.shopify.com/app_management/unstable/graphql.json
+2026-08-06T16:16:24.859Z: Request to https://app.shopify.com/app_management/unstable/graphql.json completed in 910 ms
+With response headers:
+ - content-type: application/json; charset=utf-8
+ - server-timing: processing;dur=486, verdict_flag_enabled;desc="count=9";dur=0.272, 
+_y;desc="9d298a91-46e4-479d-9db2-c2d77a9e926b", _s;desc="bc97daf5-e28f-4a9a-9115-a37aaebf5400"
+ - x-request-id: 6d52c6c5-45ba-41cf-955e-5d87f19812f6-1786032984
+    
+2026-08-06T16:16:24.905Z: The following extension specifications were defined locally but not found in the remote 
+specifications: tax_calculation
+2026-08-06T16:16:24.906Z: The following extension specifications were found in the remote specifications but not 
+defined locally: admin_app
+2026-08-06T16:16:24.913Z: Reading the content of file at .gitignore...
+2026-08-06T16:16:25.852Z: Notifications to show: 0
+2026-08-06T16:16:25.854Z: Unable to decide project type as no web backend
+2026-08-06T16:16:25.856Z: Reading cached app information for directory D:/Shopify App/Private feedback pre-purchase...
+2026-08-06T16:16:25.861Z: Storing app information for directory D:/Shopify App/Private feedback pre-purchase:{
+  "appId": "d234e2fe788685b9b37f041b968428ef",
+  "title": "BeforeBuy Feedback",
+  "directory": "D:/Shopify App/Private feedback pre-purchase",
+  "orgId": "224685453"
+}
+2026-08-06T16:16:25.906Z: Sending "App Management" GraphQL request:
+  query ActiveAppReleaseFromApiKey($apiKey: String!) {
+  app: appByKey(key: $apiKey) {
+    ...AppVersionInfo
+    __typename
+  }
+}
+
+fragment ReleasedAppModule on AppModule {
+  uuid
+  userIdentifier
+  handle
+  config
+  target
+  specification {
+    identifier
+    externalIdentifier
+    name
+    experience
+    managementExperience
+  }
+}
+
+fragment AppVersionInfo on App {
+  id
+  key
+  organizationId
+  activeRoot {
+    clientCredentials {
+      secrets {
+        key
+      }
+    }
+    grantedShopifyApprovalScopes
+  }
+  activeRelease {
+    id
+    version {
+      name
+      appModules {
+        ...ReleasedAppModule
+      }
+    }
+  }
+}
+
+With variables:
+{
+  "apiKey": "*****"
+}
+
+With request headers:
+ - User-Agent: Shopify CLI; v=4.6.0
+ - Keep-Alive: timeout=30
+ - Sec-CH-UA-PLATFORM: win32
+ - Content-Type: application/json
+
+to https://app.shopify.com/app_management/unstable/graphql.json
+2026-08-06T16:16:26.480Z: Request to https://app.shopify.com/app_management/unstable/graphql.json completed in 573 ms
+With response headers:
+ - content-type: application/json; charset=utf-8
+ - server-timing: processing;dur=191, verdict_flag_enabled;desc="count=3";dur=0.198, 
+_y;desc="87ae47d8-6328-478f-a5df-d4ddcd21540b", _s;desc="c67dd818-2312-4482-bbba-27628b96e98f"
+ - x-request-id: cba828ff-613e-4021-9ab4-497ddb9f2c30-1786032985
+    
+2026-08-06T16:16:26.511Z: Sending "App Management" GraphQL request:
+  query ActiveAppReleaseFromApiKey($apiKey: String!) {
+  app: appByKey(key: $apiKey) {
+    ...AppVersionInfo
+    __typename
+  }
+}
+
+fragment ReleasedAppModule on AppModule {
+  uuid
+  userIdentifier
+  handle
+  config
+  target
+  specification {
+    identifier
+    externalIdentifier
+    name
+    experience
+    managementExperience
+  }
+}
+
+fragment AppVersionInfo on App {
+  id
+  key
+  organizationId
+  activeRoot {
+    clientCredentials {
+      secrets {
+        key
+      }
+    }
+    grantedShopifyApprovalScopes
+  }
+  activeRelease {
+    id
+    version {
+      name
+      appModules {
+        ...ReleasedAppModule
+      }
+    }
+  }
+}
+
+With variables:
+{
+  "apiKey": "*****"
+}
+
+With request headers:
+ - User-Agent: Shopify CLI; v=4.6.0
+ - Keep-Alive: timeout=30
+ - Sec-CH-UA-PLATFORM: win32
+ - Content-Type: application/json
+
+to https://app.shopify.com/app_management/unstable/graphql.json
+2026-08-06T16:16:27.090Z: Request to https://app.shopify.com/app_management/unstable/graphql.json completed in 579 ms
+With response headers:
+ - content-type: application/json; charset=utf-8
+ - server-timing: processing;dur=107, verdict_flag_enabled;desc="count=3";dur=0.117, 
+_y;desc="07d133a6-1588-43bc-9a92-38b2766b8896", _s;desc="6c265b8f-97a8-4708-8fb8-0917cb95cd78"
+ - x-request-id: 62620b4d-295e-4a19-8e9b-0885469b7f8b-1786032986
+    
+Γò¡ΓöÇ info ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö
+ÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé                                                                              Γöé
+Γöé  Using .env for default values:                                              Γöé
+Γöé                                                                              Γöé
+Γöé    ΓÇó Org:             canny apps                                             Γöé
+Γöé    ΓÇó App:             BeforeBuy Feedback                                     Γöé
+Γöé                                                                              Γöé
+Γöé   You can pass `--reset` to your command to reset your app configuration.    Γöé
+Γöé                                                                              Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö
+ÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓ
+ò»
+
+
+Releasing a new app version as part of BeforeBuy Feedback
+
+2026-08-06T16:16:27.211Z: Creating directory at .shopify...
+2026-08-06T16:16:27.213Z: Removing directory at .shopify/deploy-bundle...
+2026-08-06T16:16:27.222Z: Creating directory at .shopify/deploy-bundle...
+beforebuy-feedback-block Γöé Running theme check on your Theme app extension...
+
+[2K[1A[2K[Gbeforebuy-feedback-block Γöé Bundling theme extension beforebuy-feedback-block...
+
+2026-08-06T16:16:27.878Z: Copying file from extensions/beforebuy-feedback-block/assets/feedback.css to 
+.shopify/deploy-bundle/57b60af9-e1e9-db32-486c-d1ea3b5d482291b8762c/assets/feedback.css...
+2026-08-06T16:16:27.879Z: Copying file from extensions/beforebuy-feedback-block/assets/feedback.js to 
+.shopify/deploy-bundle/57b60af9-e1e9-db32-486c-d1ea3b5d482291b8762c/assets/feedback.js...
+2026-08-06T16:16:27.879Z: Copying file from extensions/beforebuy-feedback-block/locales/en.default.json to 
+.shopify/deploy-bundle/57b60af9-e1e9-db32-486c-d1ea3b5d482291b8762c/locales/en.default.json...
+2026-08-06T16:16:27.880Z: Copying file from extensions/beforebuy-feedback-block/blocks/feedback_button.liquid to 
+.shopify/deploy-bundle/57b60af9-e1e9-db32-486c-d1ea3b5d482291b8762c/blocks/feedback_button.liquid...
+2026-08-06T16:16:27.933Z: Removing file at 
+C:/Users/wahid/AppData/Local/Temp/16aed262-ef2c-483b-aae8-b8c93d8f7f97.tar...
+Running validation ...
+2026-08-06T16:16:27.964Z: Getting the size of file at extensions/beforebuy-feedback-block/assets/feedback.css...
+2026-08-06T16:16:27.964Z: Getting the size of file at extensions/beforebuy-feedback-block/assets/feedback.js...
+2026-08-06T16:16:27.965Z: Getting the size of file at 
+extensions/beforebuy-feedback-block/blocks/feedback_button.liquid...
+2026-08-06T16:16:27.966Z: Getting the size of file at extensions/beforebuy-feedback-block/locales/en.default.json...
+2026-08-06T16:16:27.981Z: Sending "App Management" GraphQL request:
+  mutation CreateAssetURL($sourceExtension: SourceExtension!, $organizationId: ID!) {
+  appRequestSourceUploadUrl(
+    sourceExtension: $sourceExtension
+    organizationId: $organizationId
+  ) {
+    sourceUploadUrl
+    userErrors {
+      field
+      message
+      __typename
+    }
+    __typename
+  }
+}
+
+With variables:
+{
+  "sourceExtension": "BR",
+  "organizationId": "gid://shopify/Organization/224685453"
+}
+
+With request headers:
+ - User-Agent: Shopify CLI; v=4.6.0
+ - Keep-Alive: timeout=30
+ - Sec-CH-UA-PLATFORM: win32
+ - Content-Type: application/json
+
+to https://app.shopify.com/app_management/unstable/graphql.json
+[2K[1A[2K[GReleasing an app version ...
+2026-08-06T16:16:28.607Z: Request to https://app.shopify.com/app_management/unstable/graphql.json completed in 624 ms
+With response headers:
+ - content-type: application/json; charset=utf-8
+ - server-timing: processing;dur=221, verdict_flag_enabled;desc="count=4";dur=0.11, 
+_y;desc="c6afa332-597c-450c-b39d-fee06da098b3", _s;desc="0ccd0cec-aa2e-4bd1-a5e4-0f625b003127"
+ - x-request-id: 9aa45be4-14aa-4dff-9bd9-62642ef6132d-1786032988
+    
+2026-08-06T16:16:28.619Z: Getting the size of file at .shopify/deploy-bundle.br...
+2026-08-06T16:16:28.621Z: Sync-reading the content of file at .shopify/deploy-bundle.br...
+2026-08-06T16:16:29.153Z: Request to https://partners-extensions-scripts-bucket.storage.googleapis.com/deployments/app_
+sources/224685453/7be96e4d-e862-4738-8492-275bfe9b473b/source.br?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=ar
+go-project-sa%40shopify-tiers.iam.gserviceaccount.com%2F20260806%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260806T
+161628Z&X-Goog-Expires=3600&X-Goog-SignedHeaders=host&X-Goog-Signature=3a47f0c15f821036efb72ac6af0d265ccb1b1b50e5f95a49
+6657c0425e8b1d36dda0ba4a6ce743d34c4cba35fdff4358cbfc136d6073e94b2c1c877bfb6867a2fc9f5a2d6b6600c1d94733cdad0e69403a8e7c6
+e7d557753a0a382ae82398742cf030b1db0bec614c77dea95d608c5bab08d1a1bb7582e8178a28462eec5b7f775dbae8ec4e9b294b7033756109070
+f1a42a459c2a190b7cb294875817f740ebbd452f3f753510178462e11ebdb3f19fa5862b194cc2139a3825bfd77270197f3f4c18d25a64b2b129a9e
+eeb350e488d42dc25622df55f9b395ad72aa38aa9f4b01a99525296c55e5c6161fc95584af0caf698c58833dccc0eb4730ba01c09ed completed 
+in 529 ms
+With response headers:
+ - content-type: text/html; charset=UTF-8
+ - etag: "cc0b02a4769e555ea3b7baa8b047e371"
+    
+2026-08-06T16:16:29.177Z: Sending "App Management" GraphQL request:
+  mutation CreateAppVersion($appId: ID!, $version: AppVersionInput!, $metadata: VersionMetadataInput) {
+  appVersionCreate(appId: $appId, version: $version, metadata: $metadata) {
+    version {
+      id
+      appModules {
+        ...ReleasedAppModule
+        __typename
+      }
+      metadata {
+        versionTag
+        message
+        __typename
+      }
+      __typename
+    }
+    userErrors {
+      field
+      message
+      category
+      code
+      on
+      __typename
+    }
+    __typename
+  }
+}
+
+fragment ReleasedAppModule on AppModule {
+  uuid
+  userIdentifier
+  handle
+  config
+  target
+  specification {
+    identifier
+    externalIdentifier
+    name
+    experience
+    managementExperience
+  }
+}
+
+With variables:
+{
+  "appId": "gid://shopify/App/407271931905",
+  "version": {
+    "sourceUrl": "https://partners-extensions-scripts-bucket.storage.googleapis.com/deployments/app_sources/224685453/7
+be96e4d-e862-4738-8492-275bfe9b473b/source.br?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=argo-project-sa%40sho
+pify-tiers.iam.gserviceaccount.com%2F20260806%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260806T161628Z&X-Goog-Expi
+res=3600&X-Goog-SignedHeaders=host&X-Goog-Signature=3a47f0c15f821036efb72ac6af0d265ccb1b1b50e5f95a496657c0425e8b1d36dda
+0ba4a6ce743d34c4cba35fdff4358cbfc136d6073e94b2c1c877bfb6867a2fc9f5a2d6b6600c1d94733cdad0e69403a8e7c6e7d557753a0a382ae82
+398742cf030b1db0bec614c77dea95d608c5bab08d1a1bb7582e8178a28462eec5b7f775dbae8ec4e9b294b7033756109070f1a42a459c2a190b7cb
+294875817f740ebbd452f3f753510178462e11ebdb3f19fa5862b194cc2139a3825bfd77270197f3f4c18d25a64b2b129a9eeeb350e488d42dc2562
+2df55f9b395ad72aa38aa9f4b01a99525296c55e5c6161fc95584af0caf698c58833dccc0eb4730ba01c09ed"
+  },
+  "metadata": {}
+}
+
+With request headers:
+ - User-Agent: Shopify CLI; v=4.6.0
+ - Keep-Alive: timeout=30
+ - Sec-CH-UA-PLATFORM: win32
+ - Content-Type: application/json
+
+to https://app.shopify.com/app_management/unstable/graphql.json
+2026-08-06T16:16:31.532Z: Request to https://app.shopify.com/app_management/unstable/graphql.json completed in 2354 ms
+With response headers:
+ - content-type: application/json; charset=utf-8
+ - server-timing: processing;dur=945, verdict_flag_enabled;desc="count=304";dur=9.232, 
+_y;desc="47717638-5ba7-4e2a-bd19-c6800848f127", _s;desc="53ecc663-1feb-4002-9788-d703d6dcc857"
+ - x-request-id: 02e83376-3b29-4707-b104-95ee182580bb-1786032989
+    
+2026-08-06T16:16:31.571Z: Sending "App Management" GraphQL request:
+  mutation ReleaseVersion($appId: ID!, $versionId: ID!) {
+  appReleaseCreate(appId: $appId, versionId: $versionId) {
+    release {
+      version {
+        id
+        metadata {
+          message
+          versionTag
+          __typename
+        }
+        __typename
+      }
+      __typename
+    }
+    userErrors {
+      field
+      message
+      category
+      code
+      on
+      __typename
+    }
+    __typename
+  }
+}
+
+With variables:
+{
+  "appId": "gid://shopify/App/407271931905",
+  "versionId": "gid://shopify/Version/1079057383425"
+}
+
+With request headers:
+ - User-Agent: Shopify CLI; v=4.6.0
+ - Keep-Alive: timeout=30
+ - Sec-CH-UA-PLATFORM: win32
+ - Content-Type: application/json
+
+to https://app.shopify.com/app_management/unstable/graphql.json
+2026-08-06T16:16:32.321Z: Request to https://app.shopify.com/app_management/unstable/graphql.json completed in 749 ms
+With response headers:
+ - content-type: application/json; charset=utf-8
+ - server-timing: processing;dur=361, verdict_flag_enabled;desc="count=9";dur=0.421, 
+_y;desc="3914c7c4-a64e-47d4-8478-112fee54126e", _s;desc="a3cc67c1-d2ff-4bbd-86d7-f5081f299bbf"
+ - x-request-id: def18016-7a9c-4942-8b26-e41a19696995-1786032991
+    
+[2K[1A[2K[G
+Γò¡ΓöÇ success ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö
+ÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé                                                                              Γöé
+Γöé  New version released to users.                                              Γöé
+Γöé                                                                              Γöé
+Γöé  beforebuy-feedback-4 [1]                                                    Γöé
+Γöé                                                                              Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö
+ÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓ
+ò»
+[1] https://dev.shopify.com/dashboard/224685453/apps/407271931905/versions/1079057383425
+
+2026-08-06T16:16:32.404Z: Completed command app deploy
+2026-08-06T16:16:32.453Z: Auto-upgrade: No newer version available.
+2026-08-06T16:16:32.504Z: Looking for a lockfile in D:/Shopify App/Private feedback pre-purchase...
+2026-08-06T16:16:33.024Z: Request to https://monorail-edge.shopifysvc.com/v1/produce completed in 464 ms
+With response headers:
+ - x-request-id: 277943fd-c2af-4f5b-922f-4e3dd9aa64a8
+    
+2026-08-06T16:16:33.024Z: Analytics event sent: {
+  "command": "app deploy",
+  "time_start": 1786032982678,
+  "time_end": 1786032992392,
+  "total_time": 9714,
+  "success": true,
+  "cli_version": "4.6.0",
+  "ruby_version": "",
+  "node_version": "24.19.0",
+  "is_employee": false,
+  "uname": "windows amd64",
+  "env_ci": false,
+  "env_plugin_installed_any_custom": false,
+  "env_plugin_installed_shopify": "[\"@shopify/cli\"]",
+  "env_shell": "cmd.exe",
+  "env_device_id": "85390fd8122bb95a134152ca6c1aed806b5e8959",
+  "env_cloud": "localhost",
+  "env_package_manager": "npm",
+  "env_install_package_manager": "npm",
+  "env_is_global": true,
+  "env_auth_method": "device_auth",
+  "env_is_wsl": false,
+  "env_build_repository": "Shopify/cli",
+  "env_auto_upgrade_enabled": true,
+  "cmd_app_warning_api_key_deprecation_displayed": false,
+  "cmd_deploy_flag_message_used": false,
+  "cmd_deploy_flag_version_used": false,
+  "cmd_deploy_flag_source_url_used": false,
+  "cmd_app_all_configs_any": true,
+  "cmd_app_all_configs_clients": "{\"shopify.app.toml\":\"d234e2fe788685b9b37f041b968428ef\"}",
+  "cmd_app_linked_config_used": true,
+  "cmd_app_linked_config_name": "shopify.app.toml",
+  "cmd_app_linked_config_git_tracked": true,
+  "cmd_app_linked_config_source": "cached",
+  "api_key": "****",
+  "app_extensions_any": true,
+  "app_extensions_breakdown": "{\"theme\":1}",
+  "app_extensions_count": 1,
+  "app_extensions_custom_layout": false,
+  "app_extensions_function_any": false,
+  "app_extensions_function_count": 0,
+  "app_extensions_theme_any": true,
+  "app_extensions_theme_count": 1,
+  "app_extensions_ui_any": false,
+  "app_extensions_ui_count": 0,
+  "app_name_hash": "84a487743110eb38a90fcfec45c9de2ed56c4551",
+  "app_path_hash": "0cd635da0446b3a5c3a4d32687ab7b9d0f0ca1c5",
+  "app_scopes": "[\"read_customers\",\"read_orders\",\"write_discounts\",\"write_products\"]",
+  "app_web_backend_any": false,
+  "app_web_backend_count": 0,
+  "app_web_custom_layout": false,
+  "app_web_frontend_any": false,
+  "app_web_frontend_count": 0,
+  "env_package_manager_workspaces": false,
+  "business_platform_id": 224685453,
+  "cmd_app_reset_used": false,
+  "cmd_deploy_include_config_used": true,
+  "cmd_deploy_config_modules_breakdown": 
+"[\"access_scopes\",\"application_url\",\"auth\",\"embedded\",\"name\",\"webhooks\"]",
+  "cmd_all_timing_network_ms": 7074,
+  "cmd_all_timing_prompts_ms": 0,
+  "cmd_all_launcher": "unknown",
+  "cmd_all_topic": "app",
+  "cmd_all_plugin": "@shopify/cli",
+  "cmd_all_verbose": true,
+  "cmd_all_path_override": true,
+  "cmd_all_path_override_hash": "0cd635da0446b3a5c3a4d32687ab7b9d0f0ca1c5",
+  "cmd_all_last_graphql_request_id": "def18016-7a9c-4942-8b26-e41a19696995-1786032991",
+  "cmd_all_timing_active_ms": 2639,
+  "cmd_all_exit": "ok",
+  "user_id": "c717ccfa-2822-4641-b1a2-3ded2c033294",
+  "request_ids": [
+    "f31c1d1d-18d3-4ee6-952e-8b299a75ebef-1786032983",
+    "6d52c6c5-45ba-41cf-955e-5d87f19812f6-1786032984",
+    "cba828ff-613e-4021-9ab4-497ddb9f2c30-1786032985",
+    "62620b4d-295e-4a19-8e9b-0885469b7f8b-1786032986",
+    "9aa45be4-14aa-4dff-9bd9-62642ef6132d-1786032988",
+    "02e83376-3b29-4707-b104-95ee182580bb-1786032989",
+    "def18016-7a9c-4942-8b26-e41a19696995-1786032991"
+  ],
+  "args": "--verbose --allow-updates",
+  "app_name": "BeforeBuy Feedback",
+  "env_plugin_installed_all": "[\"@shopify/cli\"]",
+  "env_shopify_variables": "{}",
+  "metadata": "{\"extraPublic\":{},\"extraSensitive\":{}}"
+}
