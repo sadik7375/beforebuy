@@ -8,12 +8,14 @@ use App\Http\Controllers\ProductFeedbackController;
 Route::get('/', [ProductFeedbackController::class, 'overview'])->name('overview');
 Route::get('/submissions', [ProductFeedbackController::class, 'submissions'])->name('submissions');
 Route::get('/settings', [ProductFeedbackController::class, 'settings'])->name('settings');
+Route::post('/settings/save', [ProductFeedbackController::class, 'saveSettings'])->name('settings.save');
 Route::get('/pricing', [ProductFeedbackController::class, 'pricing'])->name('pricing');
 Route::get('/setup', [ProductFeedbackController::class, 'setup'])->name('setup');
 Route::get('/support', [ProductFeedbackController::class, 'support'])->name('support');
 
-// API Endpoint for Storefront Popup
+// API Endpoints for Storefront Popup
 Route::post('/api/feedback', [ProductFeedbackController::class, 'store']);
+Route::get('/api/settings', [ProductFeedbackController::class, 'getApiSettings'])->name('api.settings');
 
 // Utilities
 Route::get('/run-migrate', function () {

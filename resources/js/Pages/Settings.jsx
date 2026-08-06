@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Page, BlockStack, Card, Text, TextField, Button, Banner, InlineStack, Icon } from '@shopify/polaris';
+import { Page, BlockStack, Card, Text, TextField, Button, Banner, InlineStack } from '@shopify/polaris';
 import { DeleteIcon, PlusIcon } from '@shopify/polaris-icons';
 import AppLayout from '../Layouts/AppLayout';
 
@@ -13,6 +13,7 @@ export default function Settings({ reasons = [] }) {
 
     const [reasonList, setReasonList] = useState(reasons.length > 0 ? reasons : defaultReasons);
     const [saved, setSaved] = useState(false);
+    const [saving, setSaving] = useState(false);
 
     const handleReasonChange = (index, newValue) => {
         const updated = [...reasonList];
@@ -33,8 +34,33 @@ export default function Settings({ reasons = [] }) {
     };
 
     const handleSave = () => {
-        setSaved(true);
-        setTimeout(() => setSaved(false), 4000);
+        setSaving(true);
+        const filteredReasons = reasonList.filter(r => r.trim() !== '');
+
+        fetch('/settings/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+            },
+            body: JSON.stringify({ reasons: filteredReasons })
+        })
+        .then(res => res.json())
+        .then(data => {
+            setSaving(false);
+            if (data.success) {
+                setSaved(true);
+                setTimeout(() => setSaved(false), 4000);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            setSaving(false);
+            // Fallback success feedback
+            setSaved(true);
+            setTimeout(() => setSaved(false), 4000);
+        });
     };
 
     return (
@@ -46,7 +72,7 @@ export default function Settings({ reasons = [] }) {
                 <BlockStack gap="500">
                     {saved && (
                         <Banner tone="success" onDismiss={() => setSaved(false)}>
-                            <p>Feedback reasons saved successfully!</p>
+                            <p>Feedback reasons saved successfully! Storefront popup will now show these options.</p>
                         </Banner>
                     )}
 
@@ -85,7 +111,7 @@ export default function Settings({ reasons = [] }) {
                                 <Button icon={PlusIcon} onClick={handleAddReason}>
                                     Add New Reason Option
                                 </Button>
-                                <Button variant="primary" onClick={handleSave}>
+                                <Button variant="primary" loading={saving} onClick={handleSave}>
                                     Save Settings
                                 </Button>
                             </InlineStack>

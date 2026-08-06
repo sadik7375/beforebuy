@@ -3,18 +3,75 @@ document.addEventListener('DOMContentLoaded', function () {
   const modalOverlay = document.getElementById('beforebuy-modal-overlay');
   const closeBtn = document.getElementById('beforebuy-close-btn');
   const submitBtn = document.getElementById('beforebuy-submit-btn');
-  const reasonItems = document.querySelectorAll('.beforebuy-reason-item');
   const commentInput = document.getElementById('beforebuy-custom-comment');
   const modalBody = document.getElementById('beforebuy-modal-body');
   const successBox = document.getElementById('beforebuy-success-box');
+  const reasonsContainer = document.querySelector('.beforebuy-reasons-grid');
 
   if (!triggerBtn || !modalOverlay) return;
 
   let selectedReason = 'Price is higher than expected';
 
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.innerText = text;
+    return div.innerHTML;
+  }
+
+  function fetchSettings() {
+    fetch('https://beforebuy.cannyapps.com/api/settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.reasons && data.reasons.length > 0 && reasonsContainer) {
+          reasonsContainer.innerHTML = '';
+          data.reasons.forEach((reasonText, idx) => {
+            const isChecked = idx === 0;
+            if (isChecked) selectedReason = reasonText;
+
+            const label = document.createElement('label');
+            label.className = `beforebuy-reason-item ${isChecked ? 'beforebuy-selected' : ''}`;
+            label.dataset.reason = reasonText;
+
+            label.innerHTML = `
+              <input type="radio" name="beforebuy_reason" value="${escapeHtml(reasonText)}" class="beforebuy-reason-radio" ${isChecked ? 'checked' : ''}>
+              <span>💬 ${escapeHtml(reasonText)}</span>
+            `;
+
+            label.addEventListener('click', function () {
+              document.querySelectorAll('.beforebuy-reason-item').forEach(el => el.classList.remove('beforebuy-selected'));
+              this.classList.add('beforebuy-selected');
+              const radio = this.querySelector('input[type="radio"]');
+              if (radio) radio.checked = true;
+              selectedReason = this.dataset.reason || radio.value;
+            });
+
+            reasonsContainer.appendChild(label);
+          });
+        }
+      })
+      .catch(err => console.log('Using default reasons:', err));
+  }
+
+  function bindReasonEvents() {
+    const reasonItems = document.querySelectorAll('.beforebuy-reason-item');
+    reasonItems.forEach(function (item) {
+      item.addEventListener('click', function () {
+        reasonItems.forEach(el => el.classList.remove('beforebuy-selected'));
+        this.classList.add('beforebuy-selected');
+        const radio = this.querySelector('input[type="radio"]');
+        if (radio) radio.checked = true;
+        selectedReason = this.dataset.reason || radio.value;
+      });
+    });
+  }
+
+  bindReasonEvents();
+  fetchSettings();
+
   // Open Modal
   triggerBtn.addEventListener('click', function () {
     modalOverlay.classList.add('beforebuy-is-open');
+    fetchSettings();
   });
 
   // Close Modal
@@ -26,17 +83,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
   modalOverlay.addEventListener('click', function (e) {
     if (e.target === modalOverlay) closeModal();
-  });
-
-  // Handle Reason Option Selection
-  reasonItems.forEach(function (item) {
-    item.addEventListener('click', function () {
-      reasonItems.forEach(el => el.classList.remove('beforebuy-selected'));
-      this.classList.add('beforebuy-selected');
-      const radio = this.querySelector('input[type="radio"]');
-      if (radio) radio.checked = true;
-      selectedReason = this.dataset.reason || radio.value;
-    });
   });
 
   // Submit Feedback
@@ -70,7 +116,6 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .catch(err => {
           console.error('BeforeBuy Feedback Error:', err);
-          // Show success state anyway to ensure friendly user experience
           if (modalBody) modalBody.style.display = 'none';
           if (successBox) successBox.style.display = 'block';
         });

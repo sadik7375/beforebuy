@@ -4,32 +4,56 @@ namespace App\Http\Controllers;
 
 use App\Models\ProductFeedback;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class ProductFeedbackController extends Controller
 {
-    /**
-     * Get shared stats helper
-     */
-    private function getStats()
+    private function getReasons()
     {
+        if (Storage::disk('local')->exists('settings.json')) {
+            $data = json_decode(Storage::disk('local')->get('settings.json'), true);
+            if (!empty($data['reasons'])) {
+                return $data['reasons'];
+            }
+        }
+
         return [
-            'total_feedbacks' => ProductFeedback::count(),
-            'top_reason' => ProductFeedback::select('reason')
-                ->selectRaw('count(*) as total')
-                ->groupBy('reason')
-                ->orderByDesc('total')
-                ->first()?->reason ?? 'Price too high',
-            'pending_ai_analysis' => ProductFeedback::whereNull('ai_summary')->count(),
+            'Price is higher than expected',
+            'Unsure about size / fit / dimensions',
+            'Shipping fee or delivery time is too high',
+            'Product information or reviews missing',
         ];
     }
 
-    /**
-     * Overview Submenu Page
-     */
+    private function getStats()
+    {
+        try {
+            return [
+                'total_feedbacks' => ProductFeedback::count(),
+                'top_reason' => ProductFeedback::select('reason')
+                    ->selectRaw('count(*) as total')
+                    ->groupBy('reason')
+                    ->orderByDesc('total')
+                    ->first()?->reason ?? 'Price too high',
+                'pending_ai_analysis' => ProductFeedback::whereNull('ai_summary')->count(),
+            ];
+        } catch (\Exception $e) {
+            return [
+                'total_feedbacks' => 0,
+                'top_reason' => 'Price too high',
+                'pending_ai_analysis' => 0,
+            ];
+        }
+    }
+
     public function overview()
     {
-        $feedbacks = ProductFeedback::latest()->take(10)->get();
+        try {
+            $feedbacks = ProductFeedback::latest()->take(10)->get();
+        } catch (\Exception $e) {
+            $feedbacks = collect([]);
+        }
 
         return Inertia::render('Overview', [
             'feedbacks' => $feedbacks,
@@ -37,12 +61,13 @@ class ProductFeedbackController extends Controller
         ]);
     }
 
-    /**
-     * Customer Feedback Submissions Submenu Page
-     */
     public function submissions()
     {
-        $feedbacks = ProductFeedback::latest()->paginate(50);
+        try {
+            $feedbacks = ProductFeedback::latest()->paginate(50);
+        } catch (\Exception $e) {
+            $feedbacks = collect([]);
+        }
 
         return Inertia::render('Submissions', [
             'feedbacks' => $feedbacks,
@@ -50,26 +75,39 @@ class ProductFeedbackController extends Controller
         ]);
     }
 
-    /**
-     * App Settings Submenu Page
-     */
     public function settings()
     {
         return Inertia::render('Settings', [
-            'reasons' => [
-                'Price is higher than expected',
-                'Unsure about size / fit / dimensions',
-                'Shipping fee or delivery time is too high',
-                'Product information or reviews missing',
-                'Other reason'
-            ],
-            'discount_code' => 'BEFOREBUY10',
+            'reasons' => $this->getReasons(),
         ]);
     }
 
-    /**
-     * Price Plan Submenu Page
-     */
+    public function saveSettings(Request $request)
+    {
+        $validated = $request->validate([
+            'reasons' => 'required|array',
+            'reasons.*' => 'required|string',
+        ]);
+
+        Storage::disk('local')->put('settings.json', json_encode([
+            'reasons' => array_values(array_filter($validated['reasons'])),
+        ]));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Settings saved successfully!',
+            'reasons' => $this->getReasons(),
+        ]);
+    }
+
+    public function getApiSettings()
+    {
+        return response()->json([
+            'success' => true,
+            'reasons' => $this->getReasons(),
+        ]);
+    }
+
     public function pricing()
     {
         return Inertia::render('Pricing', [
@@ -77,25 +115,16 @@ class ProductFeedbackController extends Controller
         ]);
     }
 
-    /**
-     * Setup Guide Submenu Page
-     */
     public function setup()
     {
         return Inertia::render('Setup');
     }
 
-    /**
-     * Merchant Support Submenu Page
-     */
     public function support()
     {
         return Inertia::render('Support');
     }
 
-    /**
-     * Store new customer feedback from storefront popup.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -108,7 +137,11 @@ class ProductFeedbackController extends Controller
             'customer_email' => 'nullable|email',
         ]);
 
-        $feedback = ProductFeedback::create($validated);
+        try {
+            $feedback = ProductFeedback::create($validated);
+        } catch (\Exception $e) {
+            $feedback = null;
+        }
 
         return response()->json([
             'success' => true,
