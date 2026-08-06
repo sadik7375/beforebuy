@@ -1,0 +1,142 @@
+{{ 'feedback.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'feedback.js' | asset_url }}" defer="defer"></script>
+
+<div class="beforebuy-feedback-wrapper" style="text-align: {{ block.settings.alignment }};">
+  <button
+    id="beforebuy-trigger-btn"
+    class="beforebuy-trigger-btn"
+    type="button"
+    data-product-id="{{ product.id }}"
+    data-product-title="{{ product.title | escape }}"
+    data-product-handle="{{ product.handle }}"
+    style="background-color: {{ block.settings.btn_bg_color }}; color: {{ block.settings.btn_text_color }}; border-color: {{ block.settings.btn_border_color }};"
+  >
+    {{ block.settings.button_text }}
+  </button>
+</div>
+
+<!-- BeforeBuy Feedback Modal Overlay -->
+<div id="beforebuy-modal-overlay" class="beforebuy-modal-overlay">
+  <div class="beforebuy-modal-card">
+    <div class="beforebuy-modal-header">
+      <h3>{{ block.settings.popup_title }}</h3>
+      <button id="beforebuy-close-btn" class="beforebuy-close-btn" type="button">&times;</button>
+    </div>
+
+    <div id="beforebuy-modal-body" class="beforebuy-modal-body">
+      <p class="beforebuy-subtitle">{{ block.settings.popup_subtitle }}</p>
+
+      <div class="beforebuy-reasons-grid">
+        <label class="beforebuy-reason-item beforebuy-selected" data-reason="Price is higher than expected">
+          <input type="radio" name="beforebuy_reason" value="Price is higher than expected" class="beforebuy-reason-radio" checked>
+          <span>🏷️ Price is higher than expected</span>
+        </label>
+
+        <label class="beforebuy-reason-item" data-reason="Unsure about size / fit / dimensions">
+          <input type="radio" name="beforebuy_reason" value="Unsure about size / fit / dimensions" class="beforebuy-reason-radio">
+          <span>📏 Unsure about size / fit / dimensions</span>
+        </label>
+
+        <label class="beforebuy-reason-item" data-reason="Shipping fee or delivery time is too high">
+          <input type="radio" name="beforebuy_reason" value="Shipping fee or delivery time is too high" class="beforebuy-reason-radio">
+          <span>🚚 Shipping fee or delivery time is too high</span>
+        </label>
+
+        <label class="beforebuy-reason-item" data-reason="Product information or reviews missing">
+          <input type="radio" name="beforebuy_reason" value="Product information or reviews missing" class="beforebuy-reason-radio">
+          <span>❓ Product information or reviews missing</span>
+        </label>
+
+        <label class="beforebuy-reason-item" data-reason="Other reason">
+          <input type="radio" name="beforebuy_reason" value="Other reason" class="beforebuy-reason-radio">
+          <span>💬 Other reason</span>
+        </label>
+      </div>
+
+      <div class="beforebuy-comment-group">
+        <label for="beforebuy-custom-comment">Additional Details (Optional):</label>
+        <textarea id="beforebuy-custom-comment" class="beforebuy-textarea" placeholder="Tell us what would help you make a decision..."></textarea>
+      </div>
+
+      <button id="beforebuy-submit-btn" class="beforebuy-submit-btn" type="button" style="background-color: {{ block.settings.btn_bg_color }}; color: {{ block.settings.btn_text_color }};">
+        Submit Feedback
+      </button>
+    </div>
+
+    <!-- Success Message Box -->
+    <div id="beforebuy-success-box" class="beforebuy-success-box" style="display: none;">
+      <div class="beforebuy-success-icon">🎉</div>
+      <h4>Thank you for your feedback!</h4>
+      <p>We appreciate your input to help us improve.</p>
+      {% if block.settings.discount_code != blank %}
+        <div class="beforebuy-coupon-badge">
+          Use Code: {{ block.settings.discount_code }}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "BeforeBuy Feedback Button",
+  "target": "section",
+  "stylesheet": "feedback.css",
+  "javascript": "feedback.js",
+  "settings": [
+    {
+      "type": "text",
+      "id": "button_text",
+      "label": "Button Label",
+      "default": "💬 Why aren't you buying today?"
+    },
+    {
+      "type": "text",
+      "id": "popup_title",
+      "label": "Popup Title",
+      "default": "Help Us Improve Your Shopping Experience!"
+    },
+    {
+      "type": "text",
+      "id": "popup_subtitle",
+      "label": "Popup Subtitle",
+      "default": "Please tell us what prevented you from completing your purchase."
+    },
+    {
+      "type": "text",
+      "id": "discount_code",
+      "label": "Reward Discount Code (Optional)",
+      "default": "BEFOREBUY10"
+    },
+    {
+      "type": "color",
+      "id": "btn_bg_color",
+      "label": "Button Background Color",
+      "default": "#111827"
+    },
+    {
+      "type": "color",
+      "id": "btn_text_color",
+      "label": "Button Text Color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "btn_border_color",
+      "label": "Button Border Color",
+      "default": "#d1d5db"
+    },
+    {
+      "type": "select",
+      "id": "alignment",
+      "label": "Button Alignment",
+      "options": [
+        { "value": "left", "label": "Left" },
+        { "value": "center", "label": "Center" },
+        { "value": "right", "label": "Right" }
+      ],
+      "default": "center"
+    }
+  ]
+}
+{% endschema %}

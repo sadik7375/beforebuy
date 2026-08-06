@@ -1,0 +1,5 @@
+name = "BeforeBuy Feedback Block"
+type = "theme"
+
+[build]
+automatically_update_theme_app_extensions = true

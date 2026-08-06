@@ -1,0 +1,246 @@
+/* BeforeBuy Product Page Feedback Widget Styles */
+
+.beforebuy-feedback-wrapper {
+  margin-top: 12px;
+  margin-bottom: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.beforebuy-trigger-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 12px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background-color: #f9fafb;
+  color: #1f2937;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.beforebuy-trigger-btn:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+  transform: translateY(-1px);
+}
+
+/* Modal Overlay */
+.beforebuy-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999999;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.25s ease-in-out;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.beforebuy-modal-overlay.beforebuy-is-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Modal Content Card */
+.beforebuy-modal-card {
+  background: #ffffff;
+  width: 100%;
+  max-width: 480px;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  position: relative;
+  transform: scale(0.95);
+  transition: transform 0.25s ease-in-out;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #111827;
+}
+
+.beforebuy-modal-overlay.beforebuy-is-open .beforebuy-modal-card {
+  transform: scale(1);
+}
+
+.beforebuy-modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.beforebuy-modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.beforebuy-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.beforebuy-close-btn:hover {
+  color: #111827;
+  background: #f3f4f6;
+}
+
+.beforebuy-modal-body {
+  padding: 20px 24px;
+}
+
+.beforebuy-subtitle {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+/* Reason Choice Options */
+.beforebuy-reasons-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.beforebuy-reason-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.beforebuy-reason-item:hover {
+  border-color: #9ca3af;
+  background-color: #f9fafb;
+}
+
+.beforebuy-reason-item.beforebuy-selected {
+  border-color: #2563eb;
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.beforebuy-reason-radio {
+  margin-right: 10px;
+  accent-color: #2563eb;
+}
+
+/* Textarea Comment */
+.beforebuy-comment-group {
+  margin-top: 14px;
+  margin-bottom: 20px;
+}
+
+.beforebuy-comment-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.beforebuy-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 13.5px;
+  box-sizing: border-box;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 70px;
+}
+
+.beforebuy-textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* Submit Button */
+.beforebuy-submit-btn {
+  width: 100%;
+  padding: 13px;
+  background-color: #111827;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.beforebuy-submit-btn:hover {
+  background-color: #1f2937;
+}
+
+.beforebuy-submit-btn:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Success Box */
+.beforebuy-success-box {
+  text-align: center;
+  padding: 30px 20px;
+}
+
+.beforebuy-success-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+
+.beforebuy-success-box h4 {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  color: #065f46;
+}
+
+.beforebuy-success-box p {
+  font-size: 14px;
+  color: #4b5563;
+  margin-bottom: 16px;
+}
+
+.beforebuy-coupon-badge {
+  display: inline-block;
+  background: #ecfdf5;
+  border: 1px dashed #10b981;
+  color: #047857;
+  font-weight: 700;
+  font-size: 16px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  letter-spacing: 1px;
+}
