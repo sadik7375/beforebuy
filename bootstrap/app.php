@@ -14,6 +14,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
         ]);
+
+        // Disable CSRF verification for Shopify embedded iframe routes
+        $middleware->validateCsrfTokens(except: [
+            '/settings/save',
+            '/api/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
