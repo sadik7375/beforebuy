@@ -56,8 +56,14 @@ if (!window.beforebuyFeedbackInitialized) {
 
           // Reason settings
           if (data.reasons && data.reasons.length > 0 && reasonsContainer) {
+            let reasonsList = [...data.reasons];
+            const hasOther = reasonsList.some(r => strEqualsOther(r));
+            if (!hasOther) {
+              reasonsList.push('Other reason');
+            }
+
             reasonsContainer.innerHTML = '';
-            data.reasons.forEach((reasonText, idx) => {
+            reasonsList.forEach((reasonText, idx) => {
               const isChecked = idx === 0;
               if (isChecked) selectedReason = reasonText;
 
@@ -84,6 +90,11 @@ if (!window.beforebuyFeedbackInitialized) {
           }
         })
         .catch(err => console.log('Using default settings:', err));
+    }
+
+    function strEqualsOther(str) {
+      const lower = String(str).toLowerCase().trim();
+      return lower === 'other' || lower === 'other reason';
     }
 
     function bindReasonEvents() {

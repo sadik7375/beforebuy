@@ -21,6 +21,7 @@ class ProductFeedbackController extends Controller
                 'Unsure about size / fit / dimensions',
                 'Shipping fee or delivery time is too high',
                 'Product information or reviews missing',
+                'Other reason',
             ],
             'enable_email' => true,
             'require_email' => false,
@@ -195,9 +196,23 @@ class ProductFeedbackController extends Controller
     public function getApiSettings()
     {
         $config = $this->getAppSettings();
+        
+        // Ensure "Other reason" is always in the list
+        $reasons = $config['reasons'];
+        $hasOther = false;
+        foreach ($reasons as $r) {
+            if (strtolower(trim($r)) === 'other' || strtolower(trim($r)) === 'other reason') {
+                $hasOther = true;
+                break;
+            }
+        }
+        if (!$hasOther) {
+            $reasons[] = 'Other reason';
+        }
+
         return response()->json([
             'success' => true,
-            'reasons' => $config['reasons'],
+            'reasons' => $reasons,
             'enable_email' => $config['enable_email'],
             'require_email' => $config['require_email'],
         ]);
