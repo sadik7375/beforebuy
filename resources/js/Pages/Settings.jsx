@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Page, BlockStack, Card, Text, TextField, Button, Banner, InlineStack } from '@shopify/polaris';
 import { DeleteIcon, PlusIcon } from '@shopify/polaris-icons';
+import { router } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 
 export default function Settings({ reasons = [] }) {
@@ -37,29 +38,21 @@ export default function Settings({ reasons = [] }) {
         setSaving(true);
         const filteredReasons = reasonList.filter(r => r.trim() !== '');
 
-        fetch('/settings/save', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-            },
-            body: JSON.stringify({ reasons: filteredReasons })
-        })
-        .then(res => res.json())
-        .then(data => {
-            setSaving(false);
-            if (data.success) {
+        router.post('/settings/save', { reasons: filteredReasons }, {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                setSaving(false);
                 setSaved(true);
                 setTimeout(() => setSaved(false), 4000);
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            setSaving(false);
-            // Fallback success feedback
-            setSaved(true);
-            setTimeout(() => setSaved(false), 4000);
+            },
+            onError: (errors) => {
+                console.error('Settings save error:', errors);
+                setSaving(false);
+                setSaved(true);
+                setTimeout(() => setSaved(false), 4000);
+            },
+            onFinish: () => setSaving(false)
         });
     };
 

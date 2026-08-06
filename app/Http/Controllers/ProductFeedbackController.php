@@ -152,11 +152,15 @@ class ProductFeedbackController extends Controller
             Log::error('Settings DB save error: ' . $e->getMessage());
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Settings saved successfully!',
-            'reasons' => $reasons,
-        ]);
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Settings saved successfully!',
+                'reasons' => $reasons,
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Settings saved successfully!');
     }
 
     /**
