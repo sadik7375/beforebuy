@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ProductFeedback;
-use App\Models\AppSetting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -16,13 +15,16 @@ class ProductFeedbackController extends Controller
      */
     private function getReasons()
     {
-        // 1. Try DB AppSetting
+        // 1. Try DB app_settings table
         try {
-            $setting = AppSetting::where('key', 'reasons')->first();
-            if ($setting && !empty($setting->value) && is_array($setting->value)) {
-                return $setting->value;
+            $setting = DB::table('app_settings')->where('key', 'reasons')->first();
+            if ($setting && !empty($setting->value)) {
+                $decoded = json_decode($setting->value, true);
+                if (is_array($decoded) && !empty($decoded)) {
+                    return $decoded;
+                }
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::warning('AppSetting DB fetch error: ' . $e->getMessage());
         }
 
@@ -34,7 +36,7 @@ class ProductFeedbackController extends Controller
                     return $data['reasons'];
                 }
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::warning('AppSetting File fetch error: ' . $e->getMessage());
         }
 
@@ -54,15 +56,16 @@ class ProductFeedbackController extends Controller
     {
         try {
             return [
-                'total_feedbacks' => ProductFeedback::count(),
-                'top_reason' => ProductFeedback::select('reason')
+                'total_feedbacks' => DB::table('product_feedbacks')->count(),
+                'top_reason' => DB::table('product_feedbacks')
+                    ->select('reason')
                     ->selectRaw('count(*) as total')
                     ->groupBy('reason')
                     ->orderByDesc('total')
                     ->first()?->reason ?? 'Price too high',
-                'pending_ai_analysis' => ProductFeedback::whereNull('ai_summary')->count(),
+                'pending_ai_analysis' => DB::table('product_feedbacks')->whereNull('ai_summary')->count(),
             ];
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return [
                 'total_feedbacks' => 0,
                 'top_reason' => 'Price too high',
@@ -77,8 +80,8 @@ class ProductFeedbackController extends Controller
     public function overview()
     {
         try {
-            $feedbacks = ProductFeedback::latest()->take(10)->get();
-        } catch (\Exception $e) {
+            $feedbacks = DB::table('product_feedbacks')->orderByDesc('id')->take(10)->get();
+        } catch (\Throwable $e) {
             $feedbacks = collect([]);
         }
 
@@ -94,8 +97,8 @@ class ProductFeedbackController extends Controller
     public function submissions()
     {
         try {
-            $feedbacks = ProductFeedback::latest()->paginate(50);
-        } catch (\Exception $e) {
+            $feedbacks = DB::table('product_feedbacks')->orderByDesc('id')->paginate(50);
+        } catch (\Throwable $e) {
             $feedbacks = collect([]);
         }
 
@@ -130,17 +133,22 @@ class ProductFeedbackController extends Controller
         // 1. Save to File Storage Backup
         try {
             Storage::disk('local')->put('settings.json', json_encode(['reasons' => $reasons]));
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Settings file save error: ' . $e->getMessage());
         }
 
         // 2. Save to MySQL Database
         try {
-            AppSetting::updateOrCreate(
+            DB::table('app_settings')->updateOrInsert(
                 ['key' => 'reasons'],
-                ['shop_domain' => 'global', 'value' => $reasons]
+                [
+                    'shop_domain' => 'global',
+                    'value' => json_encode($reasons),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
             );
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Settings DB save error: ' . $e->getMessage());
         }
 
@@ -203,12 +211,16 @@ class ProductFeedbackController extends Controller
             'customer_email' => 'nullable|email',
         ]);
 
-        $feedback = null;
+        $feedbackId = null;
 
         // 1. Save directly into MySQL Database
         try {
-            $feedback = ProductFeedback::create($validated);
-        } catch (\Exception $e) {
+            $dataToInsert = array_merge($validated, [
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            $feedbackId = DB::table('product_feedbacks')->insertGetId($dataToInsert);
+        } catch (\Throwable $e) {
             Log::error('Feedback DB store error: ' . $e->getMessage());
         }
 
@@ -221,14 +233,14 @@ class ProductFeedbackController extends Controller
             $validated['created_at'] = now()->toDateTimeString();
             $existing[] = $validated;
             Storage::disk('local')->put('feedbacks.json', json_encode($existing));
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Feedback File backup error: ' . $e->getMessage());
         }
 
         return response()->json([
             'success' => true,
             'message' => 'Thank you for your feedback!',
-            'feedback' => $feedback ?: $validated,
+            'feedback' => $validated,
         ]);
     }
 }
