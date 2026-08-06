@@ -6,6 +6,7 @@ export default function Support() {
     return (
         <AppLayout>
             <Page
+                fullWidth
                 title="Merchant Support & Help"
                 subtitle="We are here to help you get the most out of BeforeBuy Feedback."
             >

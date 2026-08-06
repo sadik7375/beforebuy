@@ -54,6 +54,7 @@ export default function Submissions({ feedbacks = [] }) {
     return (
         <AppLayout>
             <Page
+                fullWidth
                 title="Customer Feedback Submissions"
                 subtitle="Review why visitors are abandoning product pages on your store."
             >

@@ -33,6 +33,7 @@ export default function Pricing({ current_plan = 'Free Trial' }) {
     return (
         <AppLayout>
             <Page
+                fullWidth
                 title="Price Plans & Billing"
                 subtitle="Choose the right plan to unlock AI insights and recover lost store sales."
             >
