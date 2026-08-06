@@ -2,11 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
-use Inertia\Inertia;
+use App\Http\Controllers\ProductFeedbackController;
 
-Route::get('/', function () {
-    return Inertia::render('Dashboard');
-});
+Route::get('/', [ProductFeedbackController::class, 'index']);
+Route::post('/api/feedback', [ProductFeedbackController::class, 'store']);
 
 // Run DB Migrations via browser URL (for cPanel without terminal)
 Route::get('/run-migrate', function () {
