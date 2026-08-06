@@ -1,16 +1,22 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "16033dca3aae183dc7a59b7dae0586d1"
-name = "BeforeBuy private feedback"
+client_id = "64b98c79621a380dcc425661d7409c81"
+name = "BeforeBuy Feedback"
 application_url = "https://beforebuy.cannyapps.com"
 embedded = true
-handle = "beforebuy-private-customer-feedback"
+handle = "beforebuy-feedback"
+
+[build]
+automatically_update_theme_app_extensions = true
 
 [webhooks]
 api_version = "2024-07"
 
 [access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 scopes = "read_customers,write_discounts,read_orders,write_products"
+optional_scopes = [ ]
+use_legacy_install_flow = false
 
 [auth]
 redirect_urls = [
