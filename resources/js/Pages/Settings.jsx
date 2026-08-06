@@ -1,14 +1,36 @@
 import React, { useState } from 'react';
-import { Page, BlockStack, Card, Text, FormLayout, TextField, Button, Banner } from '@shopify/polaris';
+import { Page, BlockStack, Card, Text, TextField, Button, Banner, InlineStack, Icon } from '@shopify/polaris';
+import { DeleteIcon, PlusIcon } from '@shopify/polaris-icons';
 import AppLayout from '../Layouts/AppLayout';
 
-export default function Settings({ reasons = [], discount_code = '' }) {
-    const [reason1, setReason1] = useState(reasons[0] || 'Price is higher than expected');
-    const [reason2, setReason2] = useState(reasons[1] || 'Unsure about size / fit / dimensions');
-    const [reason3, setReason3] = useState(reasons[2] || 'Shipping fee or delivery time is too high');
-    const [reason4, setReason4] = useState(reasons[3] || 'Product information or reviews missing');
-    const [discountCode, setDiscountCode] = useState(discount_code || 'BEFOREBUY10');
+export default function Settings({ reasons = [] }) {
+    const defaultReasons = [
+        'Price is higher than expected',
+        'Unsure about size / fit / dimensions',
+        'Shipping fee or delivery time is too high',
+        'Product information or reviews missing',
+    ];
+
+    const [reasonList, setReasonList] = useState(reasons.length > 0 ? reasons : defaultReasons);
     const [saved, setSaved] = useState(false);
+
+    const handleReasonChange = (index, newValue) => {
+        const updated = [...reasonList];
+        updated[index] = newValue;
+        setReasonList(updated);
+    };
+
+    const handleAddReason = () => {
+        setReasonList([...reasonList, '']);
+    };
+
+    const handleRemoveReason = (indexToRemove) => {
+        if (reasonList.length <= 1) {
+            alert('You must keep at least one feedback reason option.');
+            return;
+        }
+        setReasonList(reasonList.filter((_, index) => index !== indexToRemove));
+    };
 
     const handleSave = () => {
         setSaved(true);
@@ -19,37 +41,54 @@ export default function Settings({ reasons = [], discount_code = '' }) {
         <AppLayout>
             <Page
                 title="App Settings & Reasons"
-                subtitle="Customize objection choices and reward discounts displayed to store visitors."
+                subtitle="Customize choices shown to visitors when they click the feedback button on product pages."
             >
                 <BlockStack gap="500">
                     {saved && (
                         <Banner tone="success" onDismiss={() => setSaved(false)}>
-                            <p>Settings saved successfully!</p>
+                            <p>Feedback reasons saved successfully!</p>
                         </Banner>
                     )}
 
                     <Card>
                         <BlockStack gap="400">
                             <Text variant="headingMd" as="h2">Pre-Defined Feedback Reasons</Text>
-                            <Text tone="subdued" variant="bodySm">Customize choices shown to customers when they click the feedback button on product pages.</Text>
+                            <Text tone="subdued" variant="bodySm">
+                                Dynamically add or remove reason options shown in the storefront feedback popup.
+                            </Text>
 
-                            <FormLayout>
-                                <TextField label="Reason Option 1" value={reason1} onChange={setReason1} autoComplete="off" />
-                                <TextField label="Reason Option 2" value={reason2} onChange={setReason2} autoComplete="off" />
-                                <TextField label="Reason Option 3" value={reason3} onChange={setReason3} autoComplete="off" />
-                                <TextField label="Reason Option 4" value={reason4} onChange={setReason4} autoComplete="off" />
-                            </FormLayout>
-                        </BlockStack>
-                    </Card>
+                            <BlockStack gap="300">
+                                {reasonList.map((reason, index) => (
+                                    <InlineStack key={index} align="space-between" blockAlign="center" gap="300">
+                                        <div style={{ flexGrow: 1 }}>
+                                            <TextField
+                                                label={`Reason Option ${index + 1}`}
+                                                labelHidden
+                                                placeholder={`Reason Option ${index + 1}`}
+                                                value={reason}
+                                                onChange={(val) => handleReasonChange(index, val)}
+                                                autoComplete="off"
+                                            />
+                                        </div>
+                                        <Button
+                                            tone="critical"
+                                            variant="tertiary"
+                                            icon={DeleteIcon}
+                                            accessibilityLabel="Remove reason"
+                                            onClick={() => handleRemoveReason(index)}
+                                        />
+                                    </InlineStack>
+                                ))}
+                            </BlockStack>
 
-                    <Card>
-                        <BlockStack gap="400">
-                            <Text variant="headingMd" as="h2">Reward Discount Code</Text>
-                            <Text tone="subdued" variant="bodySm">Optional discount code shown to customers after submitting feedback.</Text>
-                            <FormLayout>
-                                <TextField label="Discount Code" value={discountCode} onChange={setDiscountCode} autoComplete="off" />
-                                <Button variant="primary" onClick={handleSave}>Save Settings</Button>
-                            </FormLayout>
+                            <InlineStack align="space-between" blockAlign="center">
+                                <Button icon={PlusIcon} onClick={handleAddReason}>
+                                    Add New Reason Option
+                                </Button>
+                                <Button variant="primary" onClick={handleSave}>
+                                    Save Settings
+                                </Button>
+                            </InlineStack>
                         </BlockStack>
                     </Card>
                 </BlockStack>
