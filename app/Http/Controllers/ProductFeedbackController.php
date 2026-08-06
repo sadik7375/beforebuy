@@ -3,21 +3,42 @@
 namespace App\Http\Controllers;
 
 use App\Models\ProductFeedback;
+use App\Models\AppSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class ProductFeedbackController extends Controller
 {
+    /**
+     * Get dynamic feedback reasons from DB or Storage fallback
+     */
     private function getReasons()
     {
-        if (Storage::disk('local')->exists('settings.json')) {
-            $data = json_decode(Storage::disk('local')->get('settings.json'), true);
-            if (!empty($data['reasons'])) {
-                return $data['reasons'];
+        // 1. Try DB AppSetting
+        try {
+            $setting = AppSetting::where('key', 'reasons')->first();
+            if ($setting && !empty($setting->value) && is_array($setting->value)) {
+                return $setting->value;
             }
+        } catch (\Exception $e) {
+            Log::warning('AppSetting DB fetch error: ' . $e->getMessage());
         }
 
+        // 2. Try Storage JSON file
+        try {
+            if (Storage::disk('local')->exists('settings.json')) {
+                $data = json_decode(Storage::disk('local')->get('settings.json'), true);
+                if (!empty($data['reasons']) && is_array($data['reasons'])) {
+                    return $data['reasons'];
+                }
+            }
+        } catch (\Exception $e) {
+            Log::warning('AppSetting File fetch error: ' . $e->getMessage());
+        }
+
+        // 3. Fallback default reasons
         return [
             'Price is higher than expected',
             'Unsure about size / fit / dimensions',
@@ -26,6 +47,9 @@ class ProductFeedbackController extends Controller
         ];
     }
 
+    /**
+     * Get statistics summary for dashboard
+     */
     private function getStats()
     {
         try {
@@ -47,6 +71,9 @@ class ProductFeedbackController extends Controller
         }
     }
 
+    /**
+     * Submenu: Overview
+     */
     public function overview()
     {
         try {
@@ -61,6 +88,9 @@ class ProductFeedbackController extends Controller
         ]);
     }
 
+    /**
+     * Submenu: Feedback Submissions Log Table
+     */
     public function submissions()
     {
         try {
@@ -75,6 +105,9 @@ class ProductFeedbackController extends Controller
         ]);
     }
 
+    /**
+     * Submenu: Settings Page
+     */
     public function settings()
     {
         return Inertia::render('Settings', [
@@ -82,6 +115,9 @@ class ProductFeedbackController extends Controller
         ]);
     }
 
+    /**
+     * Save dynamic settings (DB + File persistence)
+     */
     public function saveSettings(Request $request)
     {
         $validated = $request->validate([
@@ -89,17 +125,35 @@ class ProductFeedbackController extends Controller
             'reasons.*' => 'required|string',
         ]);
 
-        Storage::disk('local')->put('settings.json', json_encode([
-            'reasons' => array_values(array_filter($validated['reasons'])),
-        ]));
+        $reasons = array_values(array_filter($validated['reasons']));
+
+        // 1. Save to File Storage Backup
+        try {
+            Storage::disk('local')->put('settings.json', json_encode(['reasons' => $reasons]));
+        } catch (\Exception $e) {
+            Log::error('Settings file save error: ' . $e->getMessage());
+        }
+
+        // 2. Save to MySQL Database
+        try {
+            AppSetting::updateOrCreate(
+                ['key' => 'reasons'],
+                ['shop_domain' => 'global', 'value' => $reasons]
+            );
+        } catch (\Exception $e) {
+            Log::error('Settings DB save error: ' . $e->getMessage());
+        }
 
         return response()->json([
             'success' => true,
             'message' => 'Settings saved successfully!',
-            'reasons' => $this->getReasons(),
+            'reasons' => $reasons,
         ]);
     }
 
+    /**
+     * Public API: Get dynamic settings for storefront popup
+     */
     public function getApiSettings()
     {
         return response()->json([
@@ -108,6 +162,9 @@ class ProductFeedbackController extends Controller
         ]);
     }
 
+    /**
+     * Submenu: Pricing
+     */
     public function pricing()
     {
         return Inertia::render('Pricing', [
@@ -115,16 +172,25 @@ class ProductFeedbackController extends Controller
         ]);
     }
 
+    /**
+     * Submenu: Setup
+     */
     public function setup()
     {
         return Inertia::render('Setup');
     }
 
+    /**
+     * Submenu: Support
+     */
     public function support()
     {
         return Inertia::render('Support');
     }
 
+    /**
+     * Public API: Save new customer feedback from storefront modal
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -137,16 +203,32 @@ class ProductFeedbackController extends Controller
             'customer_email' => 'nullable|email',
         ]);
 
+        $feedback = null;
+
+        // 1. Save directly into MySQL Database
         try {
             $feedback = ProductFeedback::create($validated);
         } catch (\Exception $e) {
-            $feedback = null;
+            Log::error('Feedback DB store error: ' . $e->getMessage());
+        }
+
+        // 2. File Backup in storage/app/feedbacks.json
+        try {
+            $existing = [];
+            if (Storage::disk('local')->exists('feedbacks.json')) {
+                $existing = json_decode(Storage::disk('local')->get('feedbacks.json'), true) ?: [];
+            }
+            $validated['created_at'] = now()->toDateTimeString();
+            $existing[] = $validated;
+            Storage::disk('local')->put('feedbacks.json', json_encode($existing));
+        } catch (\Exception $e) {
+            Log::error('Feedback File backup error: ' . $e->getMessage());
         }
 
         return response()->json([
             'success' => true,
             'message' => 'Thank you for your feedback!',
-            'feedback' => $feedback,
+            'feedback' => $feedback ?: $validated,
         ]);
     }
 }
