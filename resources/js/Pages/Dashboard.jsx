@@ -89,16 +89,6 @@ export default function Dashboard({ feedbacks = [], stats = {} }) {
         <Page
             title="BeforeBuy - Lost Sales Feedback Dashboard"
             subtitle="Merchant Admin Panel: Review why customers leave product pages without buying."
-            secondaryActions={[
-                {
-                    content: 'Run DB Migration 🚀',
-                    onAction: () => window.open('/run-migrate', '_blank'),
-                },
-                {
-                    content: 'Clear Cache 🧹',
-                    onAction: () => window.open('/clear-cache', '_blank'),
-                },
-            ]}
         >
             <BlockStack gap="500">
                 {toastMessage && (
@@ -106,13 +96,6 @@ export default function Dashboard({ feedbacks = [], stats = {} }) {
                         <p>{toastMessage}</p>
                     </Banner>
                 )}
-
-                {/* Banner explaining app status */}
-                <Banner title="Merchant Admin Dashboard Connected" tone="success">
-                    <p>
-                        Storefront feedback collection is active. Customer submissions on your product pages will automatically appear in the table below.
-                    </p>
-                </Banner>
 
                 {/* Quick Merchant Stats Grid */}
                 <Grid>

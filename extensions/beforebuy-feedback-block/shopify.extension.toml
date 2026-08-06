@@ -1,3 +1,7 @@
-name = "BeforeBuy Feedback Block"
+api_version = "2024-07"
+
+[[extensions]]
+name = "BeforeBuy Feedback"
 handle = "beforebuy-feedback-block"
+uid = "57b60af9-e1e9-db32-486c-d1ea3b5d482291b8762c"
 type = "theme"
