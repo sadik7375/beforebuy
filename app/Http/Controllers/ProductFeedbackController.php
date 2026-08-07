@@ -103,9 +103,12 @@ class ProductFeedbackController extends Controller
             $feedbacks = collect([]);
         }
 
+        $config = $this->getAppSettings();
+
         return Inertia::render('Overview', [
             'feedbacks' => $feedbacks,
             'stats' => $this->getStats(),
+            'reasons' => $config['reasons'] ?? [],
         ]);
     }
 
@@ -120,9 +123,12 @@ class ProductFeedbackController extends Controller
             $feedbacks = collect([]);
         }
 
+        $config = $this->getAppSettings();
+
         return Inertia::render('Submissions', [
             'feedbacks' => $feedbacks,
             'stats' => $this->getStats(),
+            'reasons' => $config['reasons'] ?? [],
         ]);
     }
 

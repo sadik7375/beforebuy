@@ -3,23 +3,28 @@ import { Page, BlockStack, Card, Text, Badge, DataTable, InlineStack, TextField,
 import { SearchIcon, XIcon } from '@shopify/polaris-icons';
 import AppLayout from '../Layouts/AppLayout';
 
-export default function Submissions({ feedbacks = [] }) {
+export default function Submissions({ feedbacks = [], reasons = [] }) {
     const list = Array.isArray(feedbacks) ? feedbacks : (feedbacks.data || []);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedReasonFilter, setSelectedReasonFilter] = useState('all');
 
-    // Filter choices options
-    const reasonOptions = [
-        { label: 'All Reasons', value: 'all' },
-        { label: 'Price is higher than expected', value: 'price' },
-        { label: 'Unsure about size / fit', value: 'size' },
-        { label: 'Shipping fee too high', value: 'shipping' },
-        { label: 'Product info missing', value: 'info' },
-        { label: 'Other reason', value: 'other' },
-    ];
+    // Build dynamic filter options from Merchant Settings + Actual Submissions
+    const reasonOptions = useMemo(() => {
+        const uniqueSet = new Set();
+        (reasons || []).forEach(r => uniqueSet.add(r));
+        list.forEach(item => {
+            if (item.reason) uniqueSet.add(item.reason);
+        });
 
-    // Real-time Search and Filter logic
+        const options = [{ label: 'All Reasons', value: 'all' }];
+        uniqueSet.forEach(reason => {
+            options.push({ label: reason, value: reason });
+        });
+        return options;
+    }, [reasons, list]);
+
+    // Real-time Search and Dynamic Filter logic
     const filteredList = useMemo(() => {
         return list.filter((item) => {
             const query = searchQuery.toLowerCase().trim();
@@ -31,14 +36,8 @@ export default function Submissions({ feedbacks = [] }) {
                 (item.customer_email && item.customer_email.toLowerCase().includes(query))
             );
 
-            const reasonLower = (item.reason || '').toLowerCase();
-            let matchesReason = true;
-
-            if (selectedReasonFilter === 'price') matchesReason = reasonLower.includes('price');
-            else if (selectedReasonFilter === 'size') matchesReason = reasonLower.includes('size') || reasonLower.includes('fit');
-            else if (selectedReasonFilter === 'shipping') matchesReason = reasonLower.includes('shipping') || reasonLower.includes('delivery');
-            else if (selectedReasonFilter === 'info') matchesReason = reasonLower.includes('info') || reasonLower.includes('review');
-            else if (selectedReasonFilter === 'other') matchesReason = reasonLower.includes('other');
+            const matchesReason = selectedReasonFilter === 'all' ||
+                (item.reason && item.reason.toLowerCase().trim() === selectedReasonFilter.toLowerCase().trim());
 
             return matchesQuery && matchesReason;
         });
@@ -81,7 +80,7 @@ export default function Submissions({ feedbacks = [] }) {
                             <Badge tone="success">Live Database Log</Badge>
                         </InlineStack>
 
-                        {/* Search and Filter Header Bar */}
+                        {/* Search and Dynamic Filter Bar */}
                         <div style={{
                             border: '1px solid #e1e3e5',
                             borderRadius: '8px',
