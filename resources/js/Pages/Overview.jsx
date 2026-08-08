@@ -162,10 +162,7 @@ export default function Overview({ feedbacks = [], stats = {} }) {
                                 justifyContent: 'space-between'
                             }}>
                                 <BlockStack gap="300">
-                                    <InlineStack gap="200" blockAlign="center">
-                                        <span style={{ fontSize: '18px' }}>✨</span>
-                                        <Text variant="headingMd" as="h3">AI Insight of the Week</Text>
-                                    </InlineStack>
+                                    <Text variant="headingMd" as="h3" weight="bold">AI Insight of the Week</Text>
 
                                     <Text variant="bodyMd" tone="subdued">
                                         Snowboard Liquid accounts for 60% of "price too high" complaints. Consider a limited-time 10% discount or highlighting your deposit/COD option more prominently on this product.

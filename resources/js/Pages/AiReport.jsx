@@ -19,7 +19,7 @@ export default function AiReport({ stats = {}, repeatCustomers = [] }) {
         <Badge key={`badge-${item.customer_email}`} tone="warning">{`${item.count || item.count} Submissions`}</Badge>,
         item.products || 'Multiple Products',
         <Badge key={`intent-${item.customer_email}`} tone={item.tone || 'success'}>
-            {`🔥 ${item.intent || 'High Intent (90%)'}`}
+            {item.intent || 'High Intent (90%)'}
         </Badge>
     ]);
 
@@ -30,7 +30,7 @@ export default function AiReport({ stats = {}, repeatCustomers = [] }) {
                 title="Weekly AI Report"
                 subtitle="Aug 1 – Aug 7, 2026 · Generated automatically every Monday"
                 primaryAction={{
-                    content: 'Export PDF 📥',
+                    content: 'Export PDF',
                     onAction: () => window.print(),
                 }}
             >
@@ -43,10 +43,7 @@ export default function AiReport({ stats = {}, repeatCustomers = [] }) {
                         padding: '24px',
                     }}>
                         <BlockStack gap="300">
-                            <InlineStack gap="200" blockAlign="center">
-                                <span style={{ fontSize: '18px' }}>✨</span>
-                                <Text variant="headingMd" as="h2" weight="bold">Executive Summary</Text>
-                            </InlineStack>
+                            <Text variant="headingMd" as="h2" weight="bold">Executive Summary</Text>
 
                             <Text variant="bodyMd" tone="base">
                                 This week, <strong>{totalCount} customers</strong> shared feedback before leaving without buying — up 18% from last week. Pricing concerns dominated (42%), concentrated heavily on <strong>Snowboard Liquid</strong>. Sizing issues on <strong>Winter Jacket</strong> also spiked, likely tied to your recent restock without XXL. Two products account for over half of all objections this week — fixing these could recover an estimated <strong>{estRevenue}</strong> in lost sales.
@@ -55,7 +52,7 @@ export default function AiReport({ stats = {}, repeatCustomers = [] }) {
                     </div>
 
                     {/* AI Strategic Analysis Cards */}
-                    <Text variant="headingLg" as="h2">🎯 AI Strategic Insights & Analysis</Text>
+                    <Text variant="headingLg" as="h2">AI Strategic Insights & Analysis</Text>
 
                     <Grid>
                         {/* Insight 1: Price Sensitivity Analysis */}
@@ -63,10 +60,7 @@ export default function AiReport({ stats = {}, repeatCustomers = [] }) {
                             <Card>
                                 <BlockStack gap="300">
                                     <InlineStack align="space-between" blockAlign="center">
-                                        <InlineStack gap="200" blockAlign="center">
-                                            <span style={{ fontSize: '20px' }}>🚀</span>
-                                            <Text variant="headingSm" as="h3">AI Price Sensitivity Insight</Text>
-                                        </InlineStack>
+                                        <Text variant="headingSm" as="h3">AI Price Sensitivity Insight</Text>
                                         <Badge tone="success">High Opportunity</Badge>
                                     </InlineStack>
 
@@ -82,10 +76,7 @@ export default function AiReport({ stats = {}, repeatCustomers = [] }) {
                             <Card>
                                 <BlockStack gap="300">
                                     <InlineStack align="space-between" blockAlign="center">
-                                        <InlineStack gap="200" blockAlign="center">
-                                            <span style={{ fontSize: '20px' }}>📦</span>
-                                            <Text variant="headingSm" as="h3">AI Sizing & Content Gap Analysis</Text>
-                                        </InlineStack>
+                                        <Text variant="headingSm" as="h3">AI Sizing & Content Gap Analysis</Text>
                                         <Badge tone="warning">Content Optimization</Badge>
                                     </InlineStack>
 
@@ -102,10 +93,7 @@ export default function AiReport({ stats = {}, repeatCustomers = [] }) {
                         <BlockStack gap="400">
                             <InlineStack align="space-between" blockAlign="center">
                                 <BlockStack gap="100">
-                                    <InlineStack gap="200" blockAlign="center">
-                                        <span style={{ fontSize: '20px' }}>👤</span>
-                                        <Text variant="headingMd" as="h2">High-Intent Lead Intelligence (Repeat Objections)</Text>
-                                    </InlineStack>
+                                    <Text variant="headingMd" as="h2">High-Intent Lead Intelligence (Repeat Objections)</Text>
                                     <Text tone="subdued" variant="bodySm">
                                         Detailed AI analysis of high-intent visitors who submitted multiple feedback entries across products.
                                     </Text>
