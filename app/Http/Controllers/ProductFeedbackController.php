@@ -73,21 +73,55 @@ class ProductFeedbackController extends Controller
     private function getStats()
     {
         try {
+            $totalFeedbacks = DB::table('product_feedbacks')->count();
+            $emailsCount = DB::table('product_feedbacks')->whereNotNull('customer_email')->where('customer_email', '!=', '')->count();
+            
+            // Top reasons with percentages
+            $reasonsData = DB::table('product_feedbacks')
+                ->select('reason', DB::raw('count(*) as count'))
+                ->groupBy('reason')
+                ->orderByDesc('count')
+                ->get();
+                
+            $totalReasonCount = $reasonsData->sum('count') ?: 1;
+            $reasonsBreakdown = $reasonsData->map(function ($item) use ($totalReasonCount) {
+                return [
+                    'reason' => $item->reason,
+                    'count' => $item->count,
+                    'percentage' => round(($item->count / $totalReasonCount) * 100),
+                ];
+            });
+
+            // Top products
+            $topProducts = DB::table('product_feedbacks')
+                ->select('product_title', DB::raw('count(*) as count'))
+                ->whereNotNull('product_title')
+                ->where('product_title', '!=', '')
+                ->groupBy('product_title')
+                ->orderByDesc('count')
+                ->take(5)
+                ->get();
+
             return [
-                'total_feedbacks' => DB::table('product_feedbacks')->count(),
-                'top_reason' => DB::table('product_feedbacks')
-                    ->select('reason')
-                    ->selectRaw('count(*) as total')
-                    ->groupBy('reason')
-                    ->orderByDesc('total')
-                    ->first()?->reason ?? 'Price too high',
-                'pending_ai_analysis' => DB::table('product_feedbacks')->whereNull('ai_summary')->count(),
+                'total_feedbacks' => $totalFeedbacks,
+                'emails_collected' => $emailsCount,
+                'response_rate' => $totalFeedbacks > 0 ? round(($emailsCount / $totalFeedbacks) * 100) : 60,
+                'estimated_lost_revenue' => $totalFeedbacks * 35,
+                'open_inquiries' => DB::table('product_feedbacks')->whereNull('ai_summary')->count(),
+                'top_reason' => $reasonsData->first()?->reason ?? 'Price is higher than expected',
+                'reasons_breakdown' => $reasonsBreakdown,
+                'top_products' => $topProducts,
             ];
         } catch (\Throwable $e) {
             return [
                 'total_feedbacks' => 0,
-                'top_reason' => 'Price too high',
-                'pending_ai_analysis' => 0,
+                'emails_collected' => 0,
+                'response_rate' => 0,
+                'estimated_lost_revenue' => 0,
+                'open_inquiries' => 0,
+                'top_reason' => 'Price is higher than expected',
+                'reasons_breakdown' => [],
+                'top_products' => [],
             ];
         }
     }
