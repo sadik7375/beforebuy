@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Page, BlockStack, Card, Text, Grid, Badge, DataTable, InlineStack, TextField, Select, Button, Icon } from '@shopify/polaris';
+import { Page, BlockStack, Card, Text, Grid, Badge, DataTable, InlineStack, TextField, Select, Button, Icon, Modal } from '@shopify/polaris';
 import { SearchIcon, XIcon } from '@shopify/polaris-icons';
 import AppLayout from '../Layouts/AppLayout';
 
@@ -8,6 +8,20 @@ export default function Overview({ feedbacks = [], stats = {}, reasons = [] }) {
 
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedReasonFilter, setSelectedReasonFilter] = useState('all');
+
+    // Modal state for viewing full customer note
+    const [selectedFeedback, setSelectedFeedback] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const handleOpenNoteModal = (item) => {
+        setSelectedFeedback(item);
+        setIsModalOpen(true);
+    };
+
+    const handleCloseNoteModal = () => {
+        setIsModalOpen(false);
+        setSelectedFeedback(null);
+    };
 
     // Build dynamic reason options from Merchant Settings + Actual Submissions
     const reasonOptions = useMemo(() => {
@@ -47,13 +61,28 @@ export default function Overview({ feedbacks = [], stats = {}, reasons = [] }) {
         setSelectedReasonFilter('all');
     };
 
-    const tableRows = filteredList.map((item) => [
-        item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Today',
-        item.product_title || 'General Product',
-        <Badge key={item.id} tone={item.reason && item.reason.includes('Price') ? 'warning' : 'info'}>{item.reason}</Badge>,
-        item.custom_comment || 'No comment',
-        item.customer_email || 'Anonymous Visitor',
-    ]);
+    const tableRows = filteredList.map((item) => {
+        const comment = item.custom_comment || 'No comment';
+        const isLongText = comment.length > 35;
+        const shortText = isLongText ? comment.substring(0, 35) + '...' : comment;
+
+        return [
+            item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Today',
+            item.product_title || 'General Product',
+            <Badge key={item.id} tone={item.reason && item.reason.includes('Price') ? 'warning' : 'info'}>{item.reason}</Badge>,
+            isLongText ? (
+                <InlineStack key={`note-${item.id}`} gap="100" blockAlign="center">
+                    <Text variant="bodySm" as="span">{shortText}</Text>
+                    <Button variant="tertiary" size="micro" onClick={() => handleOpenNoteModal(item)}>
+                        Read more
+                    </Button>
+                </InlineStack>
+            ) : (
+                comment
+            ),
+            item.customer_email || 'Anonymous Visitor',
+        ];
+    });
 
     const isFiltered = searchQuery !== '' || selectedReasonFilter !== 'all';
 
@@ -162,6 +191,59 @@ export default function Overview({ feedbacks = [], stats = {}, reasons = [] }) {
                             )}
                         </BlockStack>
                     </Card>
+
+                    {/* Polaris Modal for Viewing Full Customer Note */}
+                    <Modal
+                        open={isModalOpen}
+                        onClose={handleCloseNoteModal}
+                        title="Full Customer Feedback Note"
+                        primaryAction={{
+                            content: 'Close',
+                            onAction: handleCloseNoteModal,
+                        }}
+                    >
+                        <Modal.Section>
+                            {selectedFeedback && (
+                                <BlockStack gap="400">
+                                    <div>
+                                        <Text variant="headingSm" as="h4">Product</Text>
+                                        <Text tone="subdued">{selectedFeedback.product_title || 'General Product'}</Text>
+                                    </div>
+
+                                    <div>
+                                        <Text variant="headingSm" as="h4">Objection Reason</Text>
+                                        <Badge tone="warning">{selectedFeedback.reason}</Badge>
+                                    </div>
+
+                                    <div>
+                                        <Text variant="headingSm" as="h4">Customer Email</Text>
+                                        <Text tone="subdued">{selectedFeedback.customer_email || 'Anonymous Visitor'}</Text>
+                                    </div>
+
+                                    <div>
+                                        <Text variant="headingSm" as="h4">Full Note / Comment</Text>
+                                        <div style={{
+                                            backgroundColor: '#f6f6f7',
+                                            padding: '12px 16px',
+                                            borderRadius: '8px',
+                                            marginTop: '4px',
+                                            whiteSpace: 'pre-wrap',
+                                            wordBreak: 'break-word',
+                                            border: '1px solid #e1e3e5'
+                                        }}>
+                                            <Text variant="bodyMd">{selectedFeedback.custom_comment}</Text>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <Text variant="bodyXs" tone="subdued">
+                                            Submitted on: {selectedFeedback.created_at || 'Recently'}
+                                        </Text>
+                                    </div>
+                                </BlockStack>
+                            )}
+                        </Modal.Section>
+                    </Modal>
                 </BlockStack>
             </Page>
         </AppLayout>
