@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Page, BlockStack, Card, Text, Grid, Badge, Select, InlineStack, Button } from '@shopify/polaris';
+import { Page, BlockStack, Card, Text, Grid, Badge, Select, InlineStack } from '@shopify/polaris';
 import { router } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 
@@ -10,7 +10,6 @@ export default function Overview({ feedbacks = [], stats = {} }) {
     const estRevenue = stats.estimated_lost_revenue ? `$${stats.estimated_lost_revenue.toLocaleString()}` : '$4,280';
     const emailsCount = stats.emails_collected || 187;
     const responseRate = stats.response_rate || 60;
-    const openInquiries = stats.open_inquiries || 5;
 
     // Reason Colors for Progress Bars
     const getReasonColor = (index) => {
@@ -82,9 +81,9 @@ export default function Overview({ feedbacks = [], stats = {} }) {
                         </InlineStack>
                     </InlineStack>
 
-                    {/* Top Stat Cards Row (4 Columns) */}
+                    {/* Top Stat Cards Row (3 Columns) */}
                     <Grid>
-                        <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 3, xl: 3 }}>
+                        <Grid.Cell columnSpan={{ xs: 6, sm: 4, md: 4, lg: 4, xl: 4 }}>
                             <Card>
                                 <BlockStack gap="200">
                                     <Text tone="subdued" variant="bodySm">Total Feedback</Text>
@@ -94,7 +93,7 @@ export default function Overview({ feedbacks = [], stats = {} }) {
                             </Card>
                         </Grid.Cell>
 
-                        <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 3, xl: 3 }}>
+                        <Grid.Cell columnSpan={{ xs: 6, sm: 4, md: 4, lg: 4, xl: 4 }}>
                             <Card>
                                 <BlockStack gap="200">
                                     <Text tone="subdued" variant="bodySm">Est. Lost Revenue</Text>
@@ -104,24 +103,12 @@ export default function Overview({ feedbacks = [], stats = {} }) {
                             </Card>
                         </Grid.Cell>
 
-                        <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 3, xl: 3 }}>
+                        <Grid.Cell columnSpan={{ xs: 6, sm: 4, md: 4, lg: 4, xl: 4 }}>
                             <Card>
                                 <BlockStack gap="200">
                                     <Text tone="subdued" variant="bodySm">Emails Collected</Text>
                                     <Text variant="headingXl" as="h2" weight="bold">{emailsCount}</Text>
                                     <Text tone="subdued" variant="bodyXs">{responseRate}% response rate</Text>
-                                </BlockStack>
-                            </Card>
-                        </Grid.Cell>
-
-                        <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 3, xl: 3 }}>
-                            <Card>
-                                <BlockStack gap="200">
-                                    <Text tone="subdued" variant="bodySm">Open Inquiries</Text>
-                                    <Text variant="headingXl" as="h2" weight="bold" tone={openInquiries > 0 ? 'warning' : 'default'}>
-                                        {openInquiries}
-                                    </Text>
-                                    <Text tone="subdued" variant="bodyXs">2 waiting 24h+</Text>
                                 </BlockStack>
                             </Card>
                         </Grid.Cell>
