@@ -1,5 +1,5 @@
 import React from 'react';
-import { Page, BlockStack, Card, Text, Badge, Grid, Button, InlineStack, DataTable, Icon } from '@shopify/polaris';
+import { Page, BlockStack, Card, Text, Badge, Grid, InlineStack, DataTable } from '@shopify/polaris';
 import { router } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 
@@ -10,17 +10,17 @@ export default function AiReport({ stats = {}, repeatCustomers = [] }) {
     const repeatList = Array.isArray(repeatCustomers) && repeatCustomers.length > 0
         ? repeatCustomers
         : [
-            { customer_email: 'wahidsadik7375@gmail.com', count: 3, products: 'Snowboard Liquid, Winter Jacket, Trail Boots' },
-            { customer_email: 'customer.test@gmail.com', count: 2, products: 'Winter Jacket, Trail Boots' },
+            { customer_email: 'wahidsadik38@gmail.com', count: 4, products: 'The Collection Snowboard: Liquid', intent: 'High Intent (95%)', tone: 'success' },
+            { customer_email: 'wahidsadik7375@gmail.com', count: 3, products: 'The Collection Snowboard: Liquid', intent: 'Warm Intent (82%)', tone: 'attention' },
         ];
 
     const customerRows = repeatList.map((item) => [
         <Text key={item.customer_email} weight="bold">{item.customer_email}</Text>,
-        <Badge key={`badge-${item.customer_email}`} tone="attention">{`${item.count} Submissions`}</Badge>,
-        item.products,
-        <Button key={`btn-${item.customer_email}`} variant="tertiary" size="micro" onClick={() => alert(`Preparing email offer for ${item.customer_email}`)}>
-            Send Personal Offer ✉️
-        </Button>
+        <Badge key={`badge-${item.customer_email}`} tone="warning">{`${item.count || item.count} Submissions`}</Badge>,
+        item.products || 'Multiple Products',
+        <Badge key={`intent-${item.customer_email}`} tone={item.tone || 'success'}>
+            {`🔥 ${item.intent || 'High Intent (90%)'}`}
+        </Badge>
     ]);
 
     return (
@@ -54,56 +54,44 @@ export default function AiReport({ stats = {}, repeatCustomers = [] }) {
                         </BlockStack>
                     </div>
 
-                    {/* AI Campaign & Action Suggestions */}
-                    <Text variant="headingLg" as="h2">🎯 AI Strategic Recommendations</Text>
+                    {/* AI Strategic Analysis Cards */}
+                    <Text variant="headingLg" as="h2">🎯 AI Strategic Insights & Analysis</Text>
 
                     <Grid>
-                        {/* Recommendation 1: Targeted Campaign */}
+                        {/* Insight 1: Price Sensitivity Analysis */}
                         <Grid.Cell columnSpan={{ xs: 12, sm: 6, md: 6, lg: 6, xl: 6 }}>
                             <Card>
                                 <BlockStack gap="300">
                                     <InlineStack align="space-between" blockAlign="center">
                                         <InlineStack gap="200" blockAlign="center">
                                             <span style={{ fontSize: '20px' }}>🚀</span>
-                                            <Text variant="headingSm" as="h3">Recommended Marketing Campaign</Text>
+                                            <Text variant="headingSm" as="h3">AI Price Sensitivity Insight</Text>
                                         </InlineStack>
-                                        <Badge tone="success">High ROI Opportunity</Badge>
+                                        <Badge tone="success">High Opportunity</Badge>
                                     </InlineStack>
 
                                     <Text variant="bodySm" tone="subdued">
-                                        Run a targeted <strong>15% promo discount campaign</strong> on <strong>Snowboard Liquid</strong> for 7 days. 60% of lost buyers cite price as their main barrier.
+                                        60% of lost buyers cite price as their main barrier on <strong>Snowboard Liquid</strong>. Providing a 10-15% incentive or highlighting flexible COD payment options could convert these high-intent visitors.
                                     </Text>
-
-                                    <div style={{ marginTop: '8px' }}>
-                                        <Button variant="primary" onClick={() => router.visit('/settings')}>
-                                            Configure Campaign Offer
-                                        </Button>
-                                    </div>
                                 </BlockStack>
                             </Card>
                         </Grid.Cell>
 
-                        {/* Recommendation 2: Product Content Fix */}
+                        {/* Insight 2: Product Content & Size Gap */}
                         <Grid.Cell columnSpan={{ xs: 12, sm: 6, md: 6, lg: 6, xl: 6 }}>
                             <Card>
                                 <BlockStack gap="300">
                                     <InlineStack align="space-between" blockAlign="center">
                                         <InlineStack gap="200" blockAlign="center">
                                             <span style={{ fontSize: '20px' }}>📦</span>
-                                            <Text variant="headingSm" as="h3">Product Description & Size Guide Fix</Text>
+                                            <Text variant="headingSm" as="h3">AI Sizing & Content Gap Analysis</Text>
                                         </InlineStack>
-                                        <Badge tone="warning">Content Gap</Badge>
+                                        <Badge tone="warning">Content Optimization</Badge>
                                     </InlineStack>
 
                                     <Text variant="bodySm" tone="subdued">
-                                        Update the <strong>Winter Jacket</strong> page to add XXL size measurements and chest fit details. 27% of abandoning customers asked about sizing dimensions.
+                                        27% of abandoning customers on <strong>Winter Jacket</strong> left feedback asking about size, fit, and chest dimensions. Adding clear size charts or fit notes can recover lost checkout intent.
                                     </Text>
-
-                                    <div style={{ marginTop: '8px' }}>
-                                        <Button variant="secondary" onClick={() => router.visit('/submissions')}>
-                                            Review Sizing Objections
-                                        </Button>
-                                    </div>
                                 </BlockStack>
                             </Card>
                         </Grid.Cell>
@@ -116,18 +104,18 @@ export default function AiReport({ stats = {}, repeatCustomers = [] }) {
                                 <BlockStack gap="100">
                                     <InlineStack gap="200" blockAlign="center">
                                         <span style={{ fontSize: '20px' }}>👤</span>
-                                        <Text variant="headingMd" as="h2">High-Intent Lead Targets (Repeat Objections)</Text>
+                                        <Text variant="headingMd" as="h2">High-Intent Lead Intelligence (Repeat Objections)</Text>
                                     </InlineStack>
                                     <Text tone="subdued" variant="bodySm">
-                                        These high-intent visitors browsed multiple items and gave feedback on 2+ products. Target them with direct email recovery offers!
+                                        Detailed AI analysis of high-intent visitors who submitted multiple feedback entries across products.
                                     </Text>
                                 </BlockStack>
-                                <Badge tone="info">Lead Recovery</Badge>
+                                <Badge tone="info">Behavioral Analytics</Badge>
                             </InlineStack>
 
                             <DataTable
                                 columnContentTypes={['text', 'text', 'text', 'text']}
-                                headings={['Customer Email', 'Objections Shared', 'Products Browsed', 'Action']}
+                                headings={['Customer Email', 'Total Objections Shared', 'Products Browsed', 'AI Intent Score']}
                                 rows={customerRows}
                             />
                         </BlockStack>
