@@ -167,6 +167,33 @@ class ProductFeedbackController extends Controller
     }
 
     /**
+     * Submenu: Weekly AI Report & Actionable Suggestions
+     */
+    public function aiReport()
+    {
+        try {
+            // Find repeat customer emails (customers who submitted feedback on multiple items)
+            $repeatCustomers = DB::table('product_feedbacks')
+                ->select('customer_email', DB::raw('count(*) as count'), DB::raw('GROUP_CONCAT(DISTINCT product_title SEPARATOR ", ") as products'))
+                ->whereNotNull('customer_email')
+                ->where('customer_email', '!=', '')
+                ->groupBy('customer_email')
+                ->having('count', '>', 1)
+                ->orderByDesc('count')
+                ->get();
+        } catch (\Throwable $e) {
+            $repeatCustomers = collect([]);
+        }
+
+        $config = $this->getAppSettings();
+
+        return Inertia::render('AiReport', [
+            'stats' => $this->getStats(),
+            'repeatCustomers' => $repeatCustomers,
+        ]);
+    }
+
+    /**
      * Submenu: Settings Page
      */
     public function settings()

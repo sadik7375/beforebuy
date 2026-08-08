@@ -7,6 +7,7 @@ use App\Http\Controllers\ProductFeedbackController;
 // Submenu Routes
 Route::get('/', [ProductFeedbackController::class, 'overview'])->name('overview');
 Route::get('/submissions', [ProductFeedbackController::class, 'submissions'])->name('submissions');
+Route::get('/ai-report', [ProductFeedbackController::class, 'aiReport'])->name('ai.report');
 Route::get('/settings', [ProductFeedbackController::class, 'settings'])->name('settings');
 Route::post('/settings/save', [ProductFeedbackController::class, 'saveSettings'])->name('settings.save');
 Route::get('/pricing', [ProductFeedbackController::class, 'pricing'])->name('pricing');

@@ -174,7 +174,7 @@ export default function Overview({ feedbacks = [], stats = {} }) {
 
                                 <div style={{ marginTop: '20px' }}>
                                     <button
-                                        onClick={() => router.visit('/submissions')}
+                                        onClick={() => router.visit('/ai-report')}
                                         style={{
                                             backgroundColor: '#000000',
                                             color: '#ffffff',
