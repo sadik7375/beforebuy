@@ -114,7 +114,7 @@ export default function Overview({ feedbacks = [], stats = {} }) {
                         </Grid.Cell>
                     </Grid>
 
-                    {/* Middle Section (Why Customers Are Leaving + AI Insight) */}
+                    {/* Middle Section (Why Customers Are Leaving + Assist AI Analysis) */}
                     <Grid>
                         {/* Left Card: Why Customers Are Leaving */}
                         <Grid.Cell columnSpan={{ xs: 12, sm: 6, md: 6, lg: 6, xl: 6 }}>
@@ -149,7 +149,7 @@ export default function Overview({ feedbacks = [], stats = {} }) {
                             </Card>
                         </Grid.Cell>
 
-                        {/* Right Card: AI Insight of the Week */}
+                        {/* Right Card: Assist AI Analysis */}
                         <Grid.Cell columnSpan={{ xs: 12, sm: 6, md: 6, lg: 6, xl: 6 }}>
                             <div style={{
                                 backgroundColor: '#f0f7ff',
@@ -162,7 +162,10 @@ export default function Overview({ feedbacks = [], stats = {} }) {
                                 justifyContent: 'space-between'
                             }}>
                                 <BlockStack gap="300">
-                                    <Text variant="headingMd" as="h3" weight="bold">AI Insight of the Week</Text>
+                                    <InlineStack align="space-between" blockAlign="center">
+                                        <Text variant="headingMd" as="h3" weight="bold">Assist AI Analysis</Text>
+                                        <Badge tone="info">Weekly Summary</Badge>
+                                    </InlineStack>
 
                                     <Text variant="bodyMd" tone="subdued">
                                         Snowboard Liquid accounts for 60% of "price too high" complaints. Consider a limited-time 10% discount or highlighting your deposit/COD option more prominently on this product.
@@ -184,7 +187,7 @@ export default function Overview({ feedbacks = [], stats = {} }) {
                                             fontSize: '14px',
                                         }}
                                     >
-                                        View Full Weekly Report
+                                        View Report
                                     </button>
                                 </div>
                             </div>
