@@ -1,16 +1,42 @@
 {{ 'feedback.css' | asset_url | stylesheet_tag }}
 <script src="{{ 'feedback.js' | asset_url }}" defer="defer"></script>
 
+{% style %}
+  .beforebuy-trigger-btn-{{ block.id }} {
+    background-color: {{ block.settings.btn_bg_color }};
+    color: {{ block.settings.btn_text_color }};
+    border: 1px solid {{ block.settings.btn_border_color }};
+    border-radius: {{ block.settings.btn_corner_radius }}px;
+    padding: {{ block.settings.btn_vertical_padding }}px {{ block.settings.btn_horizontal_padding }}px;
+    font-size: {{ block.settings.btn_font_size }}px;
+    font-weight: {{ block.settings.btn_font_weight }};
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    box-sizing: border-box;
+    text-align: center;
+    {% if block.settings.btn_width_type == 'full' %}
+      width: 100%;
+      display: block;
+    {% elsif block.settings.btn_width_type == 'custom' %}
+      width: {{ block.settings.btn_custom_width }}px;
+      max-width: 100%;
+      display: inline-block;
+    {% else %}
+      width: auto;
+      display: inline-block;
+    {% endif %}
+  }
+{% endstyle %}
+
 <div class="beforebuy-feedback-wrapper" style="text-align: {{ block.settings.alignment }};">
   <button
     id="beforebuy-trigger-btn"
-    class="beforebuy-trigger-btn"
+    class="beforebuy-trigger-btn beforebuy-trigger-btn-{{ block.id }}"
     type="button"
     data-product-id="{{ product.id }}"
     data-product-title="{{ product.title | escape }}"
     data-product-handle="{{ product.handle }}"
     data-customer-email="{% if customer %}{{ customer.email }}{% endif %}"
-    style="background-color: {{ block.settings.btn_bg_color }}; color: {{ block.settings.btn_text_color }}; border-color: {{ block.settings.btn_border_color }};"
   >
     {{ block.settings.button_text }}
   </button>
@@ -100,10 +126,120 @@
   "javascript": "feedback.js",
   "settings": [
     {
+      "type": "header",
+      "content": "Trigger Button Settings"
+    },
+    {
       "type": "text",
       "id": "button_text",
-      "label": "Trigger Button Label",
+      "label": "Button Text",
       "default": "Why aren't you buying today?"
+    },
+    {
+      "type": "color",
+      "id": "btn_text_color",
+      "label": "Button Text Color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "btn_bg_color",
+      "label": "Button Background Color",
+      "default": "#111827"
+    },
+    {
+      "type": "color",
+      "id": "btn_border_color",
+      "label": "Button Border Color",
+      "default": "#111827"
+    },
+    {
+      "type": "range",
+      "id": "btn_corner_radius",
+      "min": 0,
+      "max": 50,
+      "step": 1,
+      "unit": "px",
+      "label": "Button Corner Radius",
+      "default": 8
+    },
+    {
+      "type": "range",
+      "id": "btn_vertical_padding",
+      "min": 4,
+      "max": 30,
+      "step": 1,
+      "unit": "px",
+      "label": "Vertical Padding (Top/Bottom)",
+      "default": 10
+    },
+    {
+      "type": "range",
+      "id": "btn_horizontal_padding",
+      "min": 8,
+      "max": 60,
+      "step": 1,
+      "unit": "px",
+      "label": "Horizontal Padding (Left/Right)",
+      "default": 20
+    },
+    {
+      "type": "range",
+      "id": "btn_font_size",
+      "min": 10,
+      "max": 30,
+      "step": 1,
+      "unit": "px",
+      "label": "Button Font Size",
+      "default": 15
+    },
+    {
+      "type": "select",
+      "id": "btn_font_weight",
+      "label": "Button Font Weight",
+      "options": [
+        { "value": "400", "label": "Normal (400)" },
+        { "value": "500", "label": "Medium (500)" },
+        { "value": "600", "label": "Semi-Bold (600)" },
+        { "value": "700", "label": "Bold (700)" }
+      ],
+      "default": "600"
+    },
+    {
+      "type": "select",
+      "id": "btn_width_type",
+      "label": "Button Width",
+      "options": [
+        { "value": "auto", "label": "Auto (Fit content)" },
+        { "value": "full", "label": "Full Width (100%)" },
+        { "value": "custom", "label": "Custom Width" }
+      ],
+      "default": "full"
+    },
+    {
+      "type": "range",
+      "id": "btn_custom_width",
+      "min": 100,
+      "max": 600,
+      "step": 10,
+      "unit": "px",
+      "label": "Custom Width (if Custom selected)",
+      "default": 200
+    },
+    {
+      "type": "select",
+      "id": "alignment",
+      "label": "Button Alignment",
+      "options": [
+        { "value": "left", "label": "Left" },
+        { "value": "center", "label": "Center" },
+        { "value": "right", "label": "Right" }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "header",
+      "content": "Popup Modal Settings"
     },
     {
       "type": "text",
@@ -125,24 +261,6 @@
     },
     {
       "type": "color",
-      "id": "btn_bg_color",
-      "label": "Trigger Button Background Color",
-      "default": "#111827"
-    },
-    {
-      "type": "color",
-      "id": "btn_text_color",
-      "label": "Trigger Button Text Color",
-      "default": "#ffffff"
-    },
-    {
-      "type": "color",
-      "id": "btn_border_color",
-      "label": "Trigger Button Border Color",
-      "default": "#d1d5db"
-    },
-    {
-      "type": "color",
       "id": "popup_submit_bg_color",
       "label": "Popup Submit Button Background Color",
       "default": "#111827"
@@ -152,17 +270,6 @@
       "id": "popup_submit_text_color",
       "label": "Popup Submit Button Text Color",
       "default": "#ffffff"
-    },
-    {
-      "type": "select",
-      "id": "alignment",
-      "label": "Button Alignment",
-      "options": [
-        { "value": "left", "label": "Left" },
-        { "value": "center", "label": "Center" },
-        { "value": "right", "label": "Right" }
-      ],
-      "default": "center"
     }
   ]
 }
