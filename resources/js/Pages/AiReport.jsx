@@ -29,10 +29,6 @@ export default function AiReport({ stats = {}, repeatCustomers = [] }) {
                 backAction={{ content: 'Overview', onAction: () => router.visit('/') }}
                 title="Weekly AI Report"
                 subtitle="Aug 1 – Aug 7, 2026 · Generated automatically every Monday"
-                primaryAction={{
-                    content: 'Export PDF',
-                    onAction: () => window.print(),
-                }}
             >
                 <BlockStack gap="500">
                     {/* Executive Summary Blue Banner Box */}
