@@ -25,7 +25,7 @@ export default function Settings({ reasons = [], enable_email = true, require_em
             id: 'modern',
             name: 'Standard Card List',
             description: 'Classic vertical list with radio buttons and clean borders.',
-            type: 'vertical',
+            type: 'modern',
         },
         {
             id: 'badge_list',
