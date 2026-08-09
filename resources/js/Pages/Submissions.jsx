@@ -81,15 +81,7 @@ export default function Submissions({ feedbacks = [], reasons = [] }) {
             ) : (
                 comment
             ),
-            item.customer_email || 'Anonymous Visitor',
-            item.ai_summary ? (
-                <BlockStack key={`ai-${item.id}`} gap="100">
-                    <Badge tone="success">🤖 AI Summary</Badge>
-                    <Text variant="bodyXs" tone="subdued">{item.ai_summary}</Text>
-                </BlockStack>
-            ) : (
-                <Badge key={`ai-${item.id}`} tone="attention">🤖 AI Ready</Badge>
-            )
+            item.customer_email || 'Anonymous Visitor'
         ];
     });
 
@@ -167,8 +159,8 @@ export default function Submissions({ feedbacks = [], reasons = [] }) {
                             </div>
                         ) : (
                             <DataTable
-                                columnContentTypes={['text', 'text', 'text', 'text', 'text', 'text']}
-                                headings={['Date', 'Product', 'Objection Reason', 'Customer Note', 'Customer Email', 'AI Insight']}
+                                columnContentTypes={['text', 'text', 'text', 'text', 'text']}
+                                headings={['Date', 'Product', 'Objection Reason', 'Customer Note', 'Customer Email']}
                                 rows={tableRows}
                             />
                         )}
