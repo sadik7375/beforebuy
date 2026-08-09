@@ -9,6 +9,7 @@
     data-product-id="{{ product.id }}"
     data-product-title="{{ product.title | escape }}"
     data-product-handle="{{ product.handle }}"
+    data-customer-email="{% if customer %}{{ customer.email }}{% endif %}"
     style="background-color: {{ block.settings.btn_bg_color }}; color: {{ block.settings.btn_text_color }}; border-color: {{ block.settings.btn_border_color }};"
   >
     {{ block.settings.button_text }}
@@ -16,7 +17,7 @@
 </div>
 
 <!-- BeforeBuy Feedback Modal Overlay -->
-<div id="beforebuy-modal-overlay" class="beforebuy-modal-overlay">
+<div id="beforebuy-modal-overlay" class="beforebuy-modal-overlay" data-customer-email="{% if customer %}{{ customer.email }}{% endif %}">
   <div class="beforebuy-modal-card">
     <div class="beforebuy-modal-header">
       <h3>{{ block.settings.popup_title }}</h3>
@@ -26,6 +27,20 @@
     <div id="beforebuy-modal-body" class="beforebuy-modal-body">
       <p class="beforebuy-subtitle">{{ block.settings.popup_subtitle }}</p>
 
+      <!-- Email Group Placed At The Top -->
+      <div id="beforebuy-email-group" class="beforebuy-email-group" style="margin-bottom: 16px;">
+        <label id="beforebuy-email-label" for="beforebuy-customer-email">Your Email Address (Optional):</label>
+        <input
+          type="email"
+          id="beforebuy-customer-email"
+          class="beforebuy-input"
+          placeholder="name@example.com"
+          value="{% if customer %}{{ customer.email }}{% endif %}"
+        >
+        <p id="beforebuy-email-error" class="beforebuy-error-msg" style="display: none;">Please enter a valid email address.</p>
+      </div>
+
+      <!-- Reasons Grid Below Email Field -->
       <div class="beforebuy-reasons-grid">
         <label class="beforebuy-reason-item beforebuy-selected" data-reason="Price is higher than expected">
           <input type="radio" name="beforebuy_reason" value="Price is higher than expected" class="beforebuy-reason-radio" checked>
@@ -53,13 +68,7 @@
         </label>
       </div>
 
-      <div id="beforebuy-email-group" class="beforebuy-email-group">
-        <label id="beforebuy-email-label" for="beforebuy-customer-email">Your Email Address (Optional):</label>
-        <input type="email" id="beforebuy-customer-email" class="beforebuy-input" placeholder="name@example.com">
-        <p id="beforebuy-email-error" class="beforebuy-error-msg" style="display: none;">Please enter a valid email address.</p>
-      </div>
-
-      <div class="beforebuy-comment-group">
+      <div class="beforebuy-comment-group" style="margin-top: 16px;">
         <label for="beforebuy-custom-comment">Additional Details (Optional):</label>
         <textarea id="beforebuy-custom-comment" class="beforebuy-textarea" placeholder="Tell us what would help you make a decision..."></textarea>
       </div>

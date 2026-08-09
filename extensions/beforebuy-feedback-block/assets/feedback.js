@@ -31,6 +31,15 @@ if (!window.beforebuyFeedbackInitialized) {
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     }
 
+    function autoFillCustomerEmail() {
+      if (emailInput && !emailInput.value.trim()) {
+        const customerEmail = (triggerBtn.dataset.customerEmail || modalOverlay.dataset.customerEmail || '').trim();
+        if (customerEmail) {
+          emailInput.value = customerEmail;
+        }
+      }
+    }
+
     function fetchSettings() {
       fetch('https://beforebuy.cannyapps.com/api/settings')
         .then(res => res.json())
@@ -111,6 +120,7 @@ if (!window.beforebuyFeedbackInitialized) {
     }
 
     bindReasonEvents();
+    autoFillCustomerEmail();
     fetchSettings();
 
     // Open Modal
@@ -118,6 +128,7 @@ if (!window.beforebuyFeedbackInitialized) {
       modalOverlay.classList.add('beforebuy-is-open');
       if (emailError) emailError.style.display = 'none';
       if (emailInput) emailInput.classList.remove('beforebuy-invalid');
+      autoFillCustomerEmail();
       fetchSettings();
     });
 
