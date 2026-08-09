@@ -1,7 +1,7 @@
 if (!window.beforebuyFeedbackInitialized) {
   window.beforebuyFeedbackInitialized = true;
 
-  document.addEventListener('DOMContentLoaded', function () {
+  function initBeforeBuyWidget() {
     const triggerBtn = document.getElementById('beforebuy-trigger-btn');
     const modalOverlay = document.getElementById('beforebuy-modal-overlay');
     const closeBtn = document.getElementById('beforebuy-close-btn');
@@ -16,6 +16,15 @@ if (!window.beforebuyFeedbackInitialized) {
     const reasonsContainer = document.querySelector('.beforebuy-reasons-grid');
 
     if (!triggerBtn || !modalOverlay) return;
+
+    // Auto-move trigger button right below product form / Buy Buttons container if inside product section
+    const wrapper = triggerBtn.closest('.beforebuy-feedback-wrapper');
+    if (wrapper) {
+      const buyButtonsForm = document.querySelector('form[action*="/cart/add"], .product-form, .product-form__buttons, [data-shopify="payment-button"]');
+      if (buyButtonsForm && buyButtonsForm.parentNode && wrapper.parentNode !== buyButtonsForm.parentNode) {
+        buyButtonsForm.parentNode.insertBefore(wrapper, buyButtonsForm.nextSibling);
+      }
+    }
 
     let selectedReason = 'Price is higher than expected';
     let isEmailEnabled = true;
@@ -219,5 +228,11 @@ if (!window.beforebuyFeedbackInitialized) {
           });
       });
     }
-  });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initBeforeBuyWidget);
+  } else {
+    initBeforeBuyWidget();
+  }
 }
