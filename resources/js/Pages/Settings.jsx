@@ -178,7 +178,7 @@ export default function Settings({ reasons = [], enable_email = true, require_em
                         </BlockStack>
                     </Card>
 
-                    {/* 3. Popup Design Presets Card (Moved to the bottom) */}
+                    {/* 3. Popup Design Presets Card */}
                     <Card>
                         <BlockStack gap="400">
                             <Text variant="headingMd" as="h2">Storefront Popup Option Design Layouts</Text>
@@ -227,7 +227,7 @@ export default function Settings({ reasons = [], enable_email = true, require_em
                                                 </Box>
                                             </div>
 
-                                            {/* Real UI Mini Mock Preview */}
+                                            {/* Real E-commerce UI Mini Mock Preview */}
                                             <div style={{
                                                 marginTop: '16px',
                                                 padding: '12px',
@@ -238,10 +238,10 @@ export default function Settings({ reasons = [], enable_email = true, require_em
                                                 {preset.type === 'modern' && (
                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                                         <div style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #3b82f6', background: '#eff6ff', fontSize: '11px', color: '#1d4ed8', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3b82f6' }}></span> Price is higher
+                                                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3b82f6' }}></span> High Price
                                                         </div>
                                                         <div style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', background: '#fff', fontSize: '11px', color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', border: '1px solid #cbd5e1' }}></span> Unsure about size
+                                                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', border: '1px solid #cbd5e1' }}></span> Unsure Size
                                                         </div>
                                                     </div>
                                                 )}
@@ -249,10 +249,10 @@ export default function Settings({ reasons = [], enable_email = true, require_em
                                                 {preset.type === 'badge' && (
                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                                         <div style={{ padding: '4px 8px', borderRadius: '20px', border: '2px solid #22c55e', background: '#dcfce7', fontSize: '11px', color: '#14532d', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                            <span style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#fef08a', border: '1px solid #eab308', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#854d0e', fontWeight: '800' }}>A</span> Price is higher
+                                                            <span style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#fef08a', border: '1px solid #eab308', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#854d0e', fontWeight: '800' }}>A</span> High Price
                                                         </div>
                                                         <div style={{ padding: '4px 8px', borderRadius: '20px', border: '1.5px solid #1e293b', background: '#fff', fontSize: '11px', color: '#1e293b', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                            <span style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#fef08a', border: '1px solid #eab308', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#854d0e', fontWeight: '800' }}>B</span> Unsure about size
+                                                            <span style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#fef08a', border: '1px solid #eab308', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#854d0e', fontWeight: '800' }}>B</span> Unsure Size
                                                         </div>
                                                     </div>
                                                 )}
@@ -260,13 +260,13 @@ export default function Settings({ reasons = [], enable_email = true, require_em
                                                 {preset.type === 'chips' && (
                                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                                                         <div style={{ padding: '5px 10px', borderRadius: '20px', border: '1px solid #22c55e', background: '#f0fdf4', fontSize: '11px', color: '#15803d', fontWeight: '600' }}>
-                                                            ✓ Full-time
+                                                            ✓ High Price
                                                         </div>
                                                         <div style={{ padding: '5px 10px', borderRadius: '20px', border: '1px solid #cbd5e1', background: '#fff', fontSize: '11px', color: '#64748b' }}>
-                                                            Part-time
+                                                            Shipping Fee
                                                         </div>
                                                         <div style={{ padding: '5px 10px', borderRadius: '20px', border: '1px solid #cbd5e1', background: '#fff', fontSize: '11px', color: '#64748b' }}>
-                                                            Freelance
+                                                            Unsure Size
                                                         </div>
                                                     </div>
                                                 )}
@@ -274,10 +274,10 @@ export default function Settings({ reasons = [], enable_email = true, require_em
                                                 {preset.type === 'dark' && (
                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                                         <div style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #6366f1', background: 'rgba(99, 102, 241, 0.2)', fontSize: '11px', color: '#a5b4fc', fontWeight: '600' }}>
-                                                            • Price is higher
+                                                            • High Price
                                                         </div>
                                                         <div style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #334155', background: '#1e293b', fontSize: '11px', color: '#94a3b8' }}>
-                                                            • Unsure about size
+                                                            • Unsure Size
                                                         </div>
                                                     </div>
                                                 )}
