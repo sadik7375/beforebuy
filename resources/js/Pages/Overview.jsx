@@ -6,35 +6,21 @@ import AppLayout from '../Layouts/AppLayout';
 export default function Overview({ feedbacks = [], stats = {} }) {
     const [dateRange, setDateRange] = useState('7days');
 
-    const totalFeedback = stats.total_feedbacks || 312;
-    const estRevenue = stats.estimated_lost_revenue ? `$${stats.estimated_lost_revenue.toLocaleString()}` : '$4,280';
-    const emailsCount = stats.emails_collected || 187;
-    const responseRate = stats.response_rate || 60;
+    const totalFeedback = stats.total_feedbacks || 0;
+    const estRevenue = stats.estimated_lost_revenue ? `$${stats.estimated_lost_revenue.toLocaleString()}` : '$0';
+    const emailsCount = stats.emails_collected || 0;
+    const responseRate = stats.response_rate || 0;
 
     // Reason Colors for Progress Bars
     const getReasonColor = (index) => {
-        const colors = ['#d9381e', '#e09b13', '#2c6ecb', '#707784', '#9c6ade'];
+        const colors = ['#2c6ecb', '#d9381e', '#e09b13', '#707784', '#9c6ade'];
         return colors[index % colors.length];
     };
 
-    // Default Reasons Breakdown if DB empty
-    const breakdownList = (stats.reasons_breakdown && stats.reasons_breakdown.length > 0)
-        ? stats.reasons_breakdown
-        : [
-            { reason: 'Price too high', percentage: 42 },
-            { reason: 'Wrong size/color', percentage: 27 },
-            { reason: 'Need more info', percentage: 17 },
-            { reason: 'Out of stock', percentage: 14 },
-        ];
-
-    // Default Top Products if DB empty
-    const topProductsList = (stats.top_products && stats.top_products.length > 0)
-        ? stats.top_products
-        : [
-            { product_title: 'Snowboard Liquid', count: 18 },
-            { product_title: 'Winter Jacket', count: 11 },
-            { product_title: 'Trail Boots', count: 7 },
-        ];
+    const breakdownList = stats.reasons_breakdown || [];
+    const topProductsList = stats.top_products || [];
+    const topReason = stats.top_reason || null;
+    const topProduct = topProductsList.length > 0 ? topProductsList[0].product_title : null;
 
     return (
         <AppLayout>
@@ -88,7 +74,9 @@ export default function Overview({ feedbacks = [], stats = {} }) {
                                 <BlockStack gap="200">
                                     <Text tone="subdued" variant="bodySm">Total Feedback</Text>
                                     <Text variant="headingXl" as="h2" weight="bold">{totalFeedback}</Text>
-                                    <Text tone="success" variant="bodyXs">↑ 18% vs last week</Text>
+                                    <Text tone="subdued" variant="bodyXs">
+                                        {totalFeedback > 0 ? 'Recorded submissions' : 'No submissions yet'}
+                                    </Text>
                                 </BlockStack>
                             </Card>
                         </Grid.Cell>
@@ -98,7 +86,7 @@ export default function Overview({ feedbacks = [], stats = {} }) {
                                 <BlockStack gap="200">
                                     <Text tone="subdued" variant="bodySm">Est. Lost Revenue</Text>
                                     <Text variant="headingXl" as="h2" weight="bold">{estRevenue}</Text>
-                                    <Text tone="subdued" variant="bodyXs">Based on abandoned carts w/ feedback</Text>
+                                    <Text tone="subdued" variant="bodyXs">Based on abandoned checkout intent</Text>
                                 </BlockStack>
                             </Card>
                         </Grid.Cell>
@@ -108,7 +96,7 @@ export default function Overview({ feedbacks = [], stats = {} }) {
                                 <BlockStack gap="200">
                                     <Text tone="subdued" variant="bodySm">Emails Collected</Text>
                                     <Text variant="headingXl" as="h2" weight="bold">{emailsCount}</Text>
-                                    <Text tone="subdued" variant="bodyXs">{responseRate}% response rate</Text>
+                                    <Text tone="subdued" variant="bodyXs">{responseRate}% email collection rate</Text>
                                 </BlockStack>
                             </Card>
                         </Grid.Cell>
@@ -122,29 +110,37 @@ export default function Overview({ feedbacks = [], stats = {} }) {
                                 <BlockStack gap="400">
                                     <Text variant="headingMd" as="h3">Why Customers Are Leaving</Text>
                                     
-                                    <BlockStack gap="300">
-                                        {breakdownList.map((item, idx) => (
-                                            <div key={idx} style={{ marginBottom: '4px' }}>
-                                                <InlineStack align="space-between" blockAlign="center">
-                                                    <div style={{ width: '160px' }}>
-                                                        <Text variant="bodySm" tone="subdued">{item.reason}</Text>
-                                                    </div>
-                                                    <div style={{ flexGrow: 1, margin: '0 12px', backgroundColor: '#f1f2f4', borderRadius: '12px', height: '12px', overflow: 'hidden' }}>
-                                                        <div style={{
-                                                            width: `${item.percentage}%`,
-                                                            backgroundColor: getReasonColor(idx),
-                                                            height: '100%',
-                                                            borderRadius: '12px',
-                                                            transition: 'width 0.4s ease'
-                                                        }} />
-                                                    </div>
-                                                    <div style={{ width: '40px', textAlign: 'right' }}>
-                                                        <Text variant="bodySm" weight="semibold">{item.percentage}%</Text>
-                                                    </div>
-                                                </InlineStack>
-                                            </div>
-                                        ))}
-                                    </BlockStack>
+                                    {breakdownList.length === 0 ? (
+                                        <div style={{ padding: '32px 16px', textAlign: 'center' }}>
+                                            <Text tone="subdued" alignment="center">
+                                                No feedback breakdown recorded yet. Data will appear here as store visitors submit feedback.
+                                            </Text>
+                                        </div>
+                                    ) : (
+                                        <BlockStack gap="300">
+                                            {breakdownList.map((item, idx) => (
+                                                <div key={idx} style={{ marginBottom: '4px' }}>
+                                                    <InlineStack align="space-between" blockAlign="center">
+                                                        <div style={{ width: '160px' }}>
+                                                            <Text variant="bodySm" tone="subdued">{item.reason}</Text>
+                                                        </div>
+                                                        <div style={{ flexGrow: 1, margin: '0 12px', backgroundColor: '#f1f2f4', borderRadius: '12px', height: '12px', overflow: 'hidden' }}>
+                                                            <div style={{
+                                                                width: `${item.percentage}%`,
+                                                                backgroundColor: getReasonColor(idx),
+                                                                height: '100%',
+                                                                borderRadius: '12px',
+                                                                transition: 'width 0.4s ease'
+                                                            }} />
+                                                        </div>
+                                                        <div style={{ width: '40px', textAlign: 'right' }}>
+                                                            <Text variant="bodySm" weight="semibold">{item.percentage}%</Text>
+                                                        </div>
+                                                    </InlineStack>
+                                                </div>
+                                            ))}
+                                        </BlockStack>
+                                    )}
                                 </BlockStack>
                             </Card>
                         </Grid.Cell>
@@ -164,12 +160,21 @@ export default function Overview({ feedbacks = [], stats = {} }) {
                                 <BlockStack gap="300">
                                     <InlineStack align="space-between" blockAlign="center">
                                         <Text variant="headingMd" as="h3" weight="bold">Assist AI Analysis</Text>
-                                        <Badge tone="info">Weekly Summary</Badge>
+                                        <Badge tone="info">Live Insights</Badge>
                                     </InlineStack>
 
-                                    <Text variant="bodyMd" tone="subdued">
-                                        Snowboard Liquid accounts for 60% of "price too high" complaints. Consider a limited-time 10% discount or highlighting your deposit/COD option more prominently on this product.
-                                    </Text>
+                                    {totalFeedback > 0 ? (
+                                        <Text variant="bodyMd" tone="base">
+                                            {topProduct
+                                                ? `"${topProduct}" currently accounts for the highest volume of visitor objections. Primary reason reported is "${topReason || 'Price concerns'}".`
+                                                : `Primary objection reason reported by visitors is "${topReason || 'Price concerns'}".`
+                                            }
+                                        </Text>
+                                    ) : (
+                                        <Text variant="bodyMd" tone="subdued">
+                                            AI Analysis is active! Once customers submit feedback on your store, AI will analyze their objections and suggest actionable conversion improvements here.
+                                        </Text>
+                                    )}
                                 </BlockStack>
 
                                 <div style={{ marginTop: '20px' }}>
@@ -202,35 +207,37 @@ export default function Overview({ feedbacks = [], stats = {} }) {
                                 <BlockStack gap="400">
                                     <Text variant="headingMd" as="h3">Feedback Trend (7 days)</Text>
 
-                                    {/* Smooth SVG Trend Line Chart */}
-                                    <div style={{ padding: '16px 0 8px 0' }}>
-                                        <svg viewBox="0 0 500 150" style={{ width: '100%', height: '140px', overflow: 'visible' }}>
-                                            {/* Grid Lines */}
-                                            <line x1="0" y1="30" x2="500" y2="30" stroke="#f1f2f4" strokeDasharray="4 4" />
-                                            <line x1="0" y1="80" x2="500" y2="80" stroke="#f1f2f4" strokeDasharray="4 4" />
-                                            <line x1="0" y1="130" x2="500" y2="130" stroke="#f1f2f4" strokeDasharray="4 4" />
+                                    {totalFeedback === 0 ? (
+                                        <div style={{ padding: '32px 16px', textAlign: 'center' }}>
+                                            <Text tone="subdued" alignment="center">
+                                                No daily trend data available yet.
+                                            </Text>
+                                        </div>
+                                    ) : (
+                                        <div style={{ padding: '16px 0 8px 0' }}>
+                                            <svg viewBox="0 0 500 150" style={{ width: '100%', height: '140px', overflow: 'visible' }}>
+                                                <line x1="0" y1="30" x2="500" y2="30" stroke="#f1f2f4" strokeDasharray="4 4" />
+                                                <line x1="0" y1="80" x2="500" y2="80" stroke="#f1f2f4" strokeDasharray="4 4" />
+                                                <line x1="0" y1="130" x2="500" y2="130" stroke="#f1f2f4" strokeDasharray="4 4" />
 
-                                            {/* Trend Curve Path */}
-                                            <path
-                                                d="M 30 110 L 100 90 L 170 100 L 240 60 L 310 75 L 380 40 L 460 30"
-                                                fill="none"
-                                                stroke="#2c6ecb"
-                                                strokeWidth="3.5"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                            />
+                                                <path
+                                                    d="M 30 130 L 100 120 L 170 110 L 240 90 L 310 80 L 380 60 L 460 40"
+                                                    fill="none"
+                                                    stroke="#2c6ecb"
+                                                    strokeWidth="3.5"
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                />
+                                                <circle cx="460" cy="40" r="5" fill="#2c6ecb" stroke="#ffffff" strokeWidth="2" />
+                                            </svg>
 
-                                            {/* End Point Indicator */}
-                                            <circle cx="460" cy="30" r="5" fill="#2c6ecb" stroke="#ffffff" strokeWidth="2" />
-                                        </svg>
-
-                                        {/* Day Labels */}
-                                        <InlineStack align="space-between" blockAlign="center">
-                                            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, dIdx) => (
-                                                <Text key={dIdx} variant="bodyXs" tone="subdued">{day}</Text>
-                                            ))}
-                                        </InlineStack>
-                                    </div>
+                                            <InlineStack align="space-between" blockAlign="center">
+                                                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, dIdx) => (
+                                                    <Text key={dIdx} variant="bodyXs" tone="subdued">{day}</Text>
+                                                ))}
+                                            </InlineStack>
+                                        </div>
+                                    )}
                                 </BlockStack>
                             </Card>
                         </Grid.Cell>
@@ -241,19 +248,27 @@ export default function Overview({ feedbacks = [], stats = {} }) {
                                 <BlockStack gap="400">
                                     <Text variant="headingMd" as="h3">Top Products by Feedback</Text>
 
-                                    <BlockStack gap="300">
-                                        {topProductsList.map((prod, pIdx) => (
-                                            <div key={pIdx} style={{
-                                                padding: '8px 0',
-                                                borderBottom: pIdx === topProductsList.length - 1 ? 'none' : '1px solid #f1f2f4'
-                                            }}>
-                                                <InlineStack align="space-between" blockAlign="center">
-                                                    <Text variant="bodySm" weight="bold">{prod.product_title}</Text>
-                                                    <Text variant="bodySm" tone="subdued">{prod.count} responses</Text>
-                                                </InlineStack>
-                                            </div>
-                                        ))}
-                                    </BlockStack>
+                                    {topProductsList.length === 0 ? (
+                                        <div style={{ padding: '32px 16px', textAlign: 'center' }}>
+                                            <Text tone="subdued" alignment="center">
+                                                No products with customer feedback yet.
+                                            </Text>
+                                        </div>
+                                    ) : (
+                                        <BlockStack gap="300">
+                                            {topProductsList.map((prod, pIdx) => (
+                                                <div key={pIdx} style={{
+                                                    padding: '8px 0',
+                                                    borderBottom: pIdx === topProductsList.length - 1 ? 'none' : '1px solid #f1f2f4'
+                                                }}>
+                                                    <InlineStack align="space-between" blockAlign="center">
+                                                        <Text variant="bodySm" weight="bold">{prod.product_title}</Text>
+                                                        <Text variant="bodySm" tone="subdued">{prod.count} responses</Text>
+                                                    </InlineStack>
+                                                </div>
+                                            ))}
+                                        </BlockStack>
+                                    )}
                                 </BlockStack>
                             </Card>
                         </Grid.Cell>

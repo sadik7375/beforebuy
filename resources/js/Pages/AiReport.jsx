@@ -4,23 +4,19 @@ import { router } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 
 export default function AiReport({ stats = {}, repeatCustomers = [] }) {
-    const totalCount = stats.total_feedbacks || 68;
-    const estRevenue = stats.estimated_lost_revenue ? `$${stats.estimated_lost_revenue.toLocaleString()}` : '$2,100';
+    const totalCount = stats.total_feedbacks || 0;
+    const estRevenue = stats.estimated_lost_revenue ? `$${stats.estimated_lost_revenue.toLocaleString()}` : '$0';
+    const topReason = stats.top_reason || null;
+    const topProducts = stats.top_products || [];
+    const topProductName = topProducts.length > 0 ? topProducts[0].product_title : null;
 
-    const repeatList = Array.isArray(repeatCustomers) && repeatCustomers.length > 0
-        ? repeatCustomers
-        : [
-            { customer_email: 'wahidsadik38@gmail.com', count: 4, products: 'The Collection Snowboard: Liquid', intent: 'High Intent (95%)', tone: 'success' },
-            { customer_email: 'wahidsadik7375@gmail.com', count: 3, products: 'The Collection Snowboard: Liquid', intent: 'Warm Intent (82%)', tone: 'attention' },
-        ];
+    const repeatList = Array.isArray(repeatCustomers) ? repeatCustomers : [];
 
     const customerRows = repeatList.map((item) => [
         <Text key={item.customer_email} weight="bold">{item.customer_email}</Text>,
-        <Badge key={`badge-${item.customer_email}`} tone="warning">{`${item.count || item.count} Submissions`}</Badge>,
+        <Badge key={`badge-${item.customer_email}`} tone="warning">{`${item.count} Submissions`}</Badge>,
         item.products || 'Multiple Products',
-        <Badge key={`intent-${item.customer_email}`} tone={item.tone || 'success'}>
-            {item.intent || 'High Intent (90%)'}
-        </Badge>
+        <Badge key={`intent-${item.customer_email}`} tone="success">High Intent</Badge>
     ]);
 
     return (
@@ -28,7 +24,7 @@ export default function AiReport({ stats = {}, repeatCustomers = [] }) {
             <Page
                 backAction={{ content: 'Overview', onAction: () => router.visit('/') }}
                 title="Weekly AI Report"
-                subtitle="Aug 1 – Aug 7, 2026 · Generated automatically every Monday"
+                subtitle="Automated AI analytics & actionable product recommendations"
             >
                 <BlockStack gap="500">
                     {/* Executive Summary Blue Banner Box */}
@@ -41,9 +37,18 @@ export default function AiReport({ stats = {}, repeatCustomers = [] }) {
                         <BlockStack gap="300">
                             <Text variant="headingMd" as="h2" weight="bold">Executive Summary</Text>
 
-                            <Text variant="bodyMd" tone="base">
-                                This week, <strong>{totalCount} customers</strong> shared feedback before leaving without buying — up 18% from last week. Pricing concerns dominated (42%), concentrated heavily on <strong>Snowboard Liquid</strong>. Sizing issues on <strong>Winter Jacket</strong> also spiked, likely tied to your recent restock without XXL. Two products account for over half of all objections this week — fixing these could recover an estimated <strong>{estRevenue}</strong> in lost sales.
-                            </Text>
+                            {totalCount > 0 ? (
+                                <Text variant="bodyMd" tone="base">
+                                    This week, <strong>{totalCount} customers</strong> submitted feedback before leaving without purchasing.
+                                    The leading objection reason reported is <strong>"{topReason || 'Price concerns'}"</strong>
+                                    {topProductName && <> concentrated on <strong>{topProductName}</strong></>}.
+                                    Addressing these top objections could recover an estimated <strong>{estRevenue}</strong> in potential lost revenue.
+                                </Text>
+                            ) : (
+                                <Text variant="bodyMd" tone="subdued">
+                                    No customer feedback recorded yet. Once store visitors submit feedback on your product pages, AI will generate weekly executive summaries and actionable recovery recommendations here.
+                                </Text>
+                            )}
                         </BlockStack>
                     </div>
 
@@ -51,33 +56,43 @@ export default function AiReport({ stats = {}, repeatCustomers = [] }) {
                     <Text variant="headingLg" as="h2">AI Strategic Insights & Analysis</Text>
 
                     <Grid>
-                        {/* Insight 1: Price Sensitivity Analysis */}
+                        {/* Insight 1: Price & Value Sensitivity */}
                         <Grid.Cell columnSpan={{ xs: 12, sm: 6, md: 6, lg: 6, xl: 6 }}>
                             <Card>
                                 <BlockStack gap="300">
                                     <InlineStack align="space-between" blockAlign="center">
-                                        <Text variant="headingSm" as="h3">AI Price Sensitivity Insight</Text>
-                                        <Badge tone="success">High Opportunity</Badge>
+                                        <Text variant="headingSm" as="h3">AI Price & Value Insight</Text>
+                                        <Badge tone={totalCount > 0 ? 'success' : 'subdued'}>
+                                            {totalCount > 0 ? 'Action Opportunity' : 'Pending Data'}
+                                        </Badge>
                                     </InlineStack>
 
                                     <Text variant="bodySm" tone="subdued">
-                                        60% of lost buyers cite price as their main barrier on <strong>Snowboard Liquid</strong>. Providing a 10-15% incentive or highlighting flexible COD payment options could convert these high-intent visitors.
+                                        {totalCount > 0
+                                            ? `Primary objection recorded is "${topReason || 'Price concerns'}". Offering targeted discount codes or highlighting deposit / instalment payment options can recover lost checkout intent.`
+                                            : 'No price sensitivity data collected yet. Once feedback is received, AI will pinpoint high-risk items and suggest pricing strategies.'
+                                        }
                                     </Text>
                                 </BlockStack>
                             </Card>
                         </Grid.Cell>
 
-                        {/* Insight 2: Product Content & Size Gap */}
+                        {/* Insight 2: Product Content & Specs */}
                         <Grid.Cell columnSpan={{ xs: 12, sm: 6, md: 6, lg: 6, xl: 6 }}>
                             <Card>
                                 <BlockStack gap="300">
                                     <InlineStack align="space-between" blockAlign="center">
-                                        <Text variant="headingSm" as="h3">AI Sizing & Content Gap Analysis</Text>
-                                        <Badge tone="warning">Content Optimization</Badge>
+                                        <Text variant="headingSm" as="h3">AI Product Content & Specs Analysis</Text>
+                                        <Badge tone={totalCount > 0 ? 'warning' : 'subdued'}>
+                                            {totalCount > 0 ? 'Content Optimization' : 'Pending Data'}
+                                        </Badge>
                                     </InlineStack>
 
                                     <Text variant="bodySm" tone="subdued">
-                                        27% of abandoning customers on <strong>Winter Jacket</strong> left feedback asking about size, fit, and chest dimensions. Adding clear size charts or fit notes can recover lost checkout intent.
+                                        {totalCount > 0
+                                            ? `Customers looking at ${topProductName || 'your products'} frequently ask for size, fit, or additional details. Updating product descriptions and adding clear size charts will reduce pre-purchase hesitation.`
+                                            : 'No content gap data collected yet. AI will identify missing product specifications or sizing concerns as feedback arrives.'
+                                        }
                                     </Text>
                                 </BlockStack>
                             </Card>
@@ -97,11 +112,19 @@ export default function AiReport({ stats = {}, repeatCustomers = [] }) {
                                 <Badge tone="info">Behavioral Analytics</Badge>
                             </InlineStack>
 
-                            <DataTable
-                                columnContentTypes={['text', 'text', 'text', 'text']}
-                                headings={['Customer Email', 'Total Objections Shared', 'Products Browsed', 'AI Intent Score']}
-                                rows={customerRows}
-                            />
+                            {repeatList.length === 0 ? (
+                                <div style={{ padding: '32px 16px', textAlign: 'center' }}>
+                                    <Text tone="subdued" alignment="center">
+                                        No repeat feedback leads recorded yet.
+                                    </Text>
+                                </div>
+                            ) : (
+                                <DataTable
+                                    columnContentTypes={['text', 'text', 'text', 'text']}
+                                    headings={['Customer Email', 'Total Objections Shared', 'Products Browsed', 'AI Intent Score']}
+                                    rows={customerRows}
+                                />
+                            )}
                         </BlockStack>
                     </Card>
                 </BlockStack>
