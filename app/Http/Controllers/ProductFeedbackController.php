@@ -11,9 +11,45 @@ use Inertia\Inertia;
 class ProductFeedbackController extends Controller
 {
     /**
-     * Get dynamic app config (reasons, email toggle, email required)
+     * Helper to extract clean shop domain from Request or Session
      */
-    private function getAppSettings()
+    private function getShopDomain(Request $request = null)
+    {
+        $request = $request ?: request();
+        $shop = $request->get('shop');
+
+        if ($shop) {
+            $shop = strtolower(trim($shop));
+            // Extract core store handle if domain format
+            if (str_contains($shop, '.myshopify.com')) {
+                $shopName = explode('.myshopify.com', $shop)[0];
+            } else {
+                $shopName = $shop;
+            }
+            session(['shop_domain' => $shopName]);
+            return $shopName;
+        }
+
+        if (session()->has('shop_domain')) {
+            return session('shop_domain');
+        }
+
+        // Fallback check referer header
+        $referer = $request->header('referer');
+        if ($referer) {
+            $parsed = parse_url($referer);
+            if (isset($parsed['host']) && str_contains($parsed['host'], 'myshopify.com')) {
+                return explode('.myshopify.com', $parsed['host'])[0];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Get dynamic app config (reasons, email toggle, email required) per shop
+     */
+    private function getAppSettings($shopDomain = null)
     {
         $default = [
             'reasons' => [
@@ -28,12 +64,17 @@ class ProductFeedbackController extends Controller
             'popup_theme' => 'modern',
         ];
 
-        // 1. Try DB app_settings table
         try {
-            $setting = DB::table('app_settings')->where('key', 'app_config')->first();
+            $setting = null;
+            if ($shopDomain) {
+                $setting = DB::table('app_settings')
+                    ->where('shop_domain', 'like', "%{$shopDomain}%")
+                    ->where('key', 'app_config')
+                    ->first();
+            }
+
             if (!$setting) {
-                // Fallback check old 'reasons' key
-                $setting = DB::table('app_settings')->where('key', 'reasons')->first();
+                $setting = DB::table('app_settings')->where('key', 'app_config')->first();
             }
 
             if ($setting && !empty($setting->value)) {
@@ -51,34 +92,25 @@ class ProductFeedbackController extends Controller
             Log::warning('AppSetting DB fetch error: ' . $e->getMessage());
         }
 
-        // 2. Try Storage JSON file
-        try {
-            if (Storage::disk('local')->exists('settings.json')) {
-                $data = json_decode(Storage::disk('local')->get('settings.json'), true);
-                if (is_array($data)) {
-                    if (isset($data['reasons'])) {
-                        return array_merge($default, $data);
-                    }
-                }
-            }
-        } catch (\Throwable $e) {
-            Log::warning('AppSetting File fetch error: ' . $e->getMessage());
-        }
-
         return $default;
     }
 
     /**
-     * Get statistics summary for dashboard
+     * Get statistics summary for dashboard filtered by shop domain
      */
-    private function getStats()
+    private function getStats($shopDomain = null)
     {
         try {
-            $totalFeedbacks = DB::table('product_feedbacks')->count();
-            $emailsCount = DB::table('product_feedbacks')->whereNotNull('customer_email')->where('customer_email', '!=', '')->count();
+            $query = DB::table('product_feedbacks');
+            if ($shopDomain) {
+                $query->where('shop_domain', 'like', "%{$shopDomain}%");
+            }
+
+            $totalFeedbacks = (clone $query)->count();
+            $emailsCount = (clone $query)->whereNotNull('customer_email')->where('customer_email', '!=', '')->count();
             
             // Top reasons with percentages
-            $reasonsData = DB::table('product_feedbacks')
+            $reasonsData = (clone $query)
                 ->select('reason', DB::raw('count(*) as count'))
                 ->groupBy('reason')
                 ->orderByDesc('count')
@@ -94,7 +126,7 @@ class ProductFeedbackController extends Controller
             });
 
             // Top products
-            $topProducts = DB::table('product_feedbacks')
+            $topProducts = (clone $query)
                 ->select('product_title', DB::raw('count(*) as count'))
                 ->whereNotNull('product_title')
                 ->where('product_title', '!=', '')
@@ -108,7 +140,7 @@ class ProductFeedbackController extends Controller
                 'emails_collected' => $emailsCount,
                 'response_rate' => $totalFeedbacks > 0 ? round(($emailsCount / $totalFeedbacks) * 100) : 60,
                 'estimated_lost_revenue' => $totalFeedbacks * 35,
-                'open_inquiries' => DB::table('product_feedbacks')->whereNull('ai_summary')->count(),
+                'open_inquiries' => (clone $query)->whereNull('ai_summary')->count(),
                 'top_reason' => $reasonsData->first()?->reason ?? 'Price is higher than expected',
                 'reasons_breakdown' => $reasonsBreakdown,
                 'top_products' => $topProducts,
@@ -130,51 +162,71 @@ class ProductFeedbackController extends Controller
     /**
      * Submenu: Overview
      */
-    public function overview()
+    public function overview(Request $request)
     {
+        $shopDomain = $this->getShopDomain($request);
+
         try {
-            $feedbacks = DB::table('product_feedbacks')->orderByDesc('id')->take(10)->get();
+            $query = DB::table('product_feedbacks');
+            if ($shopDomain) {
+                $query->where('shop_domain', 'like', "%{$shopDomain}%");
+            }
+            $feedbacks = $query->orderByDesc('id')->take(10)->get();
         } catch (\Throwable $e) {
             $feedbacks = collect([]);
         }
 
-        $config = $this->getAppSettings();
+        $config = $this->getAppSettings($shopDomain);
 
         return Inertia::render('Overview', [
             'feedbacks' => $feedbacks,
-            'stats' => $this->getStats(),
+            'stats' => $this->getStats($shopDomain),
             'reasons' => $config['reasons'] ?? [],
+            'shopDomain' => $shopDomain,
         ]);
     }
 
     /**
      * Submenu: Feedback Submissions Log Table
      */
-    public function submissions()
+    public function submissions(Request $request)
     {
+        $shopDomain = $this->getShopDomain($request);
+
         try {
-            $feedbacks = DB::table('product_feedbacks')->orderByDesc('id')->paginate(50);
+            $query = DB::table('product_feedbacks');
+            if ($shopDomain) {
+                $query->where('shop_domain', 'like', "%{$shopDomain}%");
+            }
+            $feedbacks = $query->orderByDesc('id')->paginate(50);
         } catch (\Throwable $e) {
             $feedbacks = collect([]);
         }
 
-        $config = $this->getAppSettings();
+        $config = $this->getAppSettings($shopDomain);
 
         return Inertia::render('Submissions', [
             'feedbacks' => $feedbacks,
-            'stats' => $this->getStats(),
+            'stats' => $this->getStats($shopDomain),
             'reasons' => $config['reasons'] ?? [],
+            'shopDomain' => $shopDomain,
         ]);
     }
 
     /**
      * Submenu: Weekly AI Report & Actionable Suggestions
      */
-    public function aiReport()
+    public function aiReport(Request $request)
     {
+        $shopDomain = $this->getShopDomain($request);
+
         try {
-            // Find repeat customer emails (customers who submitted feedback on multiple items)
-            $repeatCustomers = DB::table('product_feedbacks')
+            $query = DB::table('product_feedbacks');
+            if ($shopDomain) {
+                $query->where('shop_domain', 'like', "%{$shopDomain}%");
+            }
+
+            $repeatCustomers = $query
                 ->select('customer_email', DB::raw('count(*) as count'), DB::raw('GROUP_CONCAT(DISTINCT product_title SEPARATOR ", ") as products'))
                 ->whereNotNull('customer_email')
                 ->where('customer_email', '!=', '')
@@ -186,33 +238,37 @@ class ProductFeedbackController extends Controller
             $repeatCustomers = collect([]);
         }
 
-        $config = $this->getAppSettings();
-
         return Inertia::render('AiReport', [
-            'stats' => $this->getStats(),
+            'stats' => $this->getStats($shopDomain),
             'repeatCustomers' => $repeatCustomers,
+            'shopDomain' => $shopDomain,
         ]);
     }
 
     /**
      * Submenu: Settings Page
      */
-    public function settings()
+    public function settings(Request $request)
     {
-        $config = $this->getAppSettings();
+        $shopDomain = $this->getShopDomain($request);
+        $config = $this->getAppSettings($shopDomain);
+
         return Inertia::render('Settings', [
             'reasons' => $config['reasons'],
             'enable_email' => (bool)$config['enable_email'],
             'require_email' => (bool)$config['require_email'],
             'popup_theme' => $config['popup_theme'] ?? 'modern',
+            'shopDomain' => $shopDomain,
         ]);
     }
 
     /**
-     * Save dynamic settings (DB + File persistence)
+     * Save dynamic settings (DB per shop domain)
      */
     public function saveSettings(Request $request)
     {
+        $shopDomain = $this->getShopDomain($request) ?: 'global';
+
         $validated = $request->validate([
             'reasons' => 'required|array',
             'reasons.*' => 'required|string',
@@ -228,19 +284,11 @@ class ProductFeedbackController extends Controller
             'popup_theme' => $validated['popup_theme'] ?? 'modern',
         ];
 
-        // 1. Save to File Storage Backup
-        try {
-            Storage::disk('local')->put('settings.json', json_encode($config));
-        } catch (\Throwable $e) {
-            Log::error('Settings file save error: ' . $e->getMessage());
-        }
-
-        // 2. Save to MySQL Database
+        // Save to MySQL Database with shop domain key
         try {
             DB::table('app_settings')->updateOrInsert(
-                ['key' => 'app_config'],
+                ['shop_domain' => $shopDomain, 'key' => 'app_config'],
                 [
-                    'shop_domain' => 'global',
                     'value' => json_encode($config),
                     'created_at' => now(),
                     'updated_at' => now(),
@@ -264,11 +312,11 @@ class ProductFeedbackController extends Controller
     /**
      * Public API: Get dynamic settings for storefront popup
      */
-    public function getApiSettings()
+    public function getApiSettings(Request $request)
     {
-        $config = $this->getAppSettings();
+        $shopDomain = $request->get('shop') ?: $this->getShopDomain($request);
+        $config = $this->getAppSettings($shopDomain);
         
-        // Ensure "Other reason" is always in the list
         $reasons = $config['reasons'];
         $hasOther = false;
         foreach ($reasons as $r) {
@@ -333,7 +381,7 @@ class ProductFeedbackController extends Controller
 
         $feedbackId = null;
 
-        // 1. Save directly into MySQL Database
+        // Save directly into MySQL Database
         try {
             $dataToInsert = array_merge($validated, [
                 'created_at' => now(),
@@ -342,19 +390,6 @@ class ProductFeedbackController extends Controller
             $feedbackId = DB::table('product_feedbacks')->insertGetId($dataToInsert);
         } catch (\Throwable $e) {
             Log::error('Feedback DB store error: ' . $e->getMessage());
-        }
-
-        // 2. File Backup in storage/app/feedbacks.json
-        try {
-            $existing = [];
-            if (Storage::disk('local')->exists('feedbacks.json')) {
-                $existing = json_decode(Storage::disk('local')->get('feedbacks.json'), true) ?: [];
-            }
-            $validated['created_at'] = now()->toDateTimeString();
-            $existing[] = $validated;
-            Storage::disk('local')->put('feedbacks.json', json_encode($existing));
-        } catch (\Throwable $e) {
-            Log::error('Feedback File backup error: ' . $e->getMessage());
         }
 
         return response()->json([
