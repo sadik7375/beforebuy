@@ -11,7 +11,7 @@ use Inertia\Inertia;
 class ProductFeedbackController extends Controller
 {
     /**
-     * Helper to extract clean shop domain from Request or Session
+     * Helper to extract clean full shop domain (e.g. store.myshopify.com) from Request or Session
      */
     private function getShopDomain(Request $request = null)
     {
@@ -20,14 +20,11 @@ class ProductFeedbackController extends Controller
 
         if ($shop) {
             $shop = strtolower(trim($shop));
-            // Extract core store handle if domain format
-            if (str_contains($shop, '.myshopify.com')) {
-                $shopName = explode('.myshopify.com', $shop)[0];
-            } else {
-                $shopName = $shop;
+            if (!str_contains($shop, '.')) {
+                $shop .= '.myshopify.com';
             }
-            session(['shop_domain' => $shopName]);
-            return $shopName;
+            session(['shop_domain' => $shop]);
+            return $shop;
         }
 
         if (session()->has('shop_domain')) {
@@ -39,11 +36,30 @@ class ProductFeedbackController extends Controller
         if ($referer) {
             $parsed = parse_url($referer);
             if (isset($parsed['host']) && str_contains($parsed['host'], 'myshopify.com')) {
-                return explode('.myshopify.com', $parsed['host'])[0];
+                $shop = strtolower(trim($parsed['host']));
+                session(['shop_domain' => $shop]);
+                return $shop;
             }
         }
 
         return null;
+    }
+
+    /**
+     * Helper to apply exact store filter on queries
+     */
+    private function applyShopFilter($query, $shopDomain)
+    {
+        if (!$shopDomain) {
+            return $query;
+        }
+
+        $shortHandle = explode('.myshopify.com', $shopDomain)[0];
+
+        return $query->where(function ($q) use ($shopDomain, $shortHandle) {
+            $q->where('shop_domain', '=', $shopDomain)
+              ->orWhere('shop_domain', '=', $shortHandle);
+        });
     }
 
     /**
@@ -67,8 +83,12 @@ class ProductFeedbackController extends Controller
         try {
             $setting = null;
             if ($shopDomain) {
+                $shortHandle = explode('.myshopify.com', $shopDomain)[0];
                 $setting = DB::table('app_settings')
-                    ->where('shop_domain', 'like', "%{$shopDomain}%")
+                    ->where(function ($q) use ($shopDomain, $shortHandle) {
+                        $q->where('shop_domain', '=', $shopDomain)
+                          ->orWhere('shop_domain', '=', $shortHandle);
+                    })
                     ->where('key', 'app_config')
                     ->first();
             }
@@ -102,9 +122,7 @@ class ProductFeedbackController extends Controller
     {
         try {
             $query = DB::table('product_feedbacks');
-            if ($shopDomain) {
-                $query->where('shop_domain', 'like', "%{$shopDomain}%");
-            }
+            $this->applyShopFilter($query, $shopDomain);
 
             $totalFeedbacks = (clone $query)->count();
             $emailsCount = (clone $query)->whereNotNull('customer_email')->where('customer_email', '!=', '')->count();
@@ -168,9 +186,7 @@ class ProductFeedbackController extends Controller
 
         try {
             $query = DB::table('product_feedbacks');
-            if ($shopDomain) {
-                $query->where('shop_domain', 'like', "%{$shopDomain}%");
-            }
+            $this->applyShopFilter($query, $shopDomain);
             $feedbacks = $query->orderByDesc('id')->take(10)->get();
         } catch (\Throwable $e) {
             $feedbacks = collect([]);
@@ -195,9 +211,7 @@ class ProductFeedbackController extends Controller
 
         try {
             $query = DB::table('product_feedbacks');
-            if ($shopDomain) {
-                $query->where('shop_domain', 'like', "%{$shopDomain}%");
-            }
+            $this->applyShopFilter($query, $shopDomain);
             $feedbacks = $query->orderByDesc('id')->paginate(50);
         } catch (\Throwable $e) {
             $feedbacks = collect([]);
@@ -222,9 +236,7 @@ class ProductFeedbackController extends Controller
 
         try {
             $query = DB::table('product_feedbacks');
-            if ($shopDomain) {
-                $query->where('shop_domain', 'like', "%{$shopDomain}%");
-            }
+            $this->applyShopFilter($query, $shopDomain);
 
             $repeatCustomers = $query
                 ->select('customer_email', DB::raw('count(*) as count'), DB::raw('GROUP_CONCAT(DISTINCT product_title SEPARATOR ", ") as products'))
