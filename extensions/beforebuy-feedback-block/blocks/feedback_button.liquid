@@ -26,19 +26,23 @@
     text-align: center;
     {% if block.settings.btn_width_type == 'full' %}
       width: 100%;
-      display: block;
+      display: flex;
+      justify-content: center;
     {% elsif block.settings.btn_width_type == 'custom' %}
       width: {{ block.settings.btn_custom_width }}px;
       max-width: 100%;
-      display: inline-block;
+      display: inline-flex;
+      justify-content: center;
     {% else %}
       width: auto;
-      display: inline-block;
+      max-width: 100%;
+      display: inline-flex;
+      justify-content: center;
     {% endif %}
   }
 {% endstyle %}
 
-<div class="beforebuy-feedback-wrapper" style="text-align: {{ block.settings.alignment }};">
+<div class="beforebuy-feedback-wrapper" style="text-align: {{ block.settings.alignment }}; display: flex; justify-content: {% if block.settings.alignment == 'left' %}flex-start{% elsif block.settings.alignment == 'right' %}flex-end{% else %}center{% endif %}; width: 100%;">
   <button
     id="beforebuy-trigger-btn"
     class="beforebuy-trigger-btn beforebuy-trigger-btn-{{ block.id }}"
@@ -196,7 +200,7 @@
       "step": 1,
       "unit": "px",
       "label": "Horizontal Padding (Left/Right)",
-      "default": 18
+      "default": 24
     },
     {
       "type": "range",
@@ -229,7 +233,7 @@
         { "value": "full", "label": "Full Width (100%)" },
         { "value": "custom", "label": "Custom Width" }
       ],
-      "default": "full"
+      "default": "auto"
     },
     {
       "type": "range",
