@@ -59,8 +59,8 @@
 .beforebuy-modal-card {
   background: #ffffff;
   width: 100%;
-  max-width: 420px;
-  border-radius: 12px;
+  max-width: 440px;
+  border-radius: 14px;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   overflow: hidden;
   position: relative;
@@ -136,6 +136,10 @@
   color: #374151;
   transition: all 0.15s ease;
   user-select: none;
+}
+
+.beforebuy-badge-letter {
+  display: none;
 }
 
 .beforebuy-reason-item:hover {
@@ -276,25 +280,97 @@
 }
 
 /* ---------------------------------------------------- */
-/* PRESET 1: Minimalist Flat (.beforebuy-preset-minimal) */
+/* PRESET 1: Pop Quiz Pill Badges (.beforebuy-preset-badge_list) */
 /* ---------------------------------------------------- */
-.beforebuy-modal-overlay.beforebuy-preset-minimal .beforebuy-modal-card {
-  border-radius: 4px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+.beforebuy-modal-overlay.beforebuy-preset-badge_list .beforebuy-reason-item {
+  border-radius: 28px;
+  border: 1.5px solid #0f172a;
+  padding: 6px 14px;
+  background-color: #ffffff;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.beforebuy-modal-overlay.beforebuy-preset-badge_list .beforebuy-reason-radio {
+  display: none;
+}
+
+.beforebuy-modal-overlay.beforebuy-preset-badge_list .beforebuy-badge-letter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #fef08a;
+  border: 1.5px solid #eab308;
+  color: #854d0e;
+  font-weight: 800;
+  font-size: 12px;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.beforebuy-modal-overlay.beforebuy-preset-badge_list .beforebuy-reason-item.beforebuy-selected {
+  background-color: #22c55e;
+  border-color: #16a34a;
+  color: #000000;
+  font-weight: 700;
+}
+
+.beforebuy-modal-overlay.beforebuy-preset-badge_list .beforebuy-submit-btn {
+  border-radius: 28px;
+}
+
+/* ---------------------------------------------------- */
+/* PRESET 2: Horizontal Tag Chips (.beforebuy-preset-chips_grid) */
+/* ---------------------------------------------------- */
+.beforebuy-modal-overlay.beforebuy-preset-chips_grid .beforebuy-reasons-grid {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.beforebuy-modal-overlay.beforebuy-preset-chips_grid .beforebuy-reason-item {
+  display: inline-flex;
+  width: auto;
+  border-radius: 20px;
+  padding: 7px 14px;
   border: 1px solid #cbd5e1;
+  font-size: 12px;
+  font-weight: 500;
+  background-color: #ffffff;
+  color: #334155;
 }
 
-.beforebuy-modal-overlay.beforebuy-preset-minimal .beforebuy-reason-item {
-  border-radius: 4px;
-  border-width: 1px;
+.beforebuy-modal-overlay.beforebuy-preset-chips_grid .beforebuy-reason-radio {
+  display: none;
 }
 
-.beforebuy-modal-overlay.beforebuy-preset-minimal .beforebuy-submit-btn {
-  border-radius: 4px;
+.beforebuy-modal-overlay.beforebuy-preset-chips_grid .beforebuy-badge-letter {
+  display: none;
+}
+
+.beforebuy-modal-overlay.beforebuy-preset-chips_grid .beforebuy-reason-item.beforebuy-selected {
+  border-color: #22c55e;
+  background-color: #f0fdf4;
+  color: #15803d;
+  font-weight: 600;
+}
+
+.beforebuy-modal-overlay.beforebuy-preset-chips_grid .beforebuy-reason-item.beforebuy-selected::before {
+  content: "✓ ";
+  font-weight: 800;
+  margin-right: 4px;
+  color: #22c55e;
+}
+
+.beforebuy-modal-overlay.beforebuy-preset-chips_grid .beforebuy-submit-btn {
+  border-radius: 20px;
 }
 
 /* ---------------------------------------------------- */
-/* PRESET 2: Sleek Dark Mode (.beforebuy-preset-dark) */
+/* PRESET 3: Sleek Dark Mode (.beforebuy-preset-dark) */
 /* ---------------------------------------------------- */
 .beforebuy-modal-overlay.beforebuy-preset-dark .beforebuy-modal-card {
   background: #0f172a;
@@ -354,27 +430,4 @@
 .beforebuy-modal-overlay.beforebuy-preset-dark .beforebuy-textarea:focus {
   border-color: #6366f1;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
-}
-
-/* ---------------------------------------------------- */
-/* PRESET 3: Soft Pills (.beforebuy-preset-pills) */
-/* ---------------------------------------------------- */
-.beforebuy-modal-overlay.beforebuy-preset-pills .beforebuy-modal-card {
-  border-radius: 20px;
-  box-shadow: 0 20px 25px -5px rgba(139, 92, 246, 0.15);
-}
-
-.beforebuy-modal-overlay.beforebuy-preset-pills .beforebuy-reason-item {
-  border-radius: 24px;
-  padding: 10px 16px;
-}
-
-.beforebuy-modal-overlay.beforebuy-preset-pills .beforebuy-reason-item.beforebuy-selected {
-  border-color: #8b5cf6;
-  background-color: #f3e8ff;
-  color: #6b21a8;
-}
-
-.beforebuy-modal-overlay.beforebuy-preset-pills .beforebuy-submit-btn {
-  border-radius: 24px;
 }

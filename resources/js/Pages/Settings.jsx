@@ -23,39 +23,27 @@ export default function Settings({ reasons = [], enable_email = true, require_em
     const themePresets = [
         {
             id: 'modern',
-            name: 'Modern Standard',
-            description: 'Clean white background, soft shadow, balanced rounded corners.',
-            badgeBg: '#ffffff',
-            badgeBorder: '#e2e8f0',
-            badgeText: '#1e293b',
-            accent: '#3b82f6',
+            name: 'Standard Card List',
+            description: 'Classic vertical list with radio buttons and clean borders.',
+            type: 'vertical',
         },
         {
-            id: 'minimal',
-            name: 'Minimalist Flat',
-            description: 'Crisp flat borders, zero shadow, compact spacing.',
-            badgeBg: '#f8fafc',
-            badgeBorder: '#cbd5e1',
-            badgeText: '#0f172a',
-            accent: '#0284c7',
+            id: 'badge_list',
+            name: 'Quiz Badge Pills (Pop Quiz Style)',
+            description: 'Pill items with circular A, B, C badges and highlighted active states.',
+            type: 'badge',
+        },
+        {
+            id: 'chips_grid',
+            name: 'Horizontal Tag Chips',
+            description: 'Compact side-by-side tags with checkmarks on active items.',
+            type: 'chips',
         },
         {
             id: 'dark',
             name: 'Sleek Dark Mode',
-            description: 'Rich dark slate background with glowing accent text.',
-            badgeBg: '#0f172a',
-            badgeBorder: '#334155',
-            badgeText: '#f8fafc',
-            accent: '#6366f1',
-        },
-        {
-            id: 'pills',
-            name: 'Soft Rounded Pills',
-            description: 'Pill-shaped reason tags, soft pastel selection highlights.',
-            badgeBg: '#faf5ff',
-            badgeBorder: '#e9d5ff',
-            badgeText: '#581c87',
-            accent: '#8b5cf6',
+            description: 'Dark mode modal layout with glowing active selection.',
+            type: 'dark',
         },
     ];
 
@@ -108,7 +96,7 @@ export default function Settings({ reasons = [], enable_email = true, require_em
         <AppLayout>
             <Page
                 title="App Settings & Reasons"
-                subtitle="Customize options, popup theme design presets, and email collection rules."
+                subtitle="Customize options, email collection rules, and storefront popup design presets."
             >
                 <BlockStack gap="500">
                     {saved && (
@@ -117,82 +105,7 @@ export default function Settings({ reasons = [], enable_email = true, require_em
                         </Banner>
                     )}
 
-                    {/* Popup Theme Presets Card */}
-                    <Card>
-                        <BlockStack gap="400">
-                            <Text variant="headingMd" as="h2">Storefront Popup Design Presets</Text>
-                            <Text tone="subdued" variant="bodySm">
-                                Select a visual style template for your feedback modal window.
-                            </Text>
-
-                            <div style={{
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                                gap: '16px',
-                                marginTop: '8px'
-                            }}>
-                                {themePresets.map((preset) => {
-                                    const isSelected = selectedTheme === preset.id;
-                                    return (
-                                        <div
-                                            key={preset.id}
-                                            onClick={() => setSelectedTheme(preset.id)}
-                                            style={{
-                                                border: `2px solid ${isSelected ? '#2c6ecb' : '#e1e3e5'}`,
-                                                borderRadius: '12px',
-                                                padding: '16px',
-                                                cursor: 'pointer',
-                                                backgroundColor: isSelected ? '#f0f7ff' : '#ffffff',
-                                                transition: 'all 0.2s ease-in-out',
-                                                position: 'relative',
-                                            }}
-                                        >
-                                            <InlineStack align="space-between" blockAlign="center">
-                                                <Text variant="headingSm" as="h3">{preset.name}</Text>
-                                                <input
-                                                    type="radio"
-                                                    name="popup_theme_preset"
-                                                    checked={isSelected}
-                                                    onChange={() => setSelectedTheme(preset.id)}
-                                                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                                                />
-                                            </InlineStack>
-
-                                            <Box paddingBlockStart="200">
-                                                <Text tone="subdued" variant="bodySm">{preset.description}</Text>
-                                            </Box>
-
-                                            {/* Visual Preview Badge */}
-                                            <div style={{
-                                                marginTop: '12px',
-                                                padding: '10px 14px',
-                                                borderRadius: preset.id === 'pills' ? '20px' : '6px',
-                                                backgroundColor: preset.badgeBg,
-                                                border: `1px solid ${preset.badgeBorder}`,
-                                                color: preset.badgeText,
-                                                fontSize: '12px',
-                                                fontWeight: '600',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justify: 'space-between',
-                                                boxShadow: preset.id === 'modern' ? '0 4px 6px -1px rgba(0, 0, 0, 0.05)' : 'none',
-                                            }}>
-                                                <span>Preview Style</span>
-                                                <span style={{
-                                                    width: '8px',
-                                                    height: '8px',
-                                                    borderRadius: '50%',
-                                                    backgroundColor: preset.accent
-                                                }}></span>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </BlockStack>
-                    </Card>
-
-                    {/* Pre-Defined Feedback Reasons Card */}
+                    {/* 1. Pre-Defined Feedback Reasons Card */}
                     <Card>
                         <BlockStack gap="400">
                             <Text variant="headingMd" as="h2">Pre-Defined Feedback Reasons</Text>
@@ -232,7 +145,7 @@ export default function Settings({ reasons = [], enable_email = true, require_em
                         </BlockStack>
                     </Card>
 
-                    {/* Customer Email Collection Settings Card */}
+                    {/* 2. Customer Email Collection Settings Card */}
                     <Card>
                         <BlockStack gap="400">
                             <Text variant="headingMd" as="h2">Customer Contact & Email Collection</Text>
@@ -262,6 +175,117 @@ export default function Settings({ reasons = [], enable_email = true, require_em
                                     </div>
                                 )}
                             </BlockStack>
+                        </BlockStack>
+                    </Card>
+
+                    {/* 3. Popup Design Presets Card (Moved to the bottom) */}
+                    <Card>
+                        <BlockStack gap="400">
+                            <Text variant="headingMd" as="h2">Storefront Popup Option Design Layouts</Text>
+                            <Text tone="subdued" variant="bodySm">
+                                Choose how feedback options are formatted inside the storefront popup window.
+                            </Text>
+
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                                gap: '16px',
+                                marginTop: '8px'
+                            }}>
+                                {themePresets.map((preset) => {
+                                    const isSelected = selectedTheme === preset.id;
+                                    return (
+                                        <div
+                                            key={preset.id}
+                                            onClick={() => setSelectedTheme(preset.id)}
+                                            style={{
+                                                border: `2px solid ${isSelected ? '#2c6ecb' : '#e1e3e5'}`,
+                                                borderRadius: '12px',
+                                                padding: '16px',
+                                                cursor: 'pointer',
+                                                backgroundColor: isSelected ? '#f0f7ff' : '#ffffff',
+                                                transition: 'all 0.2s ease-in-out',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                justifyContent: 'space-between',
+                                            }}
+                                        >
+                                            <div>
+                                                <InlineStack align="space-between" blockAlign="center">
+                                                    <Text variant="headingSm" as="h3">{preset.name}</Text>
+                                                    <input
+                                                        type="radio"
+                                                        name="popup_theme_preset"
+                                                        checked={isSelected}
+                                                        onChange={() => setSelectedTheme(preset.id)}
+                                                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                                    />
+                                                </InlineStack>
+
+                                                <Box paddingBlockStart="100">
+                                                    <Text tone="subdued" variant="bodySm">{preset.description}</Text>
+                                                </Box>
+                                            </div>
+
+                                            {/* Real UI Mini Mock Preview */}
+                                            <div style={{
+                                                marginTop: '16px',
+                                                padding: '12px',
+                                                borderRadius: '8px',
+                                                backgroundColor: preset.type === 'dark' ? '#0f172a' : '#f8fafc',
+                                                border: `1px solid ${preset.type === 'dark' ? '#334155' : '#e2e8f0'}`,
+                                            }}>
+                                                {preset.type === 'modern' && (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                        <div style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #3b82f6', background: '#eff6ff', fontSize: '11px', color: '#1d4ed8', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3b82f6' }}></span> Price is higher
+                                                        </div>
+                                                        <div style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', background: '#fff', fontSize: '11px', color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', border: '1px solid #cbd5e1' }}></span> Unsure about size
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {preset.type === 'badge' && (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                        <div style={{ padding: '4px 8px', borderRadius: '20px', border: '2px solid #22c55e', background: '#dcfce7', fontSize: '11px', color: '#14532d', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                            <span style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#fef08a', border: '1px solid #eab308', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#854d0e', fontWeight: '800' }}>A</span> Price is higher
+                                                        </div>
+                                                        <div style={{ padding: '4px 8px', borderRadius: '20px', border: '1.5px solid #1e293b', background: '#fff', fontSize: '11px', color: '#1e293b', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                            <span style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#fef08a', border: '1px solid #eab308', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#854d0e', fontWeight: '800' }}>B</span> Unsure about size
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {preset.type === 'chips' && (
+                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                                        <div style={{ padding: '5px 10px', borderRadius: '20px', border: '1px solid #22c55e', background: '#f0fdf4', fontSize: '11px', color: '#15803d', fontWeight: '600' }}>
+                                                            ✓ Full-time
+                                                        </div>
+                                                        <div style={{ padding: '5px 10px', borderRadius: '20px', border: '1px solid #cbd5e1', background: '#fff', fontSize: '11px', color: '#64748b' }}>
+                                                            Part-time
+                                                        </div>
+                                                        <div style={{ padding: '5px 10px', borderRadius: '20px', border: '1px solid #cbd5e1', background: '#fff', fontSize: '11px', color: '#64748b' }}>
+                                                            Freelance
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {preset.type === 'dark' && (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                        <div style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #6366f1', background: 'rgba(99, 102, 241, 0.2)', fontSize: '11px', color: '#a5b4fc', fontWeight: '600' }}>
+                                                            • Price is higher
+                                                        </div>
+                                                        <div style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #334155', background: '#1e293b', fontSize: '11px', color: '#94a3b8' }}>
+                                                            • Unsure about size
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
 
                             <Divider />
 

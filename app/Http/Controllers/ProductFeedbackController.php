@@ -218,7 +218,7 @@ class ProductFeedbackController extends Controller
             'reasons.*' => 'required|string',
             'enable_email' => 'required|boolean',
             'require_email' => 'required|boolean',
-            'popup_theme' => 'nullable|string|in:modern,minimal,dark,pills',
+            'popup_theme' => 'nullable|string|in:modern,badge_list,chips_grid,icon_pills,dark,minimal,pills',
         ]);
 
         $config = [

@@ -87,11 +87,13 @@ if (!window.beforebuyFeedbackInitialized) {
               const isChecked = idx === 0;
               if (isChecked) selectedReason = reasonText;
 
+              const letterBadge = String.fromCharCode(65 + (idx % 26));
               const label = document.createElement('label');
               label.className = `beforebuy-reason-item ${isChecked ? 'beforebuy-selected' : ''}`;
               label.dataset.reason = reasonText;
 
               label.innerHTML = `
+                <span class="beforebuy-badge-letter">${letterBadge}</span>
                 <input type="radio" name="beforebuy_reason" value="${escapeHtml(reasonText)}" class="beforebuy-reason-radio" ${isChecked ? 'checked' : ''}>
                 <span>${escapeHtml(reasonText)}</span>
               `;
