@@ -79,7 +79,7 @@
         type="button"
         style="background-color: {{ block.settings.popup_submit_bg_color | default: block.settings.btn_bg_color }}; color: {{ block.settings.popup_submit_text_color | default: block.settings.btn_text_color }};"
       >
-        Submit Feedback
+        {{ block.settings.popup_submit_text | default: "Submit Feedback" }}
       </button>
     </div>
 
@@ -116,6 +116,12 @@
       "id": "popup_subtitle",
       "label": "Popup Subtitle",
       "default": "Please tell us what prevented you from completing your purchase."
+    },
+    {
+      "type": "text",
+      "id": "popup_submit_text",
+      "label": "Popup Submit Button Label",
+      "default": "Submit Feedback"
     },
     {
       "type": "color",
