@@ -50,6 +50,17 @@ if (!window.beforebuyFeedbackInitialized) {
           if (typeof data.enable_email !== 'undefined') isEmailEnabled = Boolean(data.enable_email);
           if (typeof data.require_email !== 'undefined') isEmailRequired = Boolean(data.require_email);
 
+          // Popup Theme Preset
+          if (data.popup_theme && modalOverlay) {
+            modalOverlay.classList.remove(
+              'beforebuy-preset-modern',
+              'beforebuy-preset-minimal',
+              'beforebuy-preset-dark',
+              'beforebuy-preset-pills'
+            );
+            modalOverlay.classList.add(`beforebuy-preset-${data.popup_theme}`);
+          }
+
           if (emailGroup) {
             if (isEmailEnabled) {
               emailGroup.style.display = 'block';

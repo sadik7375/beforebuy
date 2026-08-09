@@ -55,7 +55,7 @@
   visibility: visible;
 }
 
-/* Modal Content Card */
+/* Modal Content Card (Default Modern Preset) */
 .beforebuy-modal-card {
   background: #ffffff;
   width: 100%;
@@ -273,4 +273,108 @@
   font-size: 12.5px;
   color: #4b5563;
   margin-bottom: 12px;
+}
+
+/* ---------------------------------------------------- */
+/* PRESET 1: Minimalist Flat (.beforebuy-preset-minimal) */
+/* ---------------------------------------------------- */
+.beforebuy-modal-overlay.beforebuy-preset-minimal .beforebuy-modal-card {
+  border-radius: 4px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border: 1px solid #cbd5e1;
+}
+
+.beforebuy-modal-overlay.beforebuy-preset-minimal .beforebuy-reason-item {
+  border-radius: 4px;
+  border-width: 1px;
+}
+
+.beforebuy-modal-overlay.beforebuy-preset-minimal .beforebuy-submit-btn {
+  border-radius: 4px;
+}
+
+/* ---------------------------------------------------- */
+/* PRESET 2: Sleek Dark Mode (.beforebuy-preset-dark) */
+/* ---------------------------------------------------- */
+.beforebuy-modal-overlay.beforebuy-preset-dark .beforebuy-modal-card {
+  background: #0f172a;
+  color: #f8fafc;
+  border: 1px solid #334155;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+.beforebuy-modal-overlay.beforebuy-preset-dark .beforebuy-modal-header {
+  border-bottom-color: #1e293b;
+}
+
+.beforebuy-modal-overlay.beforebuy-preset-dark .beforebuy-modal-header h3 {
+  color: #f8fafc;
+}
+
+.beforebuy-modal-overlay.beforebuy-preset-dark .beforebuy-close-btn {
+  color: #94a3b8;
+}
+
+.beforebuy-modal-overlay.beforebuy-preset-dark .beforebuy-close-btn:hover {
+  color: #f8fafc;
+  background: #1e293b;
+}
+
+.beforebuy-modal-overlay.beforebuy-preset-dark .beforebuy-subtitle,
+.beforebuy-modal-overlay.beforebuy-preset-dark .beforebuy-email-group label,
+.beforebuy-modal-overlay.beforebuy-preset-dark .beforebuy-comment-group label {
+  color: #94a3b8;
+}
+
+.beforebuy-modal-overlay.beforebuy-preset-dark .beforebuy-reason-item {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+.beforebuy-modal-overlay.beforebuy-preset-dark .beforebuy-reason-item:hover {
+  border-color: #64748b;
+  background-color: #334155;
+}
+
+.beforebuy-modal-overlay.beforebuy-preset-dark .beforebuy-reason-item.beforebuy-selected {
+  border-color: #6366f1;
+  background-color: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+}
+
+.beforebuy-modal-overlay.beforebuy-preset-dark .beforebuy-input,
+.beforebuy-modal-overlay.beforebuy-preset-dark .beforebuy-textarea {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+.beforebuy-modal-overlay.beforebuy-preset-dark .beforebuy-input:focus,
+.beforebuy-modal-overlay.beforebuy-preset-dark .beforebuy-textarea:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+}
+
+/* ---------------------------------------------------- */
+/* PRESET 3: Soft Pills (.beforebuy-preset-pills) */
+/* ---------------------------------------------------- */
+.beforebuy-modal-overlay.beforebuy-preset-pills .beforebuy-modal-card {
+  border-radius: 20px;
+  box-shadow: 0 20px 25px -5px rgba(139, 92, 246, 0.15);
+}
+
+.beforebuy-modal-overlay.beforebuy-preset-pills .beforebuy-reason-item {
+  border-radius: 24px;
+  padding: 10px 16px;
+}
+
+.beforebuy-modal-overlay.beforebuy-preset-pills .beforebuy-reason-item.beforebuy-selected {
+  border-color: #8b5cf6;
+  background-color: #f3e8ff;
+  color: #6b21a8;
+}
+
+.beforebuy-modal-overlay.beforebuy-preset-pills .beforebuy-submit-btn {
+  border-radius: 24px;
 }

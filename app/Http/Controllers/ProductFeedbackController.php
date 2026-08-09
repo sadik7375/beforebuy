@@ -25,6 +25,7 @@ class ProductFeedbackController extends Controller
             ],
             'enable_email' => true,
             'require_email' => false,
+            'popup_theme' => 'modern',
         ];
 
         // 1. Try DB app_settings table
@@ -203,6 +204,7 @@ class ProductFeedbackController extends Controller
             'reasons' => $config['reasons'],
             'enable_email' => (bool)$config['enable_email'],
             'require_email' => (bool)$config['require_email'],
+            'popup_theme' => $config['popup_theme'] ?? 'modern',
         ]);
     }
 
@@ -216,12 +218,14 @@ class ProductFeedbackController extends Controller
             'reasons.*' => 'required|string',
             'enable_email' => 'required|boolean',
             'require_email' => 'required|boolean',
+            'popup_theme' => 'nullable|string|in:modern,minimal,dark,pills',
         ]);
 
         $config = [
             'reasons' => array_values(array_filter($validated['reasons'])),
             'enable_email' => (bool)$validated['enable_email'],
             'require_email' => (bool)$validated['require_email'],
+            'popup_theme' => $validated['popup_theme'] ?? 'modern',
         ];
 
         // 1. Save to File Storage Backup
@@ -282,6 +286,7 @@ class ProductFeedbackController extends Controller
             'reasons' => $reasons,
             'enable_email' => $config['enable_email'],
             'require_email' => $config['require_email'],
+            'popup_theme' => $config['popup_theme'] ?? 'modern',
         ]);
     }
 
