@@ -146,10 +146,7 @@ export default function Submissions({ feedbacks = [], reasons = [] }) {
             >
                 <Card>
                     <BlockStack gap="400">
-                        <InlineStack align="space-between" blockAlign="center">
-                            <Text variant="headingMd" as="h2">All Submissions Log</Text>
-                            <Badge tone="success">Live Database Log</Badge>
-                        </InlineStack>
+                        <Text variant="headingMd" as="h2">All Submissions Log</Text>
 
                         {/* Search, Reason, and Date Filter Bar */}
                         <div style={{
