@@ -73,7 +73,12 @@
         <textarea id="beforebuy-custom-comment" class="beforebuy-textarea" placeholder="Tell us what would help you make a decision..."></textarea>
       </div>
 
-      <button id="beforebuy-submit-btn" class="beforebuy-submit-btn" type="button" style="background-color: {{ block.settings.btn_bg_color }}; color: {{ block.settings.btn_text_color }};">
+      <button
+        id="beforebuy-submit-btn"
+        class="beforebuy-submit-btn"
+        type="button"
+        style="background-color: {{ block.settings.popup_submit_bg_color | default: block.settings.btn_bg_color }}; color: {{ block.settings.popup_submit_text_color | default: block.settings.btn_text_color }};"
+      >
         Submit Feedback
       </button>
     </div>
@@ -97,7 +102,7 @@
     {
       "type": "text",
       "id": "button_text",
-      "label": "Button Label",
+      "label": "Trigger Button Label",
       "default": "Why aren't you buying today?"
     },
     {
@@ -115,20 +120,32 @@
     {
       "type": "color",
       "id": "btn_bg_color",
-      "label": "Button Background Color",
+      "label": "Trigger Button Background Color",
       "default": "#111827"
     },
     {
       "type": "color",
       "id": "btn_text_color",
-      "label": "Button Text Color",
+      "label": "Trigger Button Text Color",
       "default": "#ffffff"
     },
     {
       "type": "color",
       "id": "btn_border_color",
-      "label": "Button Border Color",
+      "label": "Trigger Button Border Color",
       "default": "#d1d5db"
+    },
+    {
+      "type": "color",
+      "id": "popup_submit_bg_color",
+      "label": "Popup Submit Button Background Color",
+      "default": "#111827"
+    },
+    {
+      "type": "color",
+      "id": "popup_submit_text_color",
+      "label": "Popup Submit Button Text Color",
+      "default": "#ffffff"
     },
     {
       "type": "select",

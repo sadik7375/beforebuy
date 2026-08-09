@@ -7,7 +7,7 @@
         "dev": "vite"
     },
     "devDependencies": {
-        "@shopify/cli": "^3.84.1",
+        "@shopify/cli": "^4.6.1",
         "@tailwindcss/vite": "^4.0.0",
         "axios": "^1.11.0",
         "concurrently": "^9.0.1",
