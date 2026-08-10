@@ -782,12 +782,44 @@ GRAPHQL;
                     if ($request->wantsJson()) {
                         return response()->json(['success' => true, 'confirmationUrl' => $unifiedUrl]);
                     }
-                    return redirect()->to($unifiedUrl);
+                    
+                    $apiKey = env('SHOPIFY_API_KEY');
+                    $safeUnifiedUrl = htmlspecialchars($unifiedUrl, ENT_QUOTES, 'UTF-8');
+                    return response(<<<HTML
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="shopify-api-key" content="{$apiKey}" />
+    <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
+</head>
+<body style="margin:0;background:#fff;display:flex;justify-content:center;align-items:center;height:100vh;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
+    <p style="color:#5c5f62;">Redirecting to Shopify Subscription Approval... <a id="br" href="{$safeUnifiedUrl}" target="_top">Click here if not redirected automatically</a></p>
+    <script type="text/javascript">
+        (function() {
+            var targetUrl = "{$safeUnifiedUrl}";
+            try {
+                if (window.top && window.top !== window.self) {
+                    window.top.location.href = targetUrl;
+                } else {
+                    window.location.href = targetUrl;
+                }
+            } catch(e) {
+                var link = document.getElementById('br');
+                if (link) link.click();
+            }
+        })();
+    </script>
+</body>
+</html>
+HTML);
                 } else {
                     Log::warning('GraphQL appSubscriptionCreate errors: ' . json_encode($body));
+                    $gqlError = json_encode($body['data']['appSubscriptionCreate']['userErrors'] ?? $body['errors'] ?? $body);
                 }
             } catch (\Throwable $e) {
                 Log::error('Shopify Subscription GraphQL error: ' . $e->getMessage());
+                $gqlError = $e->getMessage();
             }
 
             // 2. Try REST API Recurring Application Charge
@@ -820,15 +852,56 @@ GRAPHQL;
                     if ($request->wantsJson()) {
                         return response()->json(['success' => true, 'confirmationUrl' => $unifiedUrl]);
                     }
-                    return redirect()->to($unifiedUrl);
+                    
+                    $apiKey = env('SHOPIFY_API_KEY');
+                    $safeUnifiedUrl = htmlspecialchars($unifiedUrl, ENT_QUOTES, 'UTF-8');
+                    return response(<<<HTML
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="shopify-api-key" content="{$apiKey}" />
+    <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
+</head>
+<body style="margin:0;background:#fff;display:flex;justify-content:center;align-items:center;height:100vh;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
+    <p style="color:#5c5f62;">Redirecting to Shopify Subscription Approval... <a id="br" href="{$safeUnifiedUrl}" target="_top">Click here if not redirected automatically</a></p>
+    <script type="text/javascript">
+        (function() {
+            var targetUrl = "{$safeUnifiedUrl}";
+            try {
+                if (window.top && window.top !== window.self) {
+                    window.top.location.href = targetUrl;
+                } else {
+                    window.location.href = targetUrl;
+                }
+            } catch(e) {
+                var link = document.getElementById('br');
+                if (link) link.click();
+            }
+        })();
+    </script>
+</body>
+</html>
+HTML);
                 } else {
                     Log::warning('REST API recurring_application_charges errors: ' . json_encode($body));
+                    $restError = json_encode($body);
                 }
             } catch (\Throwable $e) {
                 Log::error('Shopify Subscription REST API error: ' . $e->getMessage());
+                $restError = $e->getMessage();
+            }
+
+            // If token exists but API returned errors, show explicit error to user instead of looping OAuth!
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Shopify Billing API error. GraphQL: ' . ($gqlError ?? 'N/A') . ' | REST: ' . ($restError ?? 'N/A')
+                ], 400);
             }
         }
 
+        // Only redirect to OAuth if token is completely missing
         $cleanShop = $shopDomain ?: 'canny-apps.myshopify.com';
         $apiKey = env('SHOPIFY_API_KEY');
         $scopes = env('SHOPIFY_API_SCOPES', 'read_products,write_products,read_themes,read_purchase_options,write_purchase_options');
@@ -879,12 +952,17 @@ GRAPHQL;
 
                         session(['shopify_token' => $accessToken, 'shop_domain' => $shop]);
                         Log::info("Automatic OAuth token generated and saved for shop: {$shop}");
+
+                        // Automatically redirect back to billing subscribe to complete charge setup
+                        return redirect("/billing/subscribe?shop=" . urlencode($shop));
                     }
                 } else {
                     Log::error('OAuth token exchange failed: ' . $response->body());
+                    return response('<h2>OAuth Token Exchange Failed</h2><p>Shopify API Response: ' . e($response->body()) . '</p><p>Please verify SHOPIFY_API_KEY and SHOPIFY_API_SECRET on server.</p>');
                 }
             } catch (\Throwable $e) {
                 Log::error('OAuth token exchange exception: ' . $e->getMessage());
+                return response('<h2>OAuth Token Exchange Exception</h2><p>' . e($e->getMessage()) . '</p>');
             }
         }
 
