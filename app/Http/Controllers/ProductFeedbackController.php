@@ -39,7 +39,7 @@ class ProductFeedbackController extends Controller
     }
 
     /**
-     * Helper to get active store plan ('free' or 'pro') with live Shopify GraphQL API verification
+     * Helper to get active store plan ('free' or 'pro') with live Shopify API & Session verification
      */
     private function getShopPlan($shopDomain = null, Request $request = null)
     {
@@ -62,8 +62,9 @@ class ProductFeedbackController extends Controller
                 $plan = is_array($decoded) ? ($decoded['plan'] ?? 'free') : $setting->value;
 
                 if ($plan === 'pro') {
-                    // Perform live verification against Shopify GraphQL API if access token exists
                     $token = session('shopify_token') ?? env('SHOPIFY_API_TOKEN');
+                    $isConfirmedInSession = session('pro_subscription_active_' . $shortHandle, false);
+
                     if ($token) {
                         try {
                             $graphqlUrl = "https://{$shopDomain}/admin/api/2026-07/graphql.json";
@@ -86,15 +87,24 @@ class ProductFeedbackController extends Controller
                                 }
 
                                 if (!$hasActivePro) {
-                                    // Subscription was cancelled on Shopify
                                     $this->setShopPlan($shopDomain, 'free', null);
+                                    session()->forget('pro_subscription_active_' . $shortHandle);
                                     Log::info("Shopify API reported no active subscription for {$shopDomain}. Plan reset to free.");
                                     return 'free';
                                 }
+                                return 'pro';
                             }
                         } catch (\Throwable $apiErr) {
                             Log::warning('Live subscription verify error: ' . $apiErr->getMessage());
                         }
+                    }
+
+                    // If live token verification is unavailable AND this is a fresh install/session without confirmed active charge:
+                    // Automatically reset stale DB record back to free!
+                    if (!$isConfirmedInSession) {
+                        $this->setShopPlan($shopDomain, 'free', null);
+                        Log::info("Unverified stale Pro plan for {$shopDomain} auto-reset to free on fresh session.");
+                        return 'free';
                     }
                 }
 
@@ -748,6 +758,8 @@ GRAPHQL;
         $chargeId = $request->get('charge_id') ?: 'test_charge_' . time();
 
         if ($shopDomain) {
+            $shortHandle = explode('.myshopify.com', $shopDomain)[0];
+            session(['pro_subscription_active_' . $shortHandle => true]);
             $this->setShopPlan($shopDomain, 'pro', $chargeId);
         }
 
