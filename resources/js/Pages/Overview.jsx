@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { Page, BlockStack, Card, Text, Grid, Badge, Select, InlineStack, Banner, Button } from '@shopify/polaris';
+import { Page, BlockStack, Card, Text, Grid, Badge, Select, InlineStack } from '@shopify/polaris';
 import { router } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 
-export default function Overview({ feedbacks = [], stats = {}, plan = 'free', monthlyCount = 0 }) {
+export default function Overview({ feedbacks = [], stats = {} }) {
     const [dateRange, setDateRange] = useState('7days');
-    const isPro = plan === 'pro';
 
     const totalFeedback = stats.total_feedbacks || 0;
     const estRevenue = stats.estimated_lost_revenue ? `$${stats.estimated_lost_revenue.toLocaleString()}` : '$0';
@@ -67,20 +66,6 @@ export default function Overview({ feedbacks = [], stats = {}, plan = 'free', mo
                             </button>
                         </InlineStack>
                     </InlineStack>
-
-                    {/* Free Plan Monthly Submission Quota Banner */}
-                    {!isPro && (
-                        <Banner tone="info" title="Free Plan Usage Limit">
-                            <InlineStack align="space-between" blockAlign="center">
-                                <Text variant="bodyMd" as="p">
-                                    Monthly submissions limit: <strong>{monthlyCount} / 10 used</strong> this month.
-                                </Text>
-                                <Button variant="primary" onClick={() => router.visit('/pricing')}>
-                                    Upgrade to Pro ($5/mo)
-                                </Button>
-                            </InlineStack>
-                        </Banner>
-                    )}
 
                     {/* Top Stat Cards Row (3 Columns) */}
                     <Grid>

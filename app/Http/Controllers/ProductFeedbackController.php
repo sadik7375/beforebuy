@@ -39,86 +39,11 @@ class ProductFeedbackController extends Controller
     }
 
     /**
-     * Helper to get active store plan ('free' or 'pro')
-     */
-    private function getShopPlan($shopDomain = null)
-    {
-        if (!$shopDomain) return 'free';
-
-        try {
-            $shortHandle = explode('.myshopify.com', $shopDomain)[0];
-            $setting = DB::table('app_settings')
-                ->where(function ($q) use ($shopDomain, $shortHandle) {
-                    $q->where('shop_domain', '=', $shopDomain)
-                      ->orWhere('shop_domain', '=', $shortHandle);
-                })
-                ->where('key', 'shop_plan')
-                ->first();
-
-            if ($setting && !empty($setting->value)) {
-                $decoded = json_decode($setting->value, true);
-                if (is_array($decoded) && isset($decoded['plan'])) {
-                    return $decoded['plan'];
-                }
-                return is_string($decoded) ? $decoded : 'free';
-            }
-        } catch (\Throwable $e) {
-            Log::warning('getShopPlan error: ' . $e->getMessage());
-        }
-
-        return 'free';
-    }
-
-    /**
-     * Helper to update store plan
-     */
-    private function setShopPlan($shopDomain, $planName = 'free', $subscriptionId = null)
-    {
-        if (!$shopDomain) return;
-
-        try {
-            DB::table('app_settings')->updateOrInsert(
-                ['shop_domain' => $shopDomain, 'key' => 'shop_plan'],
-                [
-                    'value' => json_encode([
-                        'plan' => $planName,
-                        'subscription_id' => $subscriptionId,
-                        'updated_at' => now()->toDateTimeString(),
-                    ]),
-                    'updated_at' => now(),
-                ]
-            );
-        } catch (\Throwable $e) {
-            Log::error('setShopPlan error: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Helper to count monthly submissions for quota tracking
-     */
-    private function getMonthlySubmissionCount($shopDomain = null)
-    {
-        if (!$shopDomain) return 0;
-
-        try {
-            $query = DB::table('product_feedbacks')
-                ->whereMonth('created_at', now()->month)
-                ->whereYear('created_at', now()->year);
-
-            $this->applyShopFilter($query, $shopDomain);
-            return $query->count();
-        } catch (\Throwable $e) {
-            return 0;
-        }
-    }
-
-    /**
      * Helper to apply exact store filter on queries with strict isolation
      */
     private function applyShopFilter($query, $shopDomain)
     {
         if (!$shopDomain) {
-            // Strictly isolate: If no shop domain is provided, return zero results
             return $query->whereRaw('1 = 0');
         }
 
@@ -251,8 +176,6 @@ class ProductFeedbackController extends Controller
     public function overview(Request $request)
     {
         $shopDomain = $this->getShopDomain($request);
-        $plan = $this->getShopPlan($shopDomain);
-        $monthlyCount = $this->getMonthlySubmissionCount($shopDomain);
 
         try {
             $query = DB::table('product_feedbacks');
@@ -269,8 +192,6 @@ class ProductFeedbackController extends Controller
             'stats' => $this->getStats($shopDomain),
             'reasons' => $config['reasons'] ?? [],
             'shopDomain' => $shopDomain,
-            'plan' => $plan,
-            'monthlyCount' => $monthlyCount,
         ]);
     }
 
@@ -280,8 +201,6 @@ class ProductFeedbackController extends Controller
     public function submissions(Request $request)
     {
         $shopDomain = $this->getShopDomain($request);
-        $plan = $this->getShopPlan($shopDomain);
-        $monthlyCount = $this->getMonthlySubmissionCount($shopDomain);
 
         try {
             $query = DB::table('product_feedbacks');
@@ -298,8 +217,6 @@ class ProductFeedbackController extends Controller
             'stats' => $this->getStats($shopDomain),
             'reasons' => $config['reasons'] ?? [],
             'shopDomain' => $shopDomain,
-            'plan' => $plan,
-            'monthlyCount' => $monthlyCount,
         ]);
     }
 
@@ -309,8 +226,6 @@ class ProductFeedbackController extends Controller
     public function aiReport(Request $request)
     {
         $shopDomain = $this->getShopDomain($request);
-        $plan = $this->getShopPlan($shopDomain);
-        $monthlyCount = $this->getMonthlySubmissionCount($shopDomain);
 
         try {
             $query = DB::table('product_feedbacks');
@@ -332,8 +247,6 @@ class ProductFeedbackController extends Controller
             'stats' => $this->getStats($shopDomain),
             'repeatCustomers' => $repeatCustomers,
             'shopDomain' => $shopDomain,
-            'plan' => $plan,
-            'monthlyCount' => $monthlyCount,
         ]);
     }
 
@@ -343,8 +256,6 @@ class ProductFeedbackController extends Controller
     public function settings(Request $request)
     {
         $shopDomain = $this->getShopDomain($request);
-        $plan = $this->getShopPlan($shopDomain);
-        $monthlyCount = $this->getMonthlySubmissionCount($shopDomain);
         $config = $this->getAppSettings($shopDomain);
 
         return Inertia::render('Settings', [
@@ -353,8 +264,6 @@ class ProductFeedbackController extends Controller
             'require_email' => (bool)$config['require_email'],
             'popup_theme' => $config['popup_theme'] ?? 'modern',
             'shopDomain' => $shopDomain,
-            'plan' => $plan,
-            'monthlyCount' => $monthlyCount,
         ]);
     }
 
@@ -364,7 +273,6 @@ class ProductFeedbackController extends Controller
     public function saveSettings(Request $request)
     {
         $shopDomain = $this->getShopDomain($request) ?: 'global';
-        $plan = $this->getShopPlan($shopDomain);
 
         $validated = $request->validate([
             'reasons' => 'required|array',
@@ -374,18 +282,11 @@ class ProductFeedbackController extends Controller
             'popup_theme' => 'nullable|string|in:modern,badge_list,chips_grid,icon_pills,dark,minimal,pills',
         ]);
 
-        $selectedTheme = $validated['popup_theme'] ?? 'modern';
-
-        // Enforce popup theme restriction: Free plan only gets 'modern' or 'pills'
-        if ($plan === 'free' && !in_array($selectedTheme, ['modern', 'pills'])) {
-            $selectedTheme = 'modern';
-        }
-
         $config = [
             'reasons' => array_values(array_filter($validated['reasons'])),
             'enable_email' => (bool)$validated['enable_email'],
             'require_email' => (bool)$validated['require_email'],
-            'popup_theme' => $selectedTheme,
+            'popup_theme' => $validated['popup_theme'] ?? 'modern',
         ];
 
         // Save to MySQL Database with shop domain key
@@ -419,7 +320,6 @@ class ProductFeedbackController extends Controller
     public function getApiSettings(Request $request)
     {
         $shopDomain = $request->get('shop') ?: $this->getShopDomain($request);
-        $plan = $this->getShopPlan($shopDomain);
         $config = $this->getAppSettings($shopDomain);
         
         $reasons = $config['reasons'];
@@ -434,34 +334,12 @@ class ProductFeedbackController extends Controller
             $reasons[] = 'Other reason';
         }
 
-        $selectedTheme = $config['popup_theme'] ?? 'modern';
-        if ($plan === 'free' && !in_array($selectedTheme, ['modern', 'pills'])) {
-            $selectedTheme = 'modern';
-        }
-
         return response()->json([
             'success' => true,
             'reasons' => $reasons,
             'enable_email' => $config['enable_email'],
             'require_email' => $config['require_email'],
-            'popup_theme' => $selectedTheme,
-            'plan' => $plan,
-        ]);
-    }
-
-    /**
-     * Submenu: Pricing
-     */
-    public function pricing(Request $request)
-    {
-        $shopDomain = $this->getShopDomain($request);
-        $plan = $this->getShopPlan($shopDomain);
-        $monthlyCount = $this->getMonthlySubmissionCount($shopDomain);
-
-        return Inertia::render('Pricing', [
-            'plan' => $plan,
-            'monthlyCount' => $monthlyCount,
-            'shopDomain' => $shopDomain,
+            'popup_theme' => $config['popup_theme'] ?? 'modern',
         ]);
     }
 
@@ -555,7 +433,7 @@ class ProductFeedbackController extends Controller
     }
 
     /**
-     * Public API: Save new customer feedback from storefront modal with 10-submission Free limit check
+     * Public API: Save new customer feedback from storefront modal
      */
     public function store(Request $request)
     {
@@ -568,21 +446,6 @@ class ProductFeedbackController extends Controller
             'custom_comment' => 'nullable|string',
             'customer_email' => 'nullable|string',
         ]);
-
-        $shopDomain = $validated['shop_domain'] ?: $this->getShopDomain($request);
-        $plan = $this->getShopPlan($shopDomain);
-
-        // Enforce 10-Submission monthly limit for stores on Free Plan
-        if ($plan === 'free') {
-            $monthlyCount = $this->getMonthlySubmissionCount($shopDomain);
-            if ($monthlyCount >= 10) {
-                return response()->json([
-                    'success' => false,
-                    'limit_reached' => true,
-                    'message' => 'Monthly feedback submission limit (10/10) reached for this store on the Free Plan. Upgrade to Pro for unlimited submissions.',
-                ], 429);
-            }
-        }
 
         $feedbackId = null;
 
@@ -602,139 +465,5 @@ class ProductFeedbackController extends Controller
             'message' => 'Thank you for your feedback!',
             'feedback' => $validated,
         ]);
-    }
-
-    /**
-     * Initiate Pro Subscription ($5/month) via Shopify Billing GraphQL API
-     */
-    public function subscribePro(Request $request)
-    {
-        $shopDomain = $this->getShopDomain($request);
-        $appUrl = env('APP_URL', 'https://beforebuy.cannyapps.com');
-        $returnUrl = "{$appUrl}/billing/confirm?shop=" . urlencode($shopDomain ?: '');
-
-        // Check if session token or env access token exists for Shopify API
-        $token = session('shopify_token') ?? env('SHOPIFY_API_TOKEN');
-
-        if ($shopDomain && $token) {
-            try {
-                $graphqlUrl = "https://{$shopDomain}/admin/api/2026-07/graphql.json";
-                $query = <<<'GRAPHQL'
-mutation appSubscriptionCreate($name: String!, $lineItems: [AppSubscriptionLineItemInput!]!, $returnUrl: URL!, $test: Boolean) {
-  appSubscriptionCreate(name: $name, lineItems: $lineItems, returnUrl: $returnUrl, test: $test) {
-    userErrors {
-      field
-      message
-    }
-    confirmationUrl
-    appSubscription {
-      id
-    }
-  }
-}
-GRAPHQL;
-
-                $response = \Illuminate\Support\Facades\Http::withHeaders([
-                    'X-Shopify-Access-Token' => $token,
-                    'Content-Type' => 'application/json',
-                ])->post($graphqlUrl, [
-                    'query' => $query,
-                    'variables' => [
-                        'name' => 'BeforeBuy Pro Plan',
-                        'returnUrl' => $returnUrl,
-                        'test' => true,
-                        'lineItems' => [
-                            [
-                                'plan' => [
-                                    'appRecurringPricingDetails' => [
-                                        'price' => [
-                                            'amount' => 5.00,
-                                            'currencyCode' => 'USD'
-                                        ],
-                                        'interval' => 'EVERY_30_DAYS'
-                                    ]
-                                ]
-                            ]
-                        ]
-                    ]
-                ]);
-
-                $body = $response->json();
-                $confirmationUrl = $body['data']['appSubscriptionCreate']['confirmationUrl'] ?? null;
-
-                if ($confirmationUrl) {
-                    if ($request->wantsJson()) {
-                        return response()->json([
-                            'success' => true,
-                            'confirmationUrl' => $confirmationUrl,
-                        ]);
-                    }
-                    return redirect()->to($confirmationUrl);
-                }
-            } catch (\Throwable $e) {
-                Log::error('Shopify Subscription GraphQL error: ' . $e->getMessage());
-            }
-        }
-
-        if ($request->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'confirmationUrl' => $returnUrl . "&charge_id=shopify_charge_" . time(),
-            ]);
-        }
-
-        return redirect()->to($returnUrl . "&charge_id=shopify_charge_" . time());
-    }
-
-    /**
-     * Handle Billing Confirmation callback
-     */
-    public function billingConfirm(Request $request)
-    {
-        $shopDomain = $this->getShopDomain($request);
-        $chargeId = $request->get('charge_id') ?: 'test_charge_' . time();
-
-        if ($shopDomain) {
-            $this->setShopPlan($shopDomain, 'pro', $chargeId);
-        }
-
-        return redirect('/pricing')->with('success', 'Congratulations! You have successfully upgraded to BeforeBuy Pro Plan ($5/mo).');
-    }
-
-    /**
-     * Cancel Pro Subscription and downgrade to Free
-     */
-    public function cancelSubscription(Request $request)
-    {
-        $shopDomain = $this->getShopDomain($request);
-
-        if ($shopDomain) {
-            $this->setShopPlan($shopDomain, 'free', null);
-        }
-
-        if ($request->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Subscription cancelled. Store plan is now Free.',
-                'plan' => 'free',
-            ]);
-        }
-
-        return redirect()->back()->with('success', 'Subscription cancelled. Store plan is now Free.');
-    }
-
-    /**
-     * Handle app/uninstalled webhook from Shopify
-     */
-    public function handleAppUninstalled(Request $request)
-    {
-        $shopDomain = $request->header('X-Shopify-Shop-Domain') ?: $request->get('shop_domain');
-
-        if ($shopDomain) {
-            $this->setShopPlan($shopDomain, 'free', null);
-            Log::info("App uninstalled for shop: {$shopDomain}. Plan reset to free.");
-        }
-
-        return response()->json(['success' => true]);
     }
 }
