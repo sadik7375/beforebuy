@@ -1,9 +1,11 @@
 import React from 'react';
-import { Page, BlockStack, Card, Text, Badge, Grid, InlineStack, DataTable } from '@shopify/polaris';
+import { Page, BlockStack, Card, Text, Badge, Grid, InlineStack, DataTable, Button, Box } from '@shopify/polaris';
 import { router } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 
-export default function AiReport({ stats = {}, repeatCustomers = [] }) {
+export default function AiReport({ stats = {}, repeatCustomers = [], plan = 'free' }) {
+    const isPro = plan === 'pro';
+
     const totalCount = stats.total_feedbacks || 0;
     const estRevenue = stats.estimated_lost_revenue ? `$${stats.estimated_lost_revenue.toLocaleString()}` : '$0';
     const topReason = stats.top_reason || null;
@@ -25,14 +27,60 @@ export default function AiReport({ stats = {}, repeatCustomers = [] }) {
                 backAction={{ content: 'Overview', onAction: () => router.visit('/') }}
                 title="Weekly AI Report"
                 subtitle="Automated AI analytics & actionable product recommendations"
+                actionGroups={[
+                    {
+                        title: 'Plan Status',
+                        actions: [
+                            {
+                                content: isPro ? 'Pro Plan Active' : 'Free Plan',
+                                onAction: () => router.visit('/pricing'),
+                            },
+                        ],
+                    },
+                ]}
             >
                 <BlockStack gap="500">
+                    {/* Locked Feature Card for Free Plan */}
+                    {!isPro && (
+                        <div style={{
+                            backgroundColor: '#fff8e6',
+                            border: '2px solid #e0b252',
+                            borderRadius: '12px',
+                            padding: '24px',
+                        }}>
+                            <BlockStack gap="300">
+                                <InlineStack align="space-between" blockAlign="center">
+                                    <InlineStack gap="200" blockAlign="center">
+                                        <span style={{ fontSize: '24px' }}>🔒</span>
+                                        <Text variant="headingMd" as="h2" weight="bold">
+                                            Weekly AI Analytics is a Pro Plan Feature
+                                        </Text>
+                                    </InlineStack>
+                                    <Badge tone="warning">Upgrade Required</Badge>
+                                </InlineStack>
+
+                                <Text variant="bodyMd" tone="base">
+                                    Upgrade to <strong>BeforeBuy Pro ($5/month)</strong> to unlock automated weekly AI summaries, customer objection analysis, and actionable lost revenue recovery recommendations.
+                                </Text>
+
+                                <Box paddingBlockStart="200">
+                                    <Button variant="primary" onClick={() => router.visit('/pricing')}>
+                                        Upgrade to Pro ($5/mo) to Unlock
+                                    </Button>
+                                </Box>
+                            </BlockStack>
+                        </div>
+                    )}
+
                     {/* Executive Summary Blue Banner Box */}
                     <div style={{
                         backgroundColor: '#f0f7ff',
                         border: '1px solid #b6d5fb',
                         borderRadius: '12px',
                         padding: '24px',
+                        filter: !isPro ? 'blur(3px)' : 'none',
+                        pointerEvents: !isPro ? 'none' : 'auto',
+                        opacity: !isPro ? 0.6 : 1,
                     }}>
                         <BlockStack gap="300">
                             <Text variant="headingMd" as="h2" weight="bold">Executive Summary</Text>
@@ -53,80 +101,88 @@ export default function AiReport({ stats = {}, repeatCustomers = [] }) {
                     </div>
 
                     {/* AI Strategic Analysis Cards */}
-                    <Text variant="headingLg" as="h2">AI Strategic Insights & Analysis</Text>
+                    <div style={{
+                        filter: !isPro ? 'blur(3px)' : 'none',
+                        pointerEvents: !isPro ? 'none' : 'auto',
+                        opacity: !isPro ? 0.6 : 1,
+                    }}>
+                        <BlockStack gap="500">
+                            <Text variant="headingLg" as="h2">AI Strategic Insights & Analysis</Text>
 
-                    <Grid>
-                        {/* Insight 1: Price & Value Sensitivity */}
-                        <Grid.Cell columnSpan={{ xs: 12, sm: 6, md: 6, lg: 6, xl: 6 }}>
+                            <Grid>
+                                {/* Insight 1: Price & Value Sensitivity */}
+                                <Grid.Cell columnSpan={{ xs: 12, sm: 6, md: 6, lg: 6, xl: 6 }}>
+                                    <Card>
+                                        <BlockStack gap="300">
+                                            <InlineStack align="space-between" blockAlign="center">
+                                                <Text variant="headingSm" as="h3">AI Price & Value Insight</Text>
+                                                <Badge tone={totalCount > 0 ? 'success' : 'subdued'}>
+                                                    {totalCount > 0 ? 'Action Opportunity' : 'Pending Data'}
+                                                </Badge>
+                                            </InlineStack>
+
+                                            <Text variant="bodySm" tone="subdued">
+                                                {totalCount > 0
+                                                    ? `Primary objection recorded is "${topReason || 'Price concerns'}". Offering targeted discount codes or highlighting deposit / instalment payment options can recover lost checkout intent.`
+                                                    : 'No price sensitivity data collected yet. Once feedback is received, AI will pinpoint high-risk items and suggest pricing strategies.'
+                                                }
+                                            </Text>
+                                        </BlockStack>
+                                    </Card>
+                                </Grid.Cell>
+
+                                {/* Insight 2: Product Content & Specs */}
+                                <Grid.Cell columnSpan={{ xs: 12, sm: 6, md: 6, lg: 6, xl: 6 }}>
+                                    <Card>
+                                        <BlockStack gap="300">
+                                            <InlineStack align="space-between" blockAlign="center">
+                                                <Text variant="headingSm" as="h3">AI Product Content & Specs Analysis</Text>
+                                                <Badge tone={totalCount > 0 ? 'warning' : 'subdued'}>
+                                                    {totalCount > 0 ? 'Content Optimization' : 'Pending Data'}
+                                                </Badge>
+                                            </InlineStack>
+
+                                            <Text variant="bodySm" tone="subdued">
+                                                {totalCount > 0
+                                                    ? `Customers looking at ${topProductName || 'your products'} frequently ask for size, fit, or additional details. Updating product descriptions and adding clear size charts will reduce pre-purchase hesitation.`
+                                                    : 'No content gap data collected yet. AI will identify missing product specifications or sizing concerns as feedback arrives.'
+                                                }
+                                            </Text>
+                                        </BlockStack>
+                                    </Card>
+                                </Grid.Cell>
+                            </Grid>
+
+                            {/* Person / Customer Target Intelligence Card */}
                             <Card>
-                                <BlockStack gap="300">
+                                <BlockStack gap="400">
                                     <InlineStack align="space-between" blockAlign="center">
-                                        <Text variant="headingSm" as="h3">AI Price & Value Insight</Text>
-                                        <Badge tone={totalCount > 0 ? 'success' : 'subdued'}>
-                                            {totalCount > 0 ? 'Action Opportunity' : 'Pending Data'}
-                                        </Badge>
+                                        <BlockStack gap="100">
+                                            <Text variant="headingMd" as="h2">High-Intent Lead Intelligence (Repeat Objections)</Text>
+                                            <Text tone="subdued" variant="bodySm">
+                                                Detailed AI analysis of high-intent visitors who submitted multiple feedback entries across products.
+                                            </Text>
+                                        </BlockStack>
+                                        <Badge tone="info">Behavioral Analytics</Badge>
                                     </InlineStack>
 
-                                    <Text variant="bodySm" tone="subdued">
-                                        {totalCount > 0
-                                            ? `Primary objection recorded is "${topReason || 'Price concerns'}". Offering targeted discount codes or highlighting deposit / instalment payment options can recover lost checkout intent.`
-                                            : 'No price sensitivity data collected yet. Once feedback is received, AI will pinpoint high-risk items and suggest pricing strategies.'
-                                        }
-                                    </Text>
+                                    {repeatList.length === 0 ? (
+                                        <div style={{ padding: '32px 16px', textAlign: 'center' }}>
+                                            <Text tone="subdued" alignment="center">
+                                                No repeat feedback leads recorded yet.
+                                            </Text>
+                                        </div>
+                                    ) : (
+                                        <DataTable
+                                            columnContentTypes={['text', 'text', 'text', 'text']}
+                                            headings={['Customer Email', 'Total Objections Shared', 'Products Browsed', 'AI Intent Score']}
+                                            rows={customerRows}
+                                        />
+                                    )}
                                 </BlockStack>
                             </Card>
-                        </Grid.Cell>
-
-                        {/* Insight 2: Product Content & Specs */}
-                        <Grid.Cell columnSpan={{ xs: 12, sm: 6, md: 6, lg: 6, xl: 6 }}>
-                            <Card>
-                                <BlockStack gap="300">
-                                    <InlineStack align="space-between" blockAlign="center">
-                                        <Text variant="headingSm" as="h3">AI Product Content & Specs Analysis</Text>
-                                        <Badge tone={totalCount > 0 ? 'warning' : 'subdued'}>
-                                            {totalCount > 0 ? 'Content Optimization' : 'Pending Data'}
-                                        </Badge>
-                                    </InlineStack>
-
-                                    <Text variant="bodySm" tone="subdued">
-                                        {totalCount > 0
-                                            ? `Customers looking at ${topProductName || 'your products'} frequently ask for size, fit, or additional details. Updating product descriptions and adding clear size charts will reduce pre-purchase hesitation.`
-                                            : 'No content gap data collected yet. AI will identify missing product specifications or sizing concerns as feedback arrives.'
-                                        }
-                                    </Text>
-                                </BlockStack>
-                            </Card>
-                        </Grid.Cell>
-                    </Grid>
-
-                    {/* Person / Customer Target Intelligence Card */}
-                    <Card>
-                        <BlockStack gap="400">
-                            <InlineStack align="space-between" blockAlign="center">
-                                <BlockStack gap="100">
-                                    <Text variant="headingMd" as="h2">High-Intent Lead Intelligence (Repeat Objections)</Text>
-                                    <Text tone="subdued" variant="bodySm">
-                                        Detailed AI analysis of high-intent visitors who submitted multiple feedback entries across products.
-                                    </Text>
-                                </BlockStack>
-                                <Badge tone="info">Behavioral Analytics</Badge>
-                            </InlineStack>
-
-                            {repeatList.length === 0 ? (
-                                <div style={{ padding: '32px 16px', textAlign: 'center' }}>
-                                    <Text tone="subdued" alignment="center">
-                                        No repeat feedback leads recorded yet.
-                                    </Text>
-                                </div>
-                            ) : (
-                                <DataTable
-                                    columnContentTypes={['text', 'text', 'text', 'text']}
-                                    headings={['Customer Email', 'Total Objections Shared', 'Products Browsed', 'AI Intent Score']}
-                                    rows={customerRows}
-                                />
-                            )}
                         </BlockStack>
-                    </Card>
+                    </div>
                 </BlockStack>
             </Page>
         </AppLayout>

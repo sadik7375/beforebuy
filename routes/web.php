@@ -15,6 +15,14 @@ Route::get('/setup', [ProductFeedbackController::class, 'setup'])->name('setup')
 Route::get('/support', [ProductFeedbackController::class, 'support'])->name('support');
 Route::post('/support/submit', [ProductFeedbackController::class, 'submitMerchantSupport'])->name('support.submit');
 
+// Shopify Billing Routes
+Route::post('/billing/subscribe', [ProductFeedbackController::class, 'subscribePro'])->name('billing.subscribe');
+Route::get('/billing/confirm', [ProductFeedbackController::class, 'billingConfirm'])->name('billing.confirm');
+Route::post('/billing/cancel', [ProductFeedbackController::class, 'cancelSubscription'])->name('billing.cancel');
+
+// Webhook Handler
+Route::post('/webhooks/app-uninstalled', [ProductFeedbackController::class, 'handleAppUninstalled']);
+
 // API Endpoints for Storefront Popup
 Route::post('/api/feedback', [ProductFeedbackController::class, 'store']);
 Route::get('/api/settings', [ProductFeedbackController::class, 'getApiSettings'])->name('api.settings');
