@@ -39,9 +39,9 @@ class ProductFeedbackController extends Controller
     }
 
     /**
-     * Helper to get active store plan ('free' or 'pro')
+     * Helper to get active store plan ('free' or 'pro') with live Shopify GraphQL API verification
      */
-    private function getShopPlan($shopDomain = null)
+    private function getShopPlan($shopDomain = null, Request $request = null)
     {
         if (!$shopDomain) return 'free';
 
@@ -57,10 +57,46 @@ class ProductFeedbackController extends Controller
 
             if ($setting && !empty($setting->value)) {
                 $decoded = json_decode($setting->value, true);
-                if (is_array($decoded) && isset($decoded['plan'])) {
-                    return $decoded['plan'];
+                $plan = is_array($decoded) ? ($decoded['plan'] ?? 'free') : $setting->value;
+
+                if ($plan === 'pro') {
+                    // Perform live verification against Shopify GraphQL API if access token exists
+                    $token = session('shopify_token') ?? env('SHOPIFY_API_TOKEN');
+                    if ($token) {
+                        try {
+                            $graphqlUrl = "https://{$shopDomain}/admin/api/2026-07/graphql.json";
+                            $response = \Illuminate\Support\Facades\Http::withHeaders([
+                                'X-Shopify-Access-Token' => $token,
+                                'Content-Type' => 'application/json',
+                            ])->post($graphqlUrl, [
+                                'query' => '{ appInstallation { activeSubscriptions { id name status } } }'
+                            ]);
+
+                            if ($response->successful()) {
+                                $data = $response->json();
+                                $activeSubs = $data['data']['appInstallation']['activeSubscriptions'] ?? [];
+                                $hasActivePro = false;
+                                foreach ($activeSubs as $sub) {
+                                    if (strtoupper($sub['status'] ?? '') === 'ACTIVE') {
+                                        $hasActivePro = true;
+                                        break;
+                                    }
+                                }
+
+                                if (!$hasActivePro) {
+                                    // Subscription was cancelled or app was uninstalled/reinstalled
+                                    $this->setShopPlan($shopDomain, 'free', null);
+                                    Log::info("Shopify API reported no active subscription for {$shopDomain}. Plan reset to free.");
+                                    return 'free';
+                                }
+                            }
+                        } catch (\Throwable $apiErr) {
+                            Log::warning('Live subscription verify error: ' . $apiErr->getMessage());
+                        }
+                    }
                 }
-                return is_string($decoded) ? $decoded : 'free';
+
+                return $plan;
             }
         } catch (\Throwable $e) {
             Log::warning('getShopPlan error: ' . $e->getMessage());
