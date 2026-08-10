@@ -828,7 +828,7 @@ GRAPHQL;
                         );
 
                         Log::info("Automatic OAuth token saved to database for shop: {$shop}");
-                        return $this->subscribePro($request);
+                        return redirect("/?shop=" . urlencode($shop));
                     }
                 } else {
                     Log::error('OAuth token exchange failed: ' . $response->body());
