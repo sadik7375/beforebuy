@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Page, BlockStack, Card, Text, TextField, Button, Banner, InlineStack, Checkbox, Divider, Box } from '@shopify/polaris';
+import { Page, BlockStack, Card, Text, TextField, Button, Banner, InlineStack, Checkbox, Divider, Box, Badge } from '@shopify/polaris';
 import { DeleteIcon, PlusIcon } from '@shopify/polaris-icons';
 import { router } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 
-export default function Settings({ reasons = [], enable_email = true, require_email = false, popup_theme = 'modern' }) {
+export default function Settings({ reasons = [], enable_email = true, require_email = false, popup_theme = 'modern', plan = 'free' }) {
+    const isPro = plan === 'pro';
+
     const defaultReasons = [
         'Price is higher than expected',
         'Unsure about size / fit / dimensions',
@@ -26,24 +28,28 @@ export default function Settings({ reasons = [], enable_email = true, require_em
             name: 'Standard Card List',
             description: 'Classic vertical list with radio buttons and clean borders.',
             type: 'modern',
+            proOnly: false,
         },
         {
             id: 'badge_list',
             name: 'Quiz Badge Pills',
             description: 'Pill items with circular A, B, C badges and highlighted active states.',
             type: 'badge',
+            proOnly: true,
         },
         {
             id: 'chips_grid',
             name: 'Horizontal Tag Chips',
             description: 'Compact side-by-side tags with checkmarks on active items.',
             type: 'chips',
+            proOnly: true,
         },
         {
             id: 'dark',
             name: 'Sleek Dark Mode',
             description: 'Dark mode modal layout with glowing active selection.',
             type: 'dark',
+            proOnly: true,
         },
     ];
 
@@ -66,6 +72,10 @@ export default function Settings({ reasons = [], enable_email = true, require_em
     };
 
     const handleThemeSelect = (preset) => {
+        if (preset.proOnly && !isPro) {
+            alert('This popup theme is a Pro Plan feature ($5/mo). Upgrade to Pro on the Pricing page to unlock all premium themes.');
+            return;
+        }
         setSelectedTheme(preset.id);
     };
 
@@ -106,6 +116,12 @@ export default function Settings({ reasons = [], enable_email = true, require_em
                     {saved && (
                         <Banner tone="success" onDismiss={() => setSaved(false)}>
                             <p>App settings saved successfully! Storefront popup will now reflect these options.</p>
+                        </Banner>
+                    )}
+
+                    {!isPro && (
+                        <Banner tone="info" title="Free Plan Active">
+                            <p>You are using the Free Plan. Upgrade to <strong>BeforeBuy Pro ($5/mo)</strong> to unlock premium themes, unlimited monthly submissions, and AI analytics.</p>
                         </Banner>
                     )}
 
@@ -198,6 +214,7 @@ export default function Settings({ reasons = [], enable_email = true, require_em
                             }}>
                                 {themePresets.map((preset) => {
                                     const isSelected = selectedTheme === preset.id;
+                                    const isLocked = preset.proOnly && !isPro;
 
                                     return (
                                         <div
@@ -207,8 +224,9 @@ export default function Settings({ reasons = [], enable_email = true, require_em
                                                 border: `2px solid ${isSelected ? '#2c6ecb' : '#e1e3e5'}`,
                                                 borderRadius: '12px',
                                                 padding: '16px',
-                                                cursor: 'pointer',
+                                                cursor: isLocked ? 'not-allowed' : 'pointer',
                                                 backgroundColor: isSelected ? '#f0f7ff' : '#ffffff',
+                                                opacity: isLocked ? 0.75 : 1,
                                                 transition: 'all 0.2s ease-in-out',
                                                 display: 'flex',
                                                 flexDirection: 'column',
@@ -218,13 +236,17 @@ export default function Settings({ reasons = [], enable_email = true, require_em
                                             <div>
                                                 <InlineStack align="space-between" blockAlign="center">
                                                     <Text variant="headingSm" as="h3">{preset.name}</Text>
-                                                    <input
-                                                        type="radio"
-                                                        name="popup_theme_preset"
-                                                        checked={isSelected}
-                                                        onChange={() => handleThemeSelect(preset)}
-                                                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                                                    />
+                                                    {preset.proOnly ? (
+                                                        <Badge tone="warning">Pro Only</Badge>
+                                                    ) : (
+                                                        <input
+                                                            type="radio"
+                                                            name="popup_theme_preset"
+                                                            checked={isSelected}
+                                                            onChange={() => handleThemeSelect(preset)}
+                                                            style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                                        />
+                                                    )}
                                                 </InlineStack>
 
                                                 <Box paddingBlockStart="100">
