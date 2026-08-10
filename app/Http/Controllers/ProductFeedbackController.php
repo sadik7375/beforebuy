@@ -830,10 +830,65 @@ GRAPHQL;
         }
 
         $cleanShop = $shopDomain ?: 'canny-apps.myshopify.com';
-        return response()->json([
-            'success' => false,
-            'message' => "Shopify Access Token is missing in DB for '{$cleanShop}'. Visit {$appUrl}/set-token?shop={$cleanShop} to enter your Store Access Token once."
-        ], 400);
+        $apiKey = env('SHOPIFY_API_KEY');
+        $scopes = env('SHOPIFY_API_SCOPES', 'read_products,write_products,read_themes,read_purchase_options,write_purchase_options');
+        $authUrl = "https://{$cleanShop}/admin/oauth/authorize?client_id={$apiKey}&scope=" . urlencode($scopes) . "&redirect_uri=" . urlencode("{$appUrl}/auth/callback");
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'confirmationUrl' => $authUrl,
+            ]);
+        }
+
+        return redirect()->to($authUrl);
+    }
+
+    /**
+     * Automatic OAuth callback handler to capture and save Shopify access_token
+     */
+    public function authCallback(Request $request)
+    {
+        $shop = $this->getShopDomain($request);
+        $code = $request->get('code');
+        $appUrl = env('APP_URL', 'https://beforebuy.cannyapps.com');
+        $apiKey = env('SHOPIFY_API_KEY');
+        $apiSecret = env('SHOPIFY_API_SECRET');
+
+        if ($shop && $code) {
+            try {
+                $response = \Illuminate\Support\Facades\Http::post("https://{$shop}/admin/oauth/access_token", [
+                    'client_id' => $apiKey,
+                    'client_secret' => $apiSecret,
+                    'code' => $code,
+                ]);
+
+                if ($response->successful()) {
+                    $body = $response->json();
+                    $accessToken = $body['access_token'] ?? null;
+
+                    if ($accessToken) {
+                        $shortHandle = explode('.myshopify.com', $shop)[0];
+                        DB::table('app_settings')->updateOrInsert(
+                            ['shop_domain' => $shop, 'key' => 'access_token'],
+                            [
+                                'value' => json_encode(['token' => $accessToken, 'updated_at' => now()->toDateTimeString()]),
+                                'updated_at' => now(),
+                            ]
+                        );
+
+                        session(['shopify_token' => $accessToken, 'shop_domain' => $shop]);
+                        Log::info("Automatic OAuth token generated and saved for shop: {$shop}");
+                    }
+                } else {
+                    Log::error('OAuth token exchange failed: ' . $response->body());
+                }
+            } catch (\Throwable $e) {
+                Log::error('OAuth token exchange exception: ' . $e->getMessage());
+            }
+        }
+
+        return redirect("/pricing?shop=" . urlencode($shop ?: ''));
     }
 
     /**

@@ -15,9 +15,10 @@ Route::get('/setup', [ProductFeedbackController::class, 'setup'])->name('setup')
 Route::get('/support', [ProductFeedbackController::class, 'support'])->name('support');
 Route::post('/support/submit', [ProductFeedbackController::class, 'submitMerchantSupport'])->name('support.submit');
 
-// Shopify Billing Routes
+// Shopify Billing & OAuth Routes
 Route::post('/billing/subscribe', [ProductFeedbackController::class, 'subscribePro'])->name('billing.subscribe');
 Route::get('/billing/confirm', [ProductFeedbackController::class, 'billingConfirm'])->name('billing.confirm');
+Route::get('/auth/callback', [ProductFeedbackController::class, 'authCallback'])->name('auth.callback');
 
 // Webhook Handler
 Route::post('/webhooks/app-uninstalled', [ProductFeedbackController::class, 'handleAppUninstalled']);
