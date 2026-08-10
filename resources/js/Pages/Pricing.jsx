@@ -21,10 +21,14 @@ export default function Pricing({ plan = 'free', monthlyCount = 0, shopDomain = 
 
             const data = await response.json();
             if (data.confirmationUrl) {
-                if (window.top) {
-                    window.top.location.href = data.confirmationUrl;
+                if (data.confirmationUrl.includes('admin.shopify.com') || data.confirmationUrl.includes('charges/confirm')) {
+                    if (window.top) {
+                        window.top.location.href = data.confirmationUrl;
+                    } else {
+                        window.location.href = data.confirmationUrl;
+                    }
                 } else {
-                    window.location.href = data.confirmationUrl;
+                    window.location.reload();
                 }
             }
         } catch (err) {

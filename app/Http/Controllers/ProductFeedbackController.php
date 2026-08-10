@@ -63,7 +63,6 @@ class ProductFeedbackController extends Controller
 
                 if ($plan === 'pro') {
                     $token = $this->getShopToken($shopDomain);
-                    $isConfirmedInSession = session('pro_subscription_active_' . $shortHandle, false);
 
                     if ($token) {
                         try {
@@ -89,7 +88,6 @@ class ProductFeedbackController extends Controller
                                 if (!$hasActivePro) {
                                     $this->setShopPlan($shopDomain, 'free', null);
                                     session()->forget('pro_subscription_active_' . $shortHandle);
-                                    Log::info("Shopify API reported no active subscription for {$shopDomain}. Plan reset to free.");
                                     return 'free';
                                 }
                                 return 'pro';
@@ -97,13 +95,6 @@ class ProductFeedbackController extends Controller
                         } catch (\Throwable $apiErr) {
                             Log::warning('Live subscription verify error: ' . $apiErr->getMessage());
                         }
-                    }
-
-                    // If live token verification is unavailable AND this is a fresh install/session without confirmed active charge:
-                    // Automatically reset stale DB record back to free!
-                    if (!$isConfirmedInSession) {
-                        $this->setShopPlan($shopDomain, 'free', null);
-                        return 'free';
                     }
                 }
 
