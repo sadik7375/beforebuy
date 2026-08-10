@@ -16,7 +16,7 @@ class ProductFeedbackController extends Controller
     private function getShopDomain(Request $request = null)
     {
         $request = $request ?: request();
-        $shop = $request->get('shop');
+        $shop = $request->get('shop') ?: session('shop_domain');
 
         if ($shop) {
             $shop = strtolower(trim($shop));
@@ -47,12 +47,14 @@ class ProductFeedbackController extends Controller
 
         try {
             $shortHandle = explode('.myshopify.com', $shopDomain)[0];
+
             $setting = DB::table('app_settings')
                 ->where(function ($q) use ($shopDomain, $shortHandle) {
                     $q->where('shop_domain', '=', $shopDomain)
                       ->orWhere('shop_domain', '=', $shortHandle);
                 })
                 ->where('key', 'shop_plan')
+                ->orderByDesc('id')
                 ->first();
 
             if ($setting && !empty($setting->value)) {
@@ -84,7 +86,7 @@ class ProductFeedbackController extends Controller
                                 }
 
                                 if (!$hasActivePro) {
-                                    // Subscription was cancelled or app was uninstalled/reinstalled
+                                    // Subscription was cancelled on Shopify
                                     $this->setShopPlan($shopDomain, 'free', null);
                                     Log::info("Shopify API reported no active subscription for {$shopDomain}. Plan reset to free.");
                                     return 'free';
@@ -106,24 +108,40 @@ class ProductFeedbackController extends Controller
     }
 
     /**
-     * Helper to update store plan
+     * Helper to update store plan cleanly (removes duplicates first)
      */
     private function setShopPlan($shopDomain, $planName = 'free', $subscriptionId = null)
     {
         if (!$shopDomain) return;
 
+        $shopDomain = strtolower(trim($shopDomain));
+        if (!str_contains($shopDomain, '.')) {
+            $shopDomain .= '.myshopify.com';
+        }
+        $shortHandle = explode('.myshopify.com', $shopDomain)[0];
+
         try {
-            DB::table('app_settings')->updateOrInsert(
-                ['shop_domain' => $shopDomain, 'key' => 'shop_plan'],
-                [
-                    'value' => json_encode([
-                        'plan' => $planName,
-                        'subscription_id' => $subscriptionId,
-                        'updated_at' => now()->toDateTimeString(),
-                    ]),
-                    'updated_at' => now(),
-                ]
-            );
+            // Delete any existing shop_plan records for both full domain & short handle to prevent stale duplicates
+            DB::table('app_settings')
+                ->where('key', 'shop_plan')
+                ->where(function ($q) use ($shopDomain, $shortHandle) {
+                    $q->where('shop_domain', '=', $shopDomain)
+                      ->orWhere('shop_domain', '=', $shortHandle);
+                })
+                ->delete();
+
+            // Insert new clean row
+            DB::table('app_settings')->insert([
+                'shop_domain' => $shopDomain,
+                'key' => 'shop_plan',
+                'value' => json_encode([
+                    'plan' => $planName,
+                    'subscription_id' => $subscriptionId,
+                    'updated_at' => now()->toDateTimeString(),
+                ]),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
         } catch (\Throwable $e) {
             Log::error('setShopPlan error: ' . $e->getMessage());
         }
@@ -738,7 +756,7 @@ GRAPHQL;
     }
 
     /**
-     * Handle app/uninstalled webhook from Shopify - Wipes all DB data for uninstalled shop
+     * Handle app/uninstalled webhook from Shopify - Resets plan to free while retaining store feedback data
      */
     public function handleAppUninstalled(Request $request)
     {
@@ -767,27 +785,14 @@ GRAPHQL;
             if (!str_contains($shopDomain, '.')) {
                 $shopDomain .= '.myshopify.com';
             }
-            $shortHandle = explode('.myshopify.com', $shopDomain)[0];
 
             try {
-                DB::table('app_settings')
-                    ->where('shop_domain', '=', $shopDomain)
-                    ->orWhere('shop_domain', '=', $shortHandle)
-                    ->delete();
+                // Immediately cancel Pro plan and revert store to Free Plan
+                $this->setShopPlan($shopDomain, 'free', null);
 
-                DB::table('product_feedbacks')
-                    ->where('shop_domain', '=', $shopDomain)
-                    ->orWhere('shop_domain', '=', $shortHandle)
-                    ->delete();
-
-                DB::table('merchant_supports')
-                    ->where('shop_domain', '=', $shopDomain)
-                    ->orWhere('shop_domain', '=', $shortHandle)
-                    ->delete();
-
-                Log::info("App uninstalled: completely purged database records for shop: {$shopDomain} ({$shortHandle})");
+                Log::info("App uninstalled: active plan reset to free for shop: {$shopDomain} (Feedback data retained).");
             } catch (\Throwable $e) {
-                Log::error("App uninstalled DB purge error for shop {$shopDomain}: " . $e->getMessage());
+                Log::error("App uninstalled plan reset error for shop {$shopDomain}: " . $e->getMessage());
             }
         }
 

@@ -42,23 +42,26 @@ Route::get('/reset-app-data', function (\Illuminate\Http\Request $request) {
         if ($shop) {
             $shortHandle = explode('.myshopify.com', $shop)[0];
             \Illuminate\Support\Facades\DB::table('app_settings')
-                ->where('shop_domain', '=', $shop)
-                ->orWhere('shop_domain', '=', $shortHandle)
+                ->where('key', '=', 'shop_plan')
+                ->where(function ($q) use ($shop, $shortHandle) {
+                    $q->where('shop_domain', '=', $shop)
+                      ->orWhere('shop_domain', '=', $shortHandle);
+                })
                 ->delete();
-            \Illuminate\Support\Facades\DB::table('product_feedbacks')
-                ->where('shop_domain', '=', $shop)
-                ->orWhere('shop_domain', '=', $shortHandle)
-                ->delete();
-            \Illuminate\Support\Facades\DB::table('merchant_supports')
-                ->where('shop_domain', '=', $shop)
-                ->orWhere('shop_domain', '=', $shortHandle)
-                ->delete();
-            return "<h2>App Data Cleared for shop: {$shop}!</h2><br><a href=\"/?shop={$shop}\">Go Back to App</a>";
+
+            \Illuminate\Support\Facades\DB::table('app_settings')->insert([
+                'shop_domain' => $shop,
+                'key' => 'shop_plan',
+                'value' => json_encode(['plan' => 'free', 'subscription_id' => null, 'updated_at' => now()->toDateTimeString()]),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            return "<h2>Subscription Plan Reset to Free for shop: {$shop}! (Feedback data retained)</h2><br><a href=\"/?shop={$shop}\">Go Back to App</a>";
         }
-        \Illuminate\Support\Facades\DB::table('app_settings')->truncate();
-        \Illuminate\Support\Facades\DB::table('product_feedbacks')->truncate();
-        \Illuminate\Support\Facades\DB::table('merchant_supports')->truncate();
-        return '<h2>All Database App Settings & Feedbacks Truncated!</h2><br><a href="/">Go Back to App</a>';
+
+        \Illuminate\Support\Facades\DB::table('app_settings')->where('key', '=', 'shop_plan')->delete();
+        return '<h2>All Subscription Plans Reset to Free! (Feedback data retained)</h2><br><a href="/">Go Back to App</a>';
     } catch (\Exception $e) {
         return '<h2>Reset Failed:</h2><pre>' . $e->getMessage() . '</pre>';
     }
