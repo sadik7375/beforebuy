@@ -13,6 +13,7 @@ Route::post('/settings/save', [ProductFeedbackController::class, 'saveSettings']
 Route::get('/pricing', [ProductFeedbackController::class, 'pricing'])->name('pricing');
 Route::get('/setup', [ProductFeedbackController::class, 'setup'])->name('setup');
 Route::get('/support', [ProductFeedbackController::class, 'support'])->name('support');
+Route::post('/support/submit', [ProductFeedbackController::class, 'submitMerchantSupport'])->name('support.submit');
 
 // API Endpoints for Storefront Popup
 Route::post('/api/feedback', [ProductFeedbackController::class, 'store']);

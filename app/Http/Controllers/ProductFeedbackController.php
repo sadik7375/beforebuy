@@ -371,9 +371,54 @@ class ProductFeedbackController extends Controller
     /**
      * Submenu: Support
      */
-    public function support()
+    public function support(Request $request)
     {
-        return Inertia::render('Support');
+        $shopDomain = $this->getShopDomain($request);
+        $defaultEmail = $shopDomain ? "shop@" . $shopDomain : "shop@canny-apps.myshopify.com";
+
+        return Inertia::render('Support', [
+            'shopDomain' => $shopDomain,
+            'defaultEmail' => $defaultEmail,
+        ]);
+    }
+
+    /**
+     * Handle Merchant Support & Complaint Form Submissions
+     */
+    public function submitMerchantSupport(Request $request)
+    {
+        $validated = $request->validate([
+            'feedback_type' => 'required|string',
+            'contact_email' => 'required|email',
+            'subject' => 'nullable|string',
+            'message' => 'required|string',
+        ]);
+
+        $shopDomain = $this->getShopDomain($request);
+
+        try {
+            DB::table('merchant_supports')->insert([
+                'shop_domain' => $shopDomain ?: 'unknown',
+                'feedback_type' => $validated['feedback_type'],
+                'contact_email' => $validated['contact_email'],
+                'subject' => $validated['subject'] ?? '',
+                'message' => $validated['message'],
+                'status' => 'open',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Merchant Support store error: ' . $e->getMessage());
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Thank you! Your feedback/support message has been submitted successfully.',
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Thank you! Your message has been submitted.');
     }
 
     /**

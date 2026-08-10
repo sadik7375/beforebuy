@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Disable CSRF verification for Shopify embedded iframe routes
         $middleware->validateCsrfTokens(except: [
             '/settings/save',
+            '/support/submit',
             '/api/*',
         ]);
     })
