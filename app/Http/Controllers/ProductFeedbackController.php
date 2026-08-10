@@ -742,9 +742,31 @@ GRAPHQL;
      */
     public function handleAppUninstalled(Request $request)
     {
-        $shopDomain = $request->header('X-Shopify-Shop-Domain') ?: $request->get('shop_domain') ?: $this->getShopDomain($request);
+        $shopDomain = $request->header('X-Shopify-Shop-Domain')
+            ?: $request->header('x-shopify-shop-domain')
+            ?: $request->get('shop')
+            ?: $request->get('shop_domain');
+
+        if (!$shopDomain) {
+            $rawContent = $request->getContent();
+            if (!empty($rawContent)) {
+                $payload = json_decode($rawContent, true);
+                if (is_array($payload)) {
+                    $shopDomain = $payload['myshopify_domain']
+                        ?? $payload['domain']
+                        ?? $payload['shop_domain']
+                        ?? null;
+                }
+            }
+        }
+
+        Log::info("Webhook app/uninstalled received for shop domain: " . ($shopDomain ?: 'UNKNOWN'));
 
         if ($shopDomain) {
+            $shopDomain = strtolower(trim($shopDomain));
+            if (!str_contains($shopDomain, '.')) {
+                $shopDomain .= '.myshopify.com';
+            }
             $shortHandle = explode('.myshopify.com', $shopDomain)[0];
 
             try {
@@ -763,7 +785,7 @@ GRAPHQL;
                     ->orWhere('shop_domain', '=', $shortHandle)
                     ->delete();
 
-                Log::info("App uninstalled: completely purged database records for shop: {$shopDomain}");
+                Log::info("App uninstalled: completely purged database records for shop: {$shopDomain} ({$shortHandle})");
             } catch (\Throwable $e) {
                 Log::error("App uninstalled DB purge error for shop {$shopDomain}: " . $e->getMessage());
             }
