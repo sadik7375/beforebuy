@@ -16,7 +16,7 @@ Route::get('/support', [ProductFeedbackController::class, 'support'])->name('sup
 Route::post('/support/submit', [ProductFeedbackController::class, 'submitMerchantSupport'])->name('support.submit');
 
 // Shopify Billing & OAuth Routes
-Route::post('/billing/subscribe', [ProductFeedbackController::class, 'subscribePro'])->name('billing.subscribe');
+Route::match(['get', 'post'], '/billing/subscribe', [ProductFeedbackController::class, 'subscribePro'])->name('billing.subscribe');
 Route::get('/billing/confirm', [ProductFeedbackController::class, 'billingConfirm'])->name('billing.confirm');
 Route::get('/auth/callback', [ProductFeedbackController::class, 'authCallback'])->name('auth.callback');
 
