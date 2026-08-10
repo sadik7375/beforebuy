@@ -210,6 +210,16 @@ export default function Pricing({ plan = 'free', monthlyCount = 0, shopDomain = 
                                                 Upgrade to Pro ($5/mo)
                                             </Button>
                                         )}
+                                        {isPro && (
+                                            <Box textAlign="center" paddingBlockStart="200">
+                                                <a
+                                                    href={`/reset-plan?shop=${encodeURIComponent(shopDomain || 'canny-apps.myshopify.com')}`}
+                                                    style={{ color: '#2c6ecb', fontSize: '13px', textDecoration: 'underline' }}
+                                                >
+                                                    Reset to Free Plan (For Testing)
+                                                </a>
+                                            </Box>
+                                        )}
 
                                         <Divider />
 
