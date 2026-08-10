@@ -729,7 +729,7 @@ class ProductFeedbackController extends Controller
 
         // 1. Execute GraphQL appSubscriptionCreate mutation to generate official Shopify Charge URL
         try {
-            $graphqlUrl = "https://{$shopDomain}/admin/api/2024-10/graphql.json";
+            $graphqlUrl = "https://{$shopDomain}/admin/api/2025-01/graphql.json";
             $query = <<<'GRAPHQL'
 mutation appSubscriptionCreate($name: String!, $lineItems: [AppSubscriptionLineItemInput!]!, $returnUrl: URL!, $test: Boolean) {
   appSubscriptionCreate(name: $name, lineItems: $lineItems, returnUrl: $returnUrl, test: $test) {
@@ -790,22 +790,6 @@ GRAPHQL;
             } else {
                 $gqlErrors = json_encode($body['data']['appSubscriptionCreate']['userErrors'] ?? $body['errors'] ?? $body);
                 Log::warning("appSubscriptionCreate error for {$shopDomain}: {$gqlErrors}");
-
-                // If token invalid/expired, wipe stale token and redirect to OAuth to refresh token
-                if (str_contains($gqlErrors, 'Non-expiring access tokens') || str_contains($gqlErrors, 'Invalid API key') || str_contains($gqlErrors, 'unrecognized login') || str_contains($gqlErrors, 'Invalid token')) {
-                    DB::table('app_settings')->whereIn('key', ['shopify_token', 'access_token', 'token', 'api_token'])->delete();
-
-                    $shopHandle = explode('.', $shopDomain)[0];
-                    $apiKey = env('SHOPIFY_API_KEY');
-                    $scopes = env('SHOPIFY_API_SCOPES', 'read_products,write_products,read_themes,read_purchase_options,write_purchase_options');
-                    $redirectUri = urlencode("{$appUrl}/auth/callback");
-                    $authUrl = "https://admin.shopify.com/store/{$shopHandle}/oauth/authorize?client_id={$apiKey}&scope=" . urlencode($scopes) . "&redirect_uri={$redirectUri}";
-
-                    if ($request->wantsJson()) {
-                        return response()->json(['success' => true, 'confirmationUrl' => $authUrl]);
-                    }
-                    return redirect()->to($authUrl);
-                }
             }
         } catch (\Throwable $e) {
             Log::error('Shopify Subscription GraphQL exception: ' . $e->getMessage());
