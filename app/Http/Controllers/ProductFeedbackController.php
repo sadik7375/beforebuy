@@ -702,15 +702,35 @@ GRAPHQL;
     }
 
     /**
-     * Handle app/uninstalled webhook from Shopify
+     * Handle app/uninstalled webhook from Shopify - Wipes all DB data for uninstalled shop
      */
     public function handleAppUninstalled(Request $request)
     {
-        $shopDomain = $request->header('X-Shopify-Shop-Domain') ?: $request->get('shop_domain');
+        $shopDomain = $request->header('X-Shopify-Shop-Domain') ?: $request->get('shop_domain') ?: $this->getShopDomain($request);
 
         if ($shopDomain) {
-            $this->setShopPlan($shopDomain, 'free', null);
-            Log::info("App uninstalled for shop: {$shopDomain}. Plan reset to free.");
+            $shortHandle = explode('.myshopify.com', $shopDomain)[0];
+
+            try {
+                DB::table('app_settings')
+                    ->where('shop_domain', '=', $shopDomain)
+                    ->orWhere('shop_domain', '=', $shortHandle)
+                    ->delete();
+
+                DB::table('product_feedbacks')
+                    ->where('shop_domain', '=', $shopDomain)
+                    ->orWhere('shop_domain', '=', $shortHandle)
+                    ->delete();
+
+                DB::table('merchant_supports')
+                    ->where('shop_domain', '=', $shopDomain)
+                    ->orWhere('shop_domain', '=', $shortHandle)
+                    ->delete();
+
+                Log::info("App uninstalled: completely purged database records for shop: {$shopDomain}");
+            } catch (\Throwable $e) {
+                Log::error("App uninstalled DB purge error for shop {$shopDomain}: " . $e->getMessage());
+            }
         }
 
         return response()->json(['success' => true]);

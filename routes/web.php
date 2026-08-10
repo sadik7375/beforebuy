@@ -36,14 +36,30 @@ Route::get('/run-migrate', function () {
     }
 });
 
-Route::get('/clear-cache', function () {
+Route::get('/reset-app-data', function (\Illuminate\Http\Request $request) {
     try {
-        Artisan::call('config:clear');
-        Artisan::call('cache:clear');
-        Artisan::call('route:clear');
-        Artisan::call('view:clear');
-        return '<h2>All Caches Cleared!</h2><br><a href="/">Go Back to App</a>';
+        $shop = $request->get('shop');
+        if ($shop) {
+            $shortHandle = explode('.myshopify.com', $shop)[0];
+            \Illuminate\Support\Facades\DB::table('app_settings')
+                ->where('shop_domain', '=', $shop)
+                ->orWhere('shop_domain', '=', $shortHandle)
+                ->delete();
+            \Illuminate\Support\Facades\DB::table('product_feedbacks')
+                ->where('shop_domain', '=', $shop)
+                ->orWhere('shop_domain', '=', $shortHandle)
+                ->delete();
+            \Illuminate\Support\Facades\DB::table('merchant_supports')
+                ->where('shop_domain', '=', $shop)
+                ->orWhere('shop_domain', '=', $shortHandle)
+                ->delete();
+            return "<h2>App Data Cleared for shop: {$shop}!</h2><br><a href=\"/?shop={$shop}\">Go Back to App</a>";
+        }
+        \Illuminate\Support\Facades\DB::table('app_settings')->truncate();
+        \Illuminate\Support\Facades\DB::table('product_feedbacks')->truncate();
+        \Illuminate\Support\Facades\DB::table('merchant_supports')->truncate();
+        return '<h2>All Database App Settings & Feedbacks Truncated!</h2><br><a href="/">Go Back to App</a>';
     } catch (\Exception $e) {
-        return '<h2>Cache Clear Failed:</h2><pre>' . $e->getMessage() . '</pre>';
+        return '<h2>Reset Failed:</h2><pre>' . $e->getMessage() . '</pre>';
     }
 });
