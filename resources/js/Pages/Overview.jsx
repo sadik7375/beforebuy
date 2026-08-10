@@ -68,19 +68,7 @@ export default function Overview({ feedbacks = [], stats = {}, plan = 'free', mo
                         </InlineStack>
                     </InlineStack>
 
-                    {/* Free Plan Monthly Submission Quota Banner */}
-                    {!isPro && (
-                        <Banner tone="info" title="Free Plan Usage Limit">
-                            <InlineStack align="space-between" blockAlign="center">
-                                <Text variant="bodyMd" as="p">
-                                    Monthly submissions limit: <strong>{monthlyCount} / 10 used</strong> this month.
-                                </Text>
-                                <Button variant="primary" onClick={() => router.visit('/pricing')}>
-                                    Upgrade to Pro ($5/mo)
-                                </Button>
-                            </InlineStack>
-                        </Banner>
-                    )}
+
 
                     {/* Top Stat Cards Row (3 Columns) */}
                     <Grid>

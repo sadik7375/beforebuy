@@ -29,21 +29,7 @@ export default function AiReport({ stats = {}, repeatCustomers = [], plan = 'fre
                 subtitle="Automated AI analytics and actionable product recommendations"
             >
                 <BlockStack gap="500">
-                    {/* Locked Feature Card for Free Plan */}
-                    {!isPro && (
-                        <Banner tone="warning" title="Weekly AI Analytics is a Pro Plan Feature">
-                            <BlockStack gap="200">
-                                <Text variant="bodyMd" as="p">
-                                    Upgrade to <strong>BeforeBuy Pro ($5/month)</strong> to unlock automated weekly AI summaries, customer objection analysis, and actionable revenue recovery recommendations.
-                                </Text>
-                                <Box paddingBlockStart="200">
-                                    <Button variant="primary" onClick={() => router.visit('/pricing')}>
-                                        Upgrade to Pro ($5/mo)
-                                    </Button>
-                                </Box>
-                            </BlockStack>
-                        </Banner>
-                    )}
+
 
                     {/* Executive Summary Box */}
                     <Card>

@@ -39,79 +39,11 @@ class ProductFeedbackController extends Controller
     }
 
     /**
-     * Helper to get active store plan ('free' or 'pro') with live Shopify API & Session verification
+     * Helper to get active store plan ('pro' by default, all features unlocked)
      */
     private function getShopPlan($shopDomain = null, Request $request = null)
     {
-        if (!$shopDomain) return 'free';
-
-        try {
-            $shortHandle = explode('.myshopify.com', $shopDomain)[0];
-
-            $setting = DB::table('app_settings')
-                ->where(function ($q) use ($shopDomain, $shortHandle) {
-                    $q->where('shop_domain', '=', $shopDomain)
-                      ->orWhere('shop_domain', '=', $shortHandle);
-                })
-                ->where('key', 'shop_plan')
-                ->orderByDesc('id')
-                ->first();
-
-            if ($setting && !empty($setting->value)) {
-                $decoded = json_decode($setting->value, true);
-                $plan = is_array($decoded) ? ($decoded['plan'] ?? 'free') : $setting->value;
-
-                if ($plan === 'pro') {
-                    $token = $this->getShopToken($shopDomain);
-                    $isConfirmedInSession = session('pro_subscription_active_' . $shortHandle, false);
-
-                    if ($token) {
-                        try {
-                            $graphqlUrl = "https://{$shopDomain}/admin/api/2026-07/graphql.json";
-                            $response = \Illuminate\Support\Facades\Http::withHeaders([
-                                'X-Shopify-Access-Token' => $token,
-                                'Content-Type' => 'application/json',
-                            ])->post($graphqlUrl, [
-                                'query' => '{ appInstallation { activeSubscriptions { id name status } } }'
-                            ]);
-
-                            if ($response->successful()) {
-                                $data = $response->json();
-                                $activeSubs = $data['data']['appInstallation']['activeSubscriptions'] ?? [];
-                                $hasActivePro = false;
-                                foreach ($activeSubs as $sub) {
-                                    if (strtoupper($sub['status'] ?? '') === 'ACTIVE') {
-                                        $hasActivePro = true;
-                                        break;
-                                    }
-                                }
-
-                                if (!$hasActivePro) {
-                                    $this->setShopPlan($shopDomain, 'free', null);
-                                    session()->forget('pro_subscription_active_' . $shortHandle);
-                                    return 'free';
-                                }
-                                return 'pro';
-                            }
-                        } catch (\Throwable $apiErr) {
-                            Log::warning('Live subscription verify error: ' . $apiErr->getMessage());
-                        }
-                    }
-
-                    // On fresh installation or session without active subscription confirmation, auto-reset stale plan to free
-                    if (!$isConfirmedInSession) {
-                        $this->setShopPlan($shopDomain, 'free', null);
-                        return 'free';
-                    }
-                }
-
-                return $plan;
-            }
-        } catch (\Throwable $e) {
-            Log::warning('getShopPlan error: ' . $e->getMessage());
-        }
-
-        return 'free';
+        return 'pro';
     }
 
     /**
@@ -630,19 +562,7 @@ class ProductFeedbackController extends Controller
         ]);
 
         $shopDomain = $validated['shop_domain'] ?: $this->getShopDomain($request);
-        $plan = $this->getShopPlan($shopDomain);
-
-        // Enforce 10-Submission monthly limit for stores on Free Plan
-        if ($plan === 'free') {
-            $monthlyCount = $this->getMonthlySubmissionCount($shopDomain);
-            if ($monthlyCount >= 10) {
-                return response()->json([
-                    'success' => false,
-                    'limit_reached' => true,
-                    'message' => 'Monthly feedback submission limit (10/10) reached for this store on the Free Plan. Upgrade to Pro for unlimited submissions.',
-                ], 429);
-            }
-        }
+        $plan = 'pro';
 
         $feedbackId = null;
 

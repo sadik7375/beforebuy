@@ -72,10 +72,6 @@ export default function Settings({ reasons = [], enable_email = true, require_em
     };
 
     const handleThemeSelect = (preset) => {
-        if (preset.proOnly && !isPro) {
-            alert('This popup theme is a Pro Plan feature ($5/mo). Upgrade to Pro on the Pricing page to unlock all premium themes.');
-            return;
-        }
         setSelectedTheme(preset.id);
     };
 
@@ -119,11 +115,7 @@ export default function Settings({ reasons = [], enable_email = true, require_em
                         </Banner>
                     )}
 
-                    {!isPro && (
-                        <Banner tone="info" title="Free Plan Active">
-                            <p>You are using the Free Plan. Upgrade to <strong>BeforeBuy Pro ($5/mo)</strong> to unlock premium themes, unlimited monthly submissions, and AI analytics.</p>
-                        </Banner>
-                    )}
+
 
                     {/* 1. Pre-Defined Feedback Reasons Card */}
                     <Card>
