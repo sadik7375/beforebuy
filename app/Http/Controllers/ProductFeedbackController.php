@@ -892,16 +892,28 @@ HTML);
                 $restError = $e->getMessage();
             }
 
-            // If token exists but API returned errors, show explicit error to user instead of looping OAuth!
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Shopify Billing API error. GraphQL: ' . ($gqlError ?? 'N/A') . ' | REST: ' . ($restError ?? 'N/A')
-                ], 400);
+            // If token exists but API returned errors, check if token is non-expiring or invalid
+            $combinedErrors = ($gqlError ?? '') . ' ' . ($restError ?? '');
+            if (str_contains($combinedErrors, 'Non-expiring access tokens') || str_contains($combinedErrors, 'Invalid API key') || str_contains($combinedErrors, 'unrecognized login') || str_contains($combinedErrors, 'wrong password')) {
+                Log::warning("Non-expiring or invalid token detected for shop {$shopDomain}. Wiping token and initiating OAuth re-authorization.");
+                
+                // Clear stale non-expiring token from DB and session
+                DB::table('app_settings')
+                    ->whereIn('key', ['shopify_token', 'access_token', 'token', 'api_token'])
+                    ->delete();
+                session()->forget('shopify_token');
+                $token = null;
+            } else {
+                if ($request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Shopify Billing API error. GraphQL: ' . ($gqlError ?? 'N/A') . ' | REST: ' . ($restError ?? 'N/A')
+                    ], 400);
+                }
             }
         }
 
-        // Only redirect to OAuth if token is completely missing
+        // Only redirect to OAuth if token is missing or cleared due to invalid/non-expiring status
         $cleanShop = $shopDomain ?: 'canny-apps.myshopify.com';
         $apiKey = env('SHOPIFY_API_KEY');
         $scopes = env('SHOPIFY_API_SCOPES', 'read_products,write_products,read_themes,read_purchase_options,write_purchase_options');
@@ -951,10 +963,10 @@ HTML);
                         );
 
                         session(['shopify_token' => $accessToken, 'shop_domain' => $shop]);
-                        Log::info("Automatic OAuth token generated and saved for shop: {$shop}");
+                        Log::info("Automatic OAuth expiring token generated and saved for shop: {$shop}");
 
-                        // Automatically redirect back to billing subscribe to complete charge setup
-                        return redirect("/billing/subscribe?shop=" . urlencode($shop));
+                        // Automatically trigger subscribePro to generate subscription charge screen
+                        return $this->subscribePro($request);
                     }
                 } else {
                     Log::error('OAuth token exchange failed: ' . $response->body());
