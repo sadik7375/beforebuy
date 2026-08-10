@@ -680,9 +680,14 @@ class ProductFeedbackController extends Controller
                       ->orWhere('shop_domain', '=', $shortHandle);
                 })
                 ->whereIn('key', ['shopify_token', 'access_token'])
+                ->orderByDesc('id')
                 ->first();
 
             if ($row && !empty($row->value)) {
+                $decoded = json_decode($row->value, true);
+                if (is_array($decoded) && !empty($decoded['token'])) {
+                    return $decoded['token'];
+                }
                 return $row->value;
             }
         }
@@ -748,10 +753,20 @@ GRAPHQL;
                 $confirmationUrl = $body['data']['appSubscriptionCreate']['confirmationUrl'] ?? null;
 
                 if ($confirmationUrl) {
-                    if ($request->wantsJson()) {
-                        return response()->json(['success' => true, 'confirmationUrl' => $confirmationUrl]);
+                    $shopHandle = explode('.', $shopDomain)[0];
+                    $unifiedUrl = $confirmationUrl;
+                    if (str_contains($confirmationUrl, "{$shopDomain}/admin/charges/")) {
+                        $unifiedUrl = str_replace("{$shopDomain}/admin/charges/", "admin.shopify.com/store/{$shopHandle}/charges/", $confirmationUrl);
+                    } elseif (str_contains($confirmationUrl, 'https://') && !str_contains($confirmationUrl, 'admin.shopify.com') && str_contains($confirmationUrl, '/admin/charges/')) {
+                        $unifiedUrl = preg_replace('/https:\/\/[^\/]+\/admin\/charges\//', "https://admin.shopify.com/store/{$shopHandle}/charges/", $confirmationUrl);
                     }
-                    return redirect()->to($confirmationUrl);
+
+                    if ($request->wantsJson()) {
+                        return response()->json(['success' => true, 'confirmationUrl' => $unifiedUrl]);
+                    }
+                    return redirect()->to($unifiedUrl);
+                } else {
+                    Log::warning('GraphQL appSubscriptionCreate errors: ' . json_encode($body));
                 }
             } catch (\Throwable $e) {
                 Log::error('Shopify Subscription GraphQL error: ' . $e->getMessage());
@@ -776,28 +791,30 @@ GRAPHQL;
                 $confirmationUrl = $body['recurring_application_charge']['confirmation_url'] ?? null;
 
                 if ($confirmationUrl) {
-                    if ($request->wantsJson()) {
-                        return response()->json(['success' => true, 'confirmationUrl' => $confirmationUrl]);
+                    $shopHandle = explode('.', $shopDomain)[0];
+                    $unifiedUrl = $confirmationUrl;
+                    if (str_contains($confirmationUrl, "{$shopDomain}/admin/charges/")) {
+                        $unifiedUrl = str_replace("{$shopDomain}/admin/charges/", "admin.shopify.com/store/{$shopHandle}/charges/", $confirmationUrl);
+                    } elseif (str_contains($confirmationUrl, 'https://') && !str_contains($confirmationUrl, 'admin.shopify.com') && str_contains($confirmationUrl, '/admin/charges/')) {
+                        $unifiedUrl = preg_replace('/https:\/\/[^\/]+\/admin\/charges\//', "https://admin.shopify.com/store/{$shopHandle}/charges/", $confirmationUrl);
                     }
-                    return redirect()->to($confirmationUrl);
+
+                    if ($request->wantsJson()) {
+                        return response()->json(['success' => true, 'confirmationUrl' => $unifiedUrl]);
+                    }
+                    return redirect()->to($unifiedUrl);
+                } else {
+                    Log::warning('REST API recurring_application_charges errors: ' . json_encode($body));
                 }
             } catch (\Throwable $e) {
                 Log::error('Shopify Subscription REST API error: ' . $e->getMessage());
             }
         }
 
-        // 3. Fallback to Shopify Admin Subscription Charge Approval Screen
-        $cleanShop = $shopDomain ?: 'canny-apps.myshopify.com';
-        $officialShopifyApprovalUrl = "https://{$cleanShop}/admin/charges/confirm_recurring_application_charge?name=BeforeBuy+Pro+Plan&price=5.00&return_url=" . urlencode($returnUrl);
-
-        if ($request->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'confirmationUrl' => $officialShopifyApprovalUrl,
-            ]);
-        }
-
-        return redirect()->to($officialShopifyApprovalUrl);
+        return response()->json([
+            'success' => false,
+            'message' => 'Unable to generate Shopify subscription charge. Access token missing or invalid. Please check store access settings.'
+        ], 400);
     }
 
     /**
