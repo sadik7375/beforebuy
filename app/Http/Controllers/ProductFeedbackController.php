@@ -892,12 +892,11 @@ HTML);
                 $restError = $e->getMessage();
             }
 
-                // Return clean error response directly if billing creation fails
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Shopify Billing API error. GraphQL: ' . ($gqlError ?? 'N/A') . ' | REST: ' . ($restError ?? 'N/A')
-                ], 400);
-            }
+            // Return clean error response directly if billing creation fails
+            return response()->json([
+                'success' => false,
+                'message' => 'Shopify Billing API error. GraphQL: ' . ($gqlError ?? 'N/A') . ' | REST: ' . ($restError ?? 'N/A')
+            ], 400);
         }
 
         return response()->json([
