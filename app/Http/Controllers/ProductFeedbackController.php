@@ -892,45 +892,18 @@ HTML);
                 $restError = $e->getMessage();
             }
 
-            // If token exists but API returned errors, check if token is non-expiring or invalid
-            $combinedErrors = ($gqlError ?? '') . ' ' . ($restError ?? '');
-            if (str_contains($combinedErrors, 'Non-expiring access tokens') || str_contains($combinedErrors, 'Invalid API key') || str_contains($combinedErrors, 'unrecognized login') || str_contains($combinedErrors, 'wrong password')) {
-                Log::warning("Non-expiring or invalid token detected for shop {$shopDomain}. Wiping token and initiating OAuth re-authorization.");
-                
-                // Clear stale non-expiring token from DB and session
-                DB::table('app_settings')
-                    ->whereIn('key', ['shopify_token', 'access_token', 'token', 'api_token'])
-                    ->delete();
-                session()->forget('shopify_token');
-                $token = null;
-            } else {
-                if ($request->wantsJson()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Shopify Billing API error. GraphQL: ' . ($gqlError ?? 'N/A') . ' | REST: ' . ($restError ?? 'N/A')
-                    ], 400);
-                }
+                // Return clean error response directly if billing creation fails
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Shopify Billing API error. GraphQL: ' . ($gqlError ?? 'N/A') . ' | REST: ' . ($restError ?? 'N/A')
+                ], 400);
             }
         }
 
-        // Only redirect to OAuth if token is missing or cleared due to invalid/non-expiring status
-        $cleanShop = $shopDomain ?: 'canny-apps.myshopify.com';
-        $shopHandle = explode('.', $cleanShop)[0];
-        $apiKey = env('SHOPIFY_API_KEY');
-        $scopes = env('SHOPIFY_API_SCOPES', 'read_products,write_products,read_themes,read_purchase_options,write_purchase_options');
-        $redirectUri = urlencode("{$appUrl}/auth/callback");
-
-        // Use Unified Admin OAuth URL to prevent same_site_cookies cross-domain errors in modern Shopify Admin
-        $authUrl = "https://admin.shopify.com/store/{$shopHandle}/oauth/authorize?client_id={$apiKey}&scope=" . urlencode($scopes) . "&redirect_uri={$redirectUri}";
-
-        if ($request->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'confirmationUrl' => $authUrl,
-            ]);
-        }
-
-        return redirect()->to($authUrl);
+        return response()->json([
+            'success' => false,
+            'message' => 'Shop domain or access token missing. Please ensure access token is saved in app_settings table.'
+        ], 400);
     }
 
     /**
