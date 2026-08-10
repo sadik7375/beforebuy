@@ -14,7 +14,7 @@ class ProductFeedbackController extends Controller
      * Helper to extract clean full shop domain (e.g. store.myshopify.com) from Request or Session
      */
     /**
-     * Helper to extract clean full shop domain (e.g. store.myshopify.com) from Request or headers
+     * Helper to extract clean full shop domain (e.g. store.myshopify.com) from Request, host parameter, or referer
      */
     private function getShopDomain(Request $request = null)
     {
@@ -29,12 +29,38 @@ class ProductFeedbackController extends Controller
             return $shop;
         }
 
+        // Check host parameter (e.g. host = base64 encoded admin.shopify.com/store/canny-apps)
+        $host = $request->get('host');
+        if ($host) {
+            $decodedHost = base64_decode($host);
+            if ($decodedHost && str_contains($decodedHost, 'admin.shopify.com/store/')) {
+                $parts = explode('admin.shopify.com/store/', $decodedHost);
+                if (isset($parts[1])) {
+                    $handle = explode('/', $parts[1])[0];
+                    if ($handle) {
+                        return strtolower(trim($handle)) . '.myshopify.com';
+                    }
+                }
+            }
+        }
+
         // Check HTTP referer header if loaded inside Shopify Admin Iframe
         $referer = $request->header('referer');
         if ($referer) {
             $parsed = parse_url($referer);
-            if (isset($parsed['host']) && str_contains($parsed['host'], 'myshopify.com')) {
-                return strtolower(trim($parsed['host']));
+            if (isset($parsed['host']) && (str_contains($parsed['host'], 'myshopify.com') || str_contains($parsed['host'], 'shopify.com'))) {
+                if (isset($parsed['path']) && str_contains($parsed['path'], '/store/')) {
+                    $parts = explode('/store/', $parsed['path']);
+                    if (isset($parts[1])) {
+                        $handle = explode('/', $parts[1])[0];
+                        if ($handle) {
+                            return strtolower(trim($handle)) . '.myshopify.com';
+                        }
+                    }
+                }
+                if (str_contains($parsed['host'], 'myshopify.com')) {
+                    return strtolower(trim($parsed['host']));
+                }
             }
         }
 
@@ -47,31 +73,33 @@ class ProductFeedbackController extends Controller
     private function getShopPlan($shopDomain = null, Request $request = null)
     {
         $shopDomain = $shopDomain ?: $this->getShopDomain($request);
-        if ($shopDomain) {
-            $shopDomain = strtolower(trim($shopDomain));
-            if (!str_contains($shopDomain, '.')) {
-                $shopDomain .= '.myshopify.com';
-            }
-            $shortHandle = explode('.myshopify.com', $shopDomain)[0];
+        if (!$shopDomain) {
+            return 'free';
+        }
 
-            try {
-                $row = DB::table('app_settings')
-                    ->where('key', 'shop_plan')
-                    ->where(function ($q) use ($shopDomain, $shortHandle) {
-                        $q->where('shop_domain', '=', $shopDomain)
-                          ->orWhere('shop_domain', '=', $shortHandle);
-                    })
-                    ->first();
+        $shopDomain = strtolower(trim($shopDomain));
+        if (!str_contains($shopDomain, '.')) {
+            $shopDomain .= '.myshopify.com';
+        }
+        $shortHandle = explode('.myshopify.com', $shopDomain)[0];
 
-                if ($row && !empty($row->value)) {
-                    $decoded = json_decode($row->value, true);
-                    if (is_array($decoded) && isset($decoded['plan'])) {
-                        return strtolower($decoded['plan']) === 'pro' ? 'pro' : 'free';
-                    }
+        try {
+            $row = DB::table('app_settings')
+                ->where('key', 'shop_plan')
+                ->where(function ($q) use ($shopDomain, $shortHandle) {
+                    $q->where('shop_domain', '=', $shopDomain)
+                      ->orWhere('shop_domain', '=', $shortHandle);
+                })
+                ->first();
+
+            if ($row && !empty($row->value)) {
+                $decoded = json_decode($row->value, true);
+                if (is_array($decoded) && isset($decoded['plan'])) {
+                    return strtolower($decoded['plan']) === 'pro' ? 'pro' : 'free';
                 }
-            } catch (\Throwable $e) {
-                Log::warning('getShopPlan DB fetch error: ' . $e->getMessage());
             }
+        } catch (\Throwable $e) {
+            Log::warning('getShopPlan DB fetch error: ' . $e->getMessage());
         }
 
         return 'free';
