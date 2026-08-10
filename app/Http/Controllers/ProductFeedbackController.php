@@ -827,7 +827,10 @@ GRAPHQL;
                             ]
                         );
 
-                        Log::info("Automatic OAuth token saved to database for shop: {$shop}");
+                        // Always reset plan to free on new installation / re-installation
+                        $this->setShopPlan($shop, 'free', null);
+
+                        Log::info("Automatic OAuth token saved and plan reset to free on install for shop: {$shop}");
                         return redirect("/?shop=" . urlencode($shop));
                     }
                 } else {
