@@ -103,7 +103,6 @@ class ProductFeedbackController extends Controller
                     // Automatically reset stale DB record back to free!
                     if (!$isConfirmedInSession) {
                         $this->setShopPlan($shopDomain, 'free', null);
-                        Log::info("Unverified stale Pro plan for {$shopDomain} auto-reset to free on fresh session.");
                         return 'free';
                     }
                 }
