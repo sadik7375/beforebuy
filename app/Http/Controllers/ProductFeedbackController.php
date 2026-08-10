@@ -63,6 +63,7 @@ class ProductFeedbackController extends Controller
 
                 if ($plan === 'pro') {
                     $token = $this->getShopToken($shopDomain);
+                    $isConfirmedInSession = session('pro_subscription_active_' . $shortHandle, false);
 
                     if ($token) {
                         try {
@@ -95,6 +96,12 @@ class ProductFeedbackController extends Controller
                         } catch (\Throwable $apiErr) {
                             Log::warning('Live subscription verify error: ' . $apiErr->getMessage());
                         }
+                    }
+
+                    // On fresh installation or session without active subscription confirmation, auto-reset stale plan to free
+                    if (!$isConfirmedInSession) {
+                        $this->setShopPlan($shopDomain, 'free', null);
+                        return 'free';
                     }
                 }
 
