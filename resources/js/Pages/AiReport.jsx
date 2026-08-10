@@ -1,5 +1,5 @@
 import React from 'react';
-import { Page, BlockStack, Card, Text, Badge, Grid, InlineStack, DataTable, Button, Box } from '@shopify/polaris';
+import { Page, BlockStack, Card, Text, Badge, Grid, InlineStack, DataTable, Button, Box, Banner } from '@shopify/polaris';
 import { router } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 
@@ -26,62 +26,27 @@ export default function AiReport({ stats = {}, repeatCustomers = [], plan = 'fre
             <Page
                 backAction={{ content: 'Overview', onAction: () => router.visit('/') }}
                 title="Weekly AI Report"
-                subtitle="Automated AI analytics & actionable product recommendations"
-                actionGroups={[
-                    {
-                        title: 'Plan Status',
-                        actions: [
-                            {
-                                content: isPro ? 'Pro Plan Active' : 'Free Plan',
-                                onAction: () => router.visit('/pricing'),
-                            },
-                        ],
-                    },
-                ]}
+                subtitle="Automated AI analytics and actionable product recommendations"
             >
                 <BlockStack gap="500">
                     {/* Locked Feature Card for Free Plan */}
                     {!isPro && (
-                        <div style={{
-                            backgroundColor: '#fff8e6',
-                            border: '2px solid #e0b252',
-                            borderRadius: '12px',
-                            padding: '24px',
-                        }}>
-                            <BlockStack gap="300">
-                                <InlineStack align="space-between" blockAlign="center">
-                                    <InlineStack gap="200" blockAlign="center">
-                                        <span style={{ fontSize: '24px' }}>🔒</span>
-                                        <Text variant="headingMd" as="h2" weight="bold">
-                                            Weekly AI Analytics is a Pro Plan Feature
-                                        </Text>
-                                    </InlineStack>
-                                    <Badge tone="warning">Upgrade Required</Badge>
-                                </InlineStack>
-
-                                <Text variant="bodyMd" tone="base">
-                                    Upgrade to <strong>BeforeBuy Pro ($5/month)</strong> to unlock automated weekly AI summaries, customer objection analysis, and actionable lost revenue recovery recommendations.
+                        <Banner tone="warning" title="Weekly AI Analytics is a Pro Plan Feature">
+                            <BlockStack gap="200">
+                                <Text variant="bodyMd" as="p">
+                                    Upgrade to <strong>BeforeBuy Pro ($5/month)</strong> to unlock automated weekly AI summaries, customer objection analysis, and actionable revenue recovery recommendations.
                                 </Text>
-
                                 <Box paddingBlockStart="200">
                                     <Button variant="primary" onClick={() => router.visit('/pricing')}>
-                                        Upgrade to Pro ($5/mo) to Unlock
+                                        Upgrade to Pro ($5/mo)
                                     </Button>
                                 </Box>
                             </BlockStack>
-                        </div>
+                        </Banner>
                     )}
 
-                    {/* Executive Summary Blue Banner Box */}
-                    <div style={{
-                        backgroundColor: '#f0f7ff',
-                        border: '1px solid #b6d5fb',
-                        borderRadius: '12px',
-                        padding: '24px',
-                        filter: !isPro ? 'blur(3px)' : 'none',
-                        pointerEvents: !isPro ? 'none' : 'auto',
-                        opacity: !isPro ? 0.6 : 1,
-                    }}>
+                    {/* Executive Summary Box */}
+                    <Card>
                         <BlockStack gap="300">
                             <Text variant="headingMd" as="h2" weight="bold">Executive Summary</Text>
 
@@ -98,7 +63,7 @@ export default function AiReport({ stats = {}, repeatCustomers = [], plan = 'fre
                                 </Text>
                             )}
                         </BlockStack>
-                    </div>
+                    </Card>
 
                     {/* AI Strategic Analysis Cards */}
                     <div style={{
