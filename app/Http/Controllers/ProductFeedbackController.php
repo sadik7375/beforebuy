@@ -915,9 +915,13 @@ HTML);
 
         // Only redirect to OAuth if token is missing or cleared due to invalid/non-expiring status
         $cleanShop = $shopDomain ?: 'canny-apps.myshopify.com';
+        $shopHandle = explode('.', $cleanShop)[0];
         $apiKey = env('SHOPIFY_API_KEY');
         $scopes = env('SHOPIFY_API_SCOPES', 'read_products,write_products,read_themes,read_purchase_options,write_purchase_options');
-        $authUrl = "https://{$cleanShop}/admin/oauth/authorize?client_id={$apiKey}&scope=" . urlencode($scopes) . "&redirect_uri=" . urlencode("{$appUrl}/auth/callback");
+        $redirectUri = urlencode("{$appUrl}/auth/callback");
+
+        // Use Unified Admin OAuth URL to prevent same_site_cookies cross-domain errors in modern Shopify Admin
+        $authUrl = "https://admin.shopify.com/store/{$shopHandle}/oauth/authorize?client_id={$apiKey}&scope=" . urlencode($scopes) . "&redirect_uri={$redirectUri}";
 
         if ($request->wantsJson()) {
             return response()->json([
