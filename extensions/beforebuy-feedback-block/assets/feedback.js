@@ -50,7 +50,8 @@ if (!window.beforebuyFeedbackInitialized) {
     }
 
     function fetchSettings() {
-      fetch('https://beforebuy.cannyapps.com/api/settings')
+      const currentShop = window.Shopify ? window.Shopify.shop : window.location.hostname;
+      fetch('https://beforebuy.cannyapps.com/api/settings?shop=' + encodeURIComponent(currentShop))
         .then(res => res.json())
         .then(data => {
           if (!data) return;

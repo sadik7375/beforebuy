@@ -23,22 +23,15 @@ class ProductFeedbackController extends Controller
             if (!str_contains($shop, '.')) {
                 $shop .= '.myshopify.com';
             }
-            session(['shop_domain' => $shop]);
             return $shop;
         }
 
-        if (session()->has('shop_domain')) {
-            return session('shop_domain');
-        }
-
-        // Fallback check referer header
+        // Check HTTP referer header if loaded inside Shopify Admin Iframe
         $referer = $request->header('referer');
         if ($referer) {
             $parsed = parse_url($referer);
             if (isset($parsed['host']) && str_contains($parsed['host'], 'myshopify.com')) {
-                $shop = strtolower(trim($parsed['host']));
-                session(['shop_domain' => $shop]);
-                return $shop;
+                return strtolower(trim($parsed['host']));
             }
         }
 
