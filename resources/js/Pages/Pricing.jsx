@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Page, BlockStack, Card, Text, Grid, Button, Badge, List, Box, Banner, InlineStack } from '@shopify/polaris';
+import { Page, BlockStack, Card, Text, Grid, Button, Badge, List, Box, Banner, InlineStack, Modal } from '@shopify/polaris';
 import AppLayout from '../Layouts/AppLayout';
 
 export default function Pricing({ plan = 'free', monthlyCount = 0, shopDomain = '' }) {
     const isPro = plan === 'pro';
     const [isLoading, setIsLoading] = useState(false);
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-    const handleUpgrade = async () => {
+    const handleConfirmUpgrade = async () => {
         setIsLoading(true);
         try {
             const response = await fetch('/billing/subscribe', {
@@ -30,6 +31,7 @@ export default function Pricing({ plan = 'free', monthlyCount = 0, shopDomain = 
             console.error('Upgrade error:', err);
         } finally {
             setIsLoading(false);
+            setShowUpgradeModal(false);
         }
     };
 
@@ -156,7 +158,7 @@ export default function Pricing({ plan = 'free', monthlyCount = 0, shopDomain = 
                                             <Button
                                                 fullWidth
                                                 variant="primary"
-                                                onClick={handleUpgrade}
+                                                onClick={() => setShowUpgradeModal(true)}
                                                 loading={isLoading}
                                             >
                                                 Upgrade to Pro ($5/mo)
@@ -168,6 +170,35 @@ export default function Pricing({ plan = 'free', monthlyCount = 0, shopDomain = 
                         </Grid.Cell>
                     </Grid>
                 </BlockStack>
+
+                {/* Shopify Billing Approval Modal */}
+                <Modal
+                    open={showUpgradeModal}
+                    onClose={() => setShowUpgradeModal(false)}
+                    title="Confirm Pro Plan Subscription"
+                    primaryAction={{
+                        content: 'Approve $5/month Charge',
+                        onAction: handleConfirmUpgrade,
+                        loading: isLoading,
+                    }}
+                    secondaryActions={[
+                        {
+                            content: 'Cancel',
+                            onAction: () => setShowUpgradeModal(false),
+                        },
+                    ]}
+                >
+                    <Modal.Section>
+                        <BlockStack gap="300">
+                            <Text variant="bodyMd" as="p">
+                                You are about to upgrade your store to the <strong>BeforeBuy Pro Plan ($5/month)</strong>.
+                            </Text>
+                            <Text variant="bodySm" tone="subdued" as="p">
+                                This charge will be processed recurringly every 30 days through your official Shopify App Billing invoice. You can cancel or downgrade back to Free at any time.
+                            </Text>
+                        </BlockStack>
+                    </Modal.Section>
+                </Modal>
             </Page>
         </AppLayout>
     );
