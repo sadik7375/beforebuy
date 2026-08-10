@@ -29,6 +29,15 @@ export default function AiReport({ stats = {}, repeatCustomers = [], plan = 'fre
                 subtitle="Automated AI analytics and actionable product recommendations"
             >
                 <BlockStack gap="500">
+                    {!isPro && (
+                        <Banner
+                            title="Pro Feature: Weekly AI Sentiment & Executive Reports"
+                            tone="info"
+                            action={{ content: 'Upgrade to Pro ($5/mo)', onAction: () => router.visit('/pricing') }}
+                        >
+                            <p>You are viewing a preview of the Weekly AI Report. Upgrade to <strong>BeforeBuy Pro Plan ($5/mo)</strong> to unlock full AI strategic insights, high-intent lead intelligence, and actionable recommendations for your store.</p>
+                        </Banner>
+                    )}
 
 
                     {/* Executive Summary Box */}

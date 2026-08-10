@@ -39,11 +39,43 @@ class ProductFeedbackController extends Controller
     }
 
     /**
-     * Helper to get active store plan ('pro' by default, all features unlocked)
+     * Helper to get active store plan ('free' by default, 'pro' if active subscription exists)
      */
     private function getShopPlan($shopDomain = null, Request $request = null)
     {
-        return 'pro';
+        $shopDomain = $shopDomain ?: $this->getShopDomain($request);
+        if ($shopDomain) {
+            $shopDomain = strtolower(trim($shopDomain));
+            if (!str_contains($shopDomain, '.')) {
+                $shopDomain .= '.myshopify.com';
+            }
+            $shortHandle = explode('.myshopify.com', $shopDomain)[0];
+
+            if (session('pro_subscription_active_' . $shortHandle)) {
+                return 'pro';
+            }
+
+            try {
+                $row = DB::table('app_settings')
+                    ->where('key', 'shop_plan')
+                    ->where(function ($q) use ($shopDomain, $shortHandle) {
+                        $q->where('shop_domain', '=', $shopDomain)
+                          ->orWhere('shop_domain', '=', $shortHandle);
+                    })
+                    ->first();
+
+                if ($row && !empty($row->value)) {
+                    $decoded = json_decode($row->value, true);
+                    if (is_array($decoded) && isset($decoded['plan'])) {
+                        return strtolower($decoded['plan']) === 'pro' ? 'pro' : 'free';
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::warning('getShopPlan error: ' . $e->getMessage());
+            }
+        }
+
+        return 'free';
     }
 
     /**
@@ -562,7 +594,18 @@ class ProductFeedbackController extends Controller
         ]);
 
         $shopDomain = $validated['shop_domain'] ?: $this->getShopDomain($request);
-        $plan = 'pro';
+        $plan = $this->getShopPlan($shopDomain, $request);
+
+        if ($plan === 'free') {
+            $monthlyCount = $this->getMonthlySubmissionCount($shopDomain);
+            if ($monthlyCount >= 10) {
+                return response()->json([
+                    'success' => false,
+                    'limit_reached' => true,
+                    'message' => 'Monthly feedback limit reached for Free plan (10/10). Please upgrade to Pro for unlimited submissions.',
+                ], 429);
+            }
+        }
 
         $feedbackId = null;
 

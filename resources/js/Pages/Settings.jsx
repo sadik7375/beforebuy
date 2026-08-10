@@ -72,6 +72,10 @@ export default function Settings({ reasons = [], enable_email = true, require_em
     };
 
     const handleThemeSelect = (preset) => {
+        if (preset.proOnly && !isPro) {
+            router.visit('/pricing');
+            return;
+        }
         setSelectedTheme(preset.id);
     };
 
