@@ -790,6 +790,30 @@ GRAPHQL;
             } else {
                 $gqlErrors = json_encode($body['data']['appSubscriptionCreate']['userErrors'] ?? $body['errors'] ?? $body);
                 Log::warning("appSubscriptionCreate error for {$shopDomain}: {$gqlErrors}");
+
+                // If token is dead or invalid, wipe stale token and redirect top window to OAuth re-authorization
+                if (str_contains($gqlErrors, 'Invalid API key') || str_contains($gqlErrors, 'unrecognized login') || str_contains($gqlErrors, 'wrong password') || str_contains($gqlErrors, 'Invalid token') || str_contains($gqlErrors, 'access token')) {
+                    Log::warning("Wiping dead token and initiating top-window OAuth re-authorization for {$shopDomain}");
+                    $shortHandle = explode('.myshopify.com', $shopDomain)[0];
+                    
+                    DB::table('app_settings')
+                        ->whereIn('key', ['shopify_token', 'access_token', 'token', 'api_token'])
+                        ->where(function ($q) use ($shopDomain, $shortHandle) {
+                            $q->where('shop_domain', '=', $shopDomain)
+                              ->orWhere('shop_domain', '=', $shortHandle);
+                        })
+                        ->delete();
+
+                    $apiKey = env('SHOPIFY_API_KEY');
+                    $scopes = env('SHOPIFY_API_SCOPES', 'read_products,write_products,read_themes,read_purchase_options,write_purchase_options');
+                    $redirectUri = urlencode("{$appUrl}/auth/callback");
+                    $authUrl = "https://admin.shopify.com/store/{$shortHandle}/oauth/authorize?client_id={$apiKey}&scope=" . urlencode($scopes) . "&redirect_uri={$redirectUri}";
+
+                    if ($request->wantsJson()) {
+                        return response()->json(['success' => true, 'confirmationUrl' => $authUrl]);
+                    }
+                    return redirect()->to($authUrl);
+                }
             }
         } catch (\Throwable $e) {
             Log::error('Shopify Subscription GraphQL exception: ' . $e->getMessage());
