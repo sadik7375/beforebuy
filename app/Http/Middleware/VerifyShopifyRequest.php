@@ -32,6 +32,11 @@ class VerifyShopifyRequest
             session(['shop_domain' => $shopClean]);
         }
 
+        $token = $request->header('X-Shopify-Access-Token') ?: $request->get('token');
+        if ($token) {
+            session(['shopify_token' => $token]);
+        }
+
         return $next($request);
     }
 
