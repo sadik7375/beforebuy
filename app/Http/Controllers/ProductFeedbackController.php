@@ -749,24 +749,48 @@ GRAPHQL;
             } catch (\Throwable $e) {
                 Log::error('Shopify Subscription GraphQL error: ' . $e->getMessage());
             }
+
+            // 2. Try REST API Recurring Application Charge
+            try {
+                $restUrl = "https://{$shopDomain}/admin/api/2026-07/recurring_application_charges.json";
+                $response = \Illuminate\Support\Facades\Http::withHeaders([
+                    'X-Shopify-Access-Token' => $token,
+                    'Content-Type' => 'application/json',
+                ])->post($restUrl, [
+                    'recurring_application_charge' => [
+                        'name' => 'BeforeBuy Pro Plan',
+                        'price' => 5.00,
+                        'return_url' => $returnUrl,
+                        'test' => true
+                    ]
+                ]);
+
+                $body = $response->json();
+                $confirmationUrl = $body['recurring_application_charge']['confirmation_url'] ?? null;
+
+                if ($confirmationUrl) {
+                    if ($request->wantsJson()) {
+                        return response()->json(['success' => true, 'confirmationUrl' => $confirmationUrl]);
+                    }
+                    return redirect()->to($confirmationUrl);
+                }
+            } catch (\Throwable $e) {
+                Log::error('Shopify Subscription REST API error: ' . $e->getMessage());
+            }
         }
 
-        // Direct confirm upgrade for testing/dev environments
-        if ($shopDomain) {
-            $shortHandle = explode('.myshopify.com', $shopDomain)[0];
-            session(['pro_subscription_active_' . $shortHandle => true]);
-            $this->setShopPlan($shopDomain, 'pro', 'charge_direct_' . time());
-        }
+        // 3. Fallback to Shopify Admin Subscription Charge Approval Screen
+        $cleanShop = $shopDomain ?: 'canny-apps.myshopify.com';
+        $officialShopifyApprovalUrl = "https://{$cleanShop}/admin/charges/confirm_recurring_application_charge?name=BeforeBuy+Pro+Plan&price=5.00&return_url=" . urlencode($returnUrl);
 
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'confirmationUrl' => "{$appUrl}/pricing?shop=" . urlencode($shopDomain ?: '') . "&upgraded=1",
+                'confirmationUrl' => $officialShopifyApprovalUrl,
             ]);
         }
 
-        return redirect('/pricing?shop=' . urlencode($shopDomain ?: ''))
-            ->with('success', 'Congratulations! You have successfully upgraded to BeforeBuy Pro Plan ($5/mo).');
+        return redirect()->to($officialShopifyApprovalUrl);
     }
 
     /**
