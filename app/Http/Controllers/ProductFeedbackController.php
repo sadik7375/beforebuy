@@ -917,7 +917,32 @@ HTML);
             $restError = $e->getMessage();
         }
 
-        // Return clean error response directly if billing creation fails
+        $combinedErrors = ($gqlError ?? '') . ' ' . ($restError ?? '');
+        if (str_contains($combinedErrors, 'Non-expiring access tokens')) {
+            Log::warning("Shopify rejected non-expiring access token for {$shopDomain}. Wiping token and redirecting to OAuth for fresh expiring token.");
+            
+            DB::table('app_settings')
+                ->whereIn('key', ['shopify_token', 'access_token', 'token', 'api_token'])
+                ->delete();
+
+            $cleanShop = $shopDomain ?: 'canny-apps.myshopify.com';
+            $shopHandle = explode('.', $cleanShop)[0];
+            $apiKey = env('SHOPIFY_API_KEY');
+            $scopes = env('SHOPIFY_API_SCOPES', 'read_products,write_products,read_themes,read_purchase_options,write_purchase_options');
+            $redirectUri = urlencode("{$appUrl}/auth/callback");
+            $authUrl = "https://admin.shopify.com/store/{$shopHandle}/oauth/authorize?client_id={$apiKey}&scope=" . urlencode($scopes) . "&redirect_uri={$redirectUri}";
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'confirmationUrl' => $authUrl,
+                ]);
+            }
+
+            return redirect()->to($authUrl);
+        }
+
+        // Return clean error response directly if billing creation fails for other reasons
         return response()->json([
             'success' => false,
             'message' => 'Shopify Billing API error. GraphQL: ' . ($gqlError ?? 'N/A') . ' | REST: ' . ($restError ?? 'N/A')
