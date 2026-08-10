@@ -120,12 +120,13 @@ class ProductFeedbackController extends Controller
     }
 
     /**
-     * Helper to apply exact store filter on queries
+     * Helper to apply exact store filter on queries with strict isolation
      */
     private function applyShopFilter($query, $shopDomain)
     {
         if (!$shopDomain) {
-            return $query;
+            // Strictly isolate: If no shop domain is provided, return zero results
+            return $query->whereRaw('1 = 0');
         }
 
         $shortHandle = explode('.myshopify.com', $shopDomain)[0];
