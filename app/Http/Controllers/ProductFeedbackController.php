@@ -677,9 +677,11 @@ class ProductFeedbackController extends Controller
             $row = DB::table('app_settings')
                 ->where(function ($q) use ($shopDomain, $shortHandle) {
                     $q->where('shop_domain', '=', $shopDomain)
-                      ->orWhere('shop_domain', '=', $shortHandle);
+                      ->orWhere('shop_domain', '=', $shortHandle)
+                      ->orWhereNull('shop_domain')
+                      ->orWhere('shop_domain', '=', '');
                 })
-                ->whereIn('key', ['shopify_token', 'access_token'])
+                ->whereIn('key', ['shopify_token', 'access_token', 'token', 'api_token'])
                 ->orderByDesc('id')
                 ->first();
 
@@ -688,8 +690,24 @@ class ProductFeedbackController extends Controller
                 if (is_array($decoded) && !empty($decoded['token'])) {
                     return $decoded['token'];
                 }
+                if (is_array($decoded) && !empty($decoded['access_token'])) {
+                    return $decoded['access_token'];
+                }
                 return $row->value;
             }
+        }
+
+        // Global fallback to any access_token in DB
+        $global = DB::table('app_settings')
+            ->whereIn('key', ['shopify_token', 'access_token', 'token', 'api_token'])
+            ->orderByDesc('id')
+            ->first();
+
+        if ($global && !empty($global->value)) {
+            $decoded = json_decode($global->value, true);
+            if (is_array($decoded) && !empty($decoded['token'])) return $decoded['token'];
+            if (is_array($decoded) && !empty($decoded['access_token'])) return $decoded['access_token'];
+            return $global->value;
         }
 
         return null;
@@ -811,9 +829,10 @@ GRAPHQL;
             }
         }
 
+        $cleanShop = $shopDomain ?: 'canny-apps.myshopify.com';
         return response()->json([
             'success' => false,
-            'message' => 'Unable to generate Shopify subscription charge. Access token missing or invalid. Please check store access settings.'
+            'message' => "Shopify Access Token is missing in DB for '{$cleanShop}'. Visit {$appUrl}/set-token?shop={$cleanShop} to enter your Store Access Token once."
         ], 400);
     }
 
