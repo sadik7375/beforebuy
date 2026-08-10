@@ -729,7 +729,7 @@ class ProductFeedbackController extends Controller
 
         // 1. Execute GraphQL appSubscriptionCreate mutation to generate official Shopify Charge URL
         try {
-            $graphqlUrl = "https://{$shopDomain}/admin/api/2026-07/graphql.json";
+            $graphqlUrl = "https://{$shopDomain}/admin/api/2024-10/graphql.json";
             $query = <<<'GRAPHQL'
 mutation appSubscriptionCreate($name: String!, $lineItems: [AppSubscriptionLineItemInput!]!, $returnUrl: URL!, $test: Boolean) {
   appSubscriptionCreate(name: $name, lineItems: $lineItems, returnUrl: $returnUrl, test: $test) {
