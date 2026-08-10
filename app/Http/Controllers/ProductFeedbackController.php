@@ -363,9 +363,15 @@ class ProductFeedbackController extends Controller
     /**
      * Submenu: Setup
      */
-    public function setup()
+    public function setup(Request $request)
     {
-        return Inertia::render('Setup');
+        $shopDomain = $this->getShopDomain($request);
+        $defaultEmail = $shopDomain ? "shop@" . $shopDomain : "shop@canny-apps.myshopify.com";
+
+        return Inertia::render('Setup', [
+            'shopDomain' => $shopDomain,
+            'defaultEmail' => $defaultEmail,
+        ]);
     }
 
     /**
