@@ -17,18 +17,20 @@ import {
 import AppLayout from '../Layouts/AppLayout';
 
 export default function Pricing({ plan = 'free', monthlyCount = 0, shopDomain = '' }) {
+    const urlParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
     const [loading, setLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState(urlParams.get('error') || '');
     const isPro = plan === 'pro';
     const freeLimit = 10;
     const usagePercent = Math.min(Math.round((monthlyCount / freeLimit) * 100), 100);
     const isLimitReached = !isPro && monthlyCount >= freeLimit;
 
     // Check if coming back from upgrade confirmation in URL
-    const urlParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
     const upgraded = urlParams.get('upgraded') === '1';
 
     const handleUpgrade = async () => {
         setLoading(true);
+        setErrorMessage('');
         try {
             const domain = shopDomain || urlParams.get('shop') || '';
             const res = await fetch(`/billing/subscribe?shop=${encodeURIComponent(domain)}`, {
@@ -47,10 +49,16 @@ export default function Pricing({ plan = 'free', monthlyCount = 0, shopDomain = 
                 } else {
                     window.location.href = data.confirmationUrl;
                 }
-            } else {
-                // Fallback direct location update
-                window.location.href = `/billing/subscribe?shop=${encodeURIComponent(domain)}`;
+                return;
             }
+
+            if (data.message) {
+                setErrorMessage(data.message);
+                setLoading(false);
+                return;
+            }
+
+            window.location.href = `/billing/subscribe?shop=${encodeURIComponent(domain)}`;
         } catch (err) {
             console.error('Upgrade request error:', err);
             const domain = shopDomain || urlParams.get('shop') || '';
@@ -65,6 +73,12 @@ export default function Pricing({ plan = 'free', monthlyCount = 0, shopDomain = 
                 subtitle="Choose the best plan for your Shopify store. Upgrade anytime for unlimited customer feedback."
             >
                 <BlockStack gap="500">
+                    {errorMessage && (
+                        <Banner title="Upgrade failed" tone="critical" onDismiss={() => setErrorMessage('')}>
+                            <p>{errorMessage}</p>
+                        </Banner>
+                    )}
+
                     {upgraded && (
                         <Banner title="Congratulations! You are now on BeforeBuy Pro Plan" tone="success">
                             <p>All premium features, unlimited feedback submissions, all popup themes, and AI analytics reports are now unlocked for your store.</p>

@@ -660,44 +660,33 @@ class ProductFeedbackController extends Controller
     private function getShopToken($shopDomain = null)
     {
         $token = env('SHOPIFY_API_TOKEN');
-        if (!empty($token)) return $token;
-
-        if ($shopDomain) {
-            $shortHandle = explode('.myshopify.com', $shopDomain)[0];
-            $row = DB::table('app_settings')
-                ->where(function ($q) use ($shopDomain, $shortHandle) {
-                    $q->where('shop_domain', '=', $shopDomain)
-                      ->orWhere('shop_domain', '=', $shortHandle)
-                      ->orWhereNull('shop_domain')
-                      ->orWhere('shop_domain', '=', '');
-                })
-                ->whereIn('key', ['shopify_token', 'access_token', 'token', 'api_token'])
-                ->orderByDesc('id')
-                ->first();
-
-            if ($row && !empty($row->value)) {
-                $decoded = json_decode($row->value, true);
-                if (is_array($decoded) && !empty($decoded['token'])) {
-                    return $decoded['token'];
-                }
-                if (is_array($decoded) && !empty($decoded['access_token'])) {
-                    return $decoded['access_token'];
-                }
-                return $row->value;
-            }
+        if (!empty($token)) {
+            return $token;
         }
 
-        // Global fallback to any access_token in DB
-        $global = DB::table('app_settings')
+        if (!$shopDomain) {
+            return null;
+        }
+
+        $shortHandle = explode('.myshopify.com', $shopDomain)[0];
+        $row = DB::table('app_settings')
+            ->where(function ($q) use ($shopDomain, $shortHandle) {
+                $q->where('shop_domain', '=', $shopDomain)
+                  ->orWhere('shop_domain', '=', $shortHandle);
+            })
             ->whereIn('key', ['shopify_token', 'access_token', 'token', 'api_token'])
             ->orderByDesc('id')
             ->first();
 
-        if ($global && !empty($global->value)) {
-            $decoded = json_decode($global->value, true);
-            if (is_array($decoded) && !empty($decoded['token'])) return $decoded['token'];
-            if (is_array($decoded) && !empty($decoded['access_token'])) return $decoded['access_token'];
-            return $global->value;
+        if ($row && !empty($row->value)) {
+            $decoded = json_decode($row->value, true);
+            if (is_array($decoded) && !empty($decoded['token'])) {
+                return $decoded['token'];
+            }
+            if (is_array($decoded) && !empty($decoded['access_token'])) {
+                return $decoded['access_token'];
+            }
+            return $row->value;
         }
 
         return null;
@@ -770,7 +759,7 @@ GRAPHQL;
                 ]
             ]);
 
-            $body = $response->json();
+            $body = $response->json() ?? [];
             $confirmationUrl = $body['data']['appSubscriptionCreate']['confirmationUrl'] ?? null;
 
             if ($confirmationUrl) {
@@ -787,33 +776,34 @@ GRAPHQL;
                 }
 
                 return redirect()->to($unifiedUrl);
-            } else {
-                $gqlErrors = json_encode($body['data']['appSubscriptionCreate']['userErrors'] ?? $body['errors'] ?? $body);
-                Log::warning("appSubscriptionCreate error for {$shopDomain}: {$gqlErrors}");
+            }
 
-                // If token is dead or invalid, wipe stale token and redirect top window to OAuth re-authorization
-                if (str_contains($gqlErrors, 'Invalid API key') || str_contains($gqlErrors, 'unrecognized login') || str_contains($gqlErrors, 'wrong password') || str_contains($gqlErrors, 'Invalid token') || str_contains($gqlErrors, 'access token')) {
-                    Log::warning("Wiping dead token and initiating top-window OAuth re-authorization for {$shopDomain}");
-                    $shortHandle = explode('.myshopify.com', $shopDomain)[0];
-                    
-                    DB::table('app_settings')
-                        ->whereIn('key', ['shopify_token', 'access_token', 'token', 'api_token'])
-                        ->where(function ($q) use ($shopDomain, $shortHandle) {
-                            $q->where('shop_domain', '=', $shopDomain)
-                              ->orWhere('shop_domain', '=', $shortHandle);
-                        })
-                        ->delete();
+            $gqlErrors = json_encode($body['data']['appSubscriptionCreate']['userErrors'] ?? $body['errors'] ?? $body ?? $response->body());
+            Log::warning("appSubscriptionCreate error for {$shopDomain}: {$gqlErrors}");
 
-                    $apiKey = env('SHOPIFY_API_KEY');
-                    $scopes = env('SHOPIFY_API_SCOPES', 'read_products,write_products,read_themes,read_purchase_options,write_purchase_options');
-                    $redirectUri = urlencode("{$appUrl}/auth/callback");
-                    $authUrl = "https://admin.shopify.com/store/{$shortHandle}/oauth/authorize?client_id={$apiKey}&scope=" . urlencode($scopes) . "&redirect_uri={$redirectUri}";
+            $isInvalidToken = !$response->successful() || str_contains($gqlErrors, 'Invalid API key') || str_contains($gqlErrors, 'unrecognized login') || str_contains($gqlErrors, 'wrong password') || str_contains($gqlErrors, 'Invalid token') || str_contains($gqlErrors, 'access token');
 
-                    if ($request->wantsJson()) {
-                        return response()->json(['success' => true, 'confirmationUrl' => $authUrl]);
-                    }
-                    return redirect()->to($authUrl);
+            if ($isInvalidToken) {
+                Log::warning("Wiping dead token and initiating top-window OAuth re-authorization for {$shopDomain}");
+                $shortHandle = explode('.myshopify.com', $shopDomain)[0];
+                
+                DB::table('app_settings')
+                    ->whereIn('key', ['shopify_token', 'access_token', 'token', 'api_token'])
+                    ->where(function ($q) use ($shopDomain, $shortHandle) {
+                        $q->where('shop_domain', '=', $shopDomain)
+                          ->orWhere('shop_domain', '=', $shortHandle);
+                    })
+                    ->delete();
+
+                $apiKey = env('SHOPIFY_API_KEY');
+                $scopes = env('SHOPIFY_API_SCOPES', 'read_products,write_products,read_themes,read_purchase_options,write_purchase_options');
+                $redirectUri = urlencode("{$appUrl}/auth/callback");
+                $authUrl = "https://admin.shopify.com/store/{$shortHandle}/oauth/authorize?client_id={$apiKey}&scope=" . urlencode($scopes) . "&redirect_uri={$redirectUri}";
+
+                if ($request->wantsJson()) {
+                    return response()->json(['success' => true, 'confirmationUrl' => $authUrl]);
                 }
+                return redirect()->to($authUrl);
             }
         } catch (\Throwable $e) {
             Log::error('Shopify Subscription GraphQL exception: ' . $e->getMessage());
