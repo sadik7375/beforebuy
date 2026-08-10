@@ -35,31 +35,6 @@ export default function Pricing({ plan = 'free', monthlyCount = 0, shopDomain = 
         }
     };
 
-    const handleDowngrade = async () => {
-        if (!confirm('Are you sure you want to downgrade to the Free plan? AI Report and Premium Themes will be locked.')) {
-            return;
-        }
-
-        setIsLoading(true);
-        try {
-            const response = await fetch('/billing/cancel', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
-            });
-            const data = await response.json();
-            if (data.success) {
-                window.location.reload();
-            }
-        } catch (err) {
-            console.error('Downgrade error:', err);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
     return (
         <AppLayout>
             <Page
@@ -112,9 +87,7 @@ export default function Pricing({ plan = 'free', monthlyCount = 0, shopDomain = 
                                         {!isPro ? (
                                             <Button fullWidth disabled>Active Plan</Button>
                                         ) : (
-                                            <Button fullWidth onClick={handleDowngrade} loading={isLoading}>
-                                                Downgrade to Free
-                                            </Button>
+                                            <Button fullWidth disabled>Free Plan</Button>
                                         )}
                                     </Box>
                                 </BlockStack>
@@ -194,7 +167,7 @@ export default function Pricing({ plan = 'free', monthlyCount = 0, shopDomain = 
                                 You are about to upgrade your store to the <strong>BeforeBuy Pro Plan ($5/month)</strong>.
                             </Text>
                             <Text variant="bodySm" tone="subdued" as="p">
-                                This charge will be processed recurringly every 30 days through your official Shopify App Billing invoice. You can cancel or downgrade back to Free at any time.
+                                This charge will be processed recurringly every 30 days through your official Shopify App Billing invoice.
                             </Text>
                         </BlockStack>
                     </Modal.Section>

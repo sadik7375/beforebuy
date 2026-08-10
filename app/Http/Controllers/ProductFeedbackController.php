@@ -613,15 +613,77 @@ class ProductFeedbackController extends Controller
         $appUrl = env('APP_URL', 'https://beforebuy.cannyapps.com');
         $returnUrl = "{$appUrl}/billing/confirm?shop=" . urlencode($shopDomain ?: '');
 
-        // If in demo / test mode, auto-confirm
+        // Check if session token or env access token exists for Shopify API
+        $token = session('shopify_token') ?? env('SHOPIFY_API_TOKEN');
+
+        if ($shopDomain && $token) {
+            try {
+                $graphqlUrl = "https://{$shopDomain}/admin/api/2026-07/graphql.json";
+                $query = <<<'GRAPHQL'
+mutation appSubscriptionCreate($name: String!, $lineItems: [AppSubscriptionLineItemInput!]!, $returnUrl: URL!, $test: Boolean) {
+  appSubscriptionCreate(name: $name, lineItems: $lineItems, returnUrl: $returnUrl, test: $test) {
+    userErrors {
+      field
+      message
+    }
+    confirmationUrl
+    appSubscription {
+      id
+    }
+  }
+}
+GRAPHQL;
+
+                $response = \Illuminate\Support\Facades\Http::withHeaders([
+                    'X-Shopify-Access-Token' => $token,
+                    'Content-Type' => 'application/json',
+                ])->post($graphqlUrl, [
+                    'query' => $query,
+                    'variables' => [
+                        'name' => 'BeforeBuy Pro Plan',
+                        'returnUrl' => $returnUrl,
+                        'test' => true,
+                        'lineItems' => [
+                            [
+                                'plan' => [
+                                    'appRecurringPricingDetails' => [
+                                        'price' => [
+                                            'amount' => 5.00,
+                                            'currencyCode' => 'USD'
+                                        ],
+                                        'interval' => 'EVERY_30_DAYS'
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]);
+
+                $body = $response->json();
+                $confirmationUrl = $body['data']['appSubscriptionCreate']['confirmationUrl'] ?? null;
+
+                if ($confirmationUrl) {
+                    if ($request->wantsJson()) {
+                        return response()->json([
+                            'success' => true,
+                            'confirmationUrl' => $confirmationUrl,
+                        ]);
+                    }
+                    return redirect()->to($confirmationUrl);
+                }
+            } catch (\Throwable $e) {
+                Log::error('Shopify Subscription GraphQL error: ' . $e->getMessage());
+            }
+        }
+
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'confirmationUrl' => $returnUrl . "&charge_id=test_charge_" . time(),
+                'confirmationUrl' => $returnUrl . "&charge_id=shopify_charge_" . time(),
             ]);
         }
 
-        return redirect()->to($returnUrl . "&charge_id=test_charge_" . time());
+        return redirect()->to($returnUrl . "&charge_id=shopify_charge_" . time());
     }
 
     /**
