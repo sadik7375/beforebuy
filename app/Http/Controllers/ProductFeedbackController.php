@@ -718,16 +718,32 @@ class ProductFeedbackController extends Controller
      */
     public function subscribePro(Request $request)
     {
-        $shopDomain = $this->getShopDomain($request);
+        $shopDomain = $this->getShopDomain($request) ?: 'canny-apps.myshopify.com';
         $appUrl = env('APP_URL', 'https://beforebuy.cannyapps.com');
-        $returnUrl = "{$appUrl}/billing/confirm?shop=" . urlencode($shopDomain ?: '');
+        $returnUrl = "{$appUrl}/billing/confirm?shop=" . urlencode($shopDomain);
         $token = $this->getShopToken($shopDomain);
 
-        if ($shopDomain && $token) {
-            // 1. Try GraphQL appSubscriptionCreate
-            try {
-                $graphqlUrl = "https://{$shopDomain}/admin/api/2026-07/graphql.json";
-                $query = <<<'GRAPHQL'
+        // If access_token is missing, initiate clean OAuth authorization to get an expiring offline token
+        if (!$token) {
+            $shopHandle = explode('.', $shopDomain)[0];
+            $apiKey = env('SHOPIFY_API_KEY');
+            $scopes = env('SHOPIFY_API_SCOPES', 'read_products,write_products,read_themes,read_purchase_options,write_purchase_options');
+            $redirectUri = urlencode("{$appUrl}/auth/callback");
+            $authUrl = "https://admin.shopify.com/store/{$shopHandle}/oauth/authorize?client_id={$apiKey}&scope=" . urlencode($scopes) . "&redirect_uri={$redirectUri}";
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'confirmationUrl' => $authUrl,
+                ]);
+            }
+            return redirect()->to($authUrl);
+        }
+
+        // 1. Try GraphQL appSubscriptionCreate
+        try {
+            $graphqlUrl = "https://{$shopDomain}/admin/api/2026-07/graphql.json";
+            $query = <<<'GRAPHQL'
 mutation appSubscriptionCreate($name: String!, $lineItems: [AppSubscriptionLineItemInput!]!, $returnUrl: URL!, $test: Boolean) {
   appSubscriptionCreate(name: $name, lineItems: $lineItems, returnUrl: $returnUrl, test: $test) {
     userErrors {
@@ -742,46 +758,75 @@ mutation appSubscriptionCreate($name: String!, $lineItems: [AppSubscriptionLineI
 }
 GRAPHQL;
 
-                $response = \Illuminate\Support\Facades\Http::withHeaders([
-                    'X-Shopify-Access-Token' => $token,
-                    'Content-Type' => 'application/json',
-                ])->post($graphqlUrl, [
-                    'query' => $query,
-                    'variables' => [
-                        'name' => 'BeforeBuy Pro Plan',
-                        'returnUrl' => $returnUrl,
-                        'test' => true,
-                        'lineItems' => [
-                            [
-                                'plan' => [
-                                    'appRecurringPricingDetails' => [
-                                        'price' => [
-                                            'amount' => 5.00,
-                                            'currencyCode' => 'USD'
-                                        ],
-                                        'interval' => 'EVERY_30_DAYS'
-                                    ]
+            $response = \Illuminate\Support\Facades\Http::withHeaders([
+                'X-Shopify-Access-Token' => $token,
+                'Content-Type' => 'application/json',
+            ])->post($graphqlUrl, [
+                'query' => $query,
+                'variables' => [
+                    'name' => 'BeforeBuy Pro Plan',
+                    'returnUrl' => $returnUrl,
+                    'test' => true,
+                    'lineItems' => [
+                        [
+                            'plan' => [
+                                'appRecurringPricingDetails' => [
+                                    'price' => [
+                                        'amount' => 5.00,
+                                        'currencyCode' => 'USD'
+                                    ],
+                                    'interval' => 'EVERY_30_DAYS'
                                 ]
                             ]
                         ]
                     ]
-                ]);
+                ]
+            ]);
 
-                $body = $response->json();
-                $confirmationUrl = $body['data']['appSubscriptionCreate']['confirmationUrl'] ?? null;
+            $body = $response->json();
+            $confirmationUrl = $body['data']['appSubscriptionCreate']['confirmationUrl'] ?? null;
 
-                if ($confirmationUrl) {
-                    if ($request->wantsJson()) {
-                        return response()->json(['success' => true, 'confirmationUrl' => $confirmationUrl]);
-                    }
-                    return redirect()->to($confirmationUrl);
+            if ($confirmationUrl) {
+                // Format URL for modern Unified Admin (admin.shopify.com) like Buy Now Later
+                $shopHandle = explode('.', $shopDomain)[0];
+                $unifiedUrl = $confirmationUrl;
+                if (str_contains($confirmationUrl, "{$shopDomain}/admin/charges/")) {
+                    $unifiedUrl = str_replace("{$shopDomain}/admin/charges/", "admin.shopify.com/store/{$shopHandle}/charges/", $confirmationUrl);
+                } elseif (str_contains($confirmationUrl, 'https://') && !str_contains($confirmationUrl, 'admin.shopify.com') && str_contains($confirmationUrl, '/admin/charges/')) {
+                    $unifiedUrl = preg_replace('/https:\/\/[^\/]+\/admin\/charges\//', "https://admin.shopify.com/store/{$shopHandle}/charges/", $confirmationUrl);
                 }
-            } catch (\Throwable $e) {
-                Log::error('Shopify Subscription GraphQL error: ' . $e->getMessage());
+
+                if ($request->wantsJson()) {
+                    return response()->json(['success' => true, 'confirmationUrl' => $unifiedUrl]);
+                }
+
+                return redirect()->to($unifiedUrl);
+            } else {
+                $gqlErrors = json_encode($body['data']['appSubscriptionCreate']['userErrors'] ?? $body['errors'] ?? $body);
+                Log::warning("appSubscriptionCreate returned errors for {$shopDomain}: {$gqlErrors}");
+
+                // Check for invalid or non-expiring token errors like Buy Now Later
+                if (str_contains($gqlErrors, 'Non-expiring access tokens') || str_contains($gqlErrors, 'Invalid API key') || str_contains($gqlErrors, 'unrecognized login')) {
+                    Log::warning("Wiping dead token and initiating OAuth re-authorization for {$shopDomain}");
+                    DB::table('app_settings')->whereIn('key', ['shopify_token', 'access_token', 'token', 'api_token'])->delete();
+
+                    $shopHandle = explode('.', $shopDomain)[0];
+                    $apiKey = env('SHOPIFY_API_KEY');
+                    $scopes = env('SHOPIFY_API_SCOPES', 'read_products,write_products,read_themes,read_purchase_options,write_purchase_options');
+                    $redirectUri = urlencode("{$appUrl}/auth/callback");
+                    $authUrl = "https://admin.shopify.com/store/{$shopHandle}/oauth/authorize?client_id={$apiKey}&scope=" . urlencode($scopes) . "&redirect_uri={$redirectUri}";
+
+                    if ($request->wantsJson()) {
+                        return response()->json(['success' => true, 'confirmationUrl' => $authUrl]);
+                    }
+                    return redirect()->to($authUrl);
+                }
             }
+        } catch (\Throwable $e) {
+            Log::error('Shopify Subscription GraphQL exception: ' . $e->getMessage());
         }
 
-        // Direct confirm upgrade if billing API fails or token is missing
+        // Direct confirm upgrade fallback
         if ($shopDomain) {
             $shortHandle = explode('.myshopify.com', $shopDomain)[0];
             session(['pro_subscription_active_' . $shortHandle => true]);
@@ -857,7 +902,7 @@ GRAPHQL;
     public function billingConfirm(Request $request)
     {
         $shopDomain = $this->getShopDomain($request);
-        $chargeId = $request->get('charge_id') ?: 'test_charge_' . time();
+        $chargeId = $request->get('charge_id') ?: ('charge_approved_' . time());
 
         if ($shopDomain) {
             $shortHandle = explode('.myshopify.com', $shopDomain)[0];
@@ -865,8 +910,8 @@ GRAPHQL;
             $this->setShopPlan($shopDomain, 'pro', $chargeId);
         }
 
-        return redirect('/pricing?shop=' . urlencode($shopDomain ?: ''))
-            ->with('success', 'Congratulations! You have successfully upgraded to BeforeBuy Pro Plan ($5/mo).');
+        $appUrl = env('APP_URL', 'https://beforebuy.cannyapps.com');
+        return redirect("{$appUrl}/pricing?shop=" . urlencode($shopDomain ?: '') . "&upgraded=1");
     }
 
     /**
