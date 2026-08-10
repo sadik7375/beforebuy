@@ -62,7 +62,7 @@ class ProductFeedbackController extends Controller
                 $plan = is_array($decoded) ? ($decoded['plan'] ?? 'free') : $setting->value;
 
                 if ($plan === 'pro') {
-                    $token = session('shopify_token') ?? env('SHOPIFY_API_TOKEN');
+                    $token = $this->getShopToken($shopDomain);
                     $isConfirmedInSession = session('pro_subscription_active_' . $shortHandle, false);
 
                     if ($token) {
