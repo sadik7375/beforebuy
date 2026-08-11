@@ -635,7 +635,72 @@ class ProductFeedbackController extends Controller
                         ]);
 
                         Log::info("Automatic OAuth token saved and plan reset to free for shop: {$shop}");
-                        return redirect("/?shop=" . urlencode($shop));
+
+                        if ($request->get('auto_subscribe') == '1') {
+                            $baseUrl = config('app.url', 'https://beforebuy.cannyapps.com');
+                            $host = $request->get('host');
+                            $returnUrl = "{$baseUrl}/plans/callback?shop=" . urlencode($shop) . ($host ? "&host=" . urlencode($host) : '');
+                            $isTest = env('SHOPIFY_BILLING_TEST', true);
+
+                            $query = <<<'GRAPHQL'
+mutation appSubscriptionCreate($name: String!, $returnUrl: URL!, $lineItems: [AppSubscriptionLineItemInput!]!, $test: Boolean) {
+  appSubscriptionCreate(name: $name, returnUrl: $returnUrl, lineItems: $lineItems, test: $test) {
+    appSubscription {
+      id
+    }
+    confirmationUrl
+    userErrors {
+      field
+      message
+    }
+  }
+}
+GRAPHQL;
+
+                            $variables = [
+                                'name' => 'BeforeBuy Pro Plan',
+                                'returnUrl' => $returnUrl,
+                                'test' => (bool)$isTest,
+                                'lineItems' => [
+                                    [
+                                        'plan' => [
+                                            'appRecurringPricingDetails' => [
+                                                'price' => [
+                                                    'amount' => 5.0,
+                                                    'currencyCode' => 'USD',
+                                                ],
+                                                'interval' => 'EVERY_30_DAYS',
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ];
+
+                            try {
+                                $apiVersion = env('SHOPIFY_API_VERSION', '2025-01');
+                                $subResponse = \Illuminate\Support\Facades\Http::withHeaders([
+                                    'X-Shopify-Access-Token' => $accessToken,
+                                    'Content-Type' => 'application/json',
+                                ])->post("https://{$shop}/admin/api/{$apiVersion}/graphql.json", [
+                                    'query' => $query,
+                                    'variables' => $variables,
+                                ]);
+
+                                if ($subResponse->successful()) {
+                                    $subResult = $subResponse->json();
+                                    $confirmationUrl = $subResult['data']['appSubscriptionCreate']['confirmationUrl'] ?? null;
+                                    if ($confirmationUrl) {
+                                        Log::info("Auto-subscribing merchant directly to Billing Approval screen for shop: {$shop}");
+                                        return redirect($confirmationUrl);
+                                    }
+                                }
+                            } catch (\Throwable $e) {
+                                Log::error("Auto-subscribe exception after OAuth for {$shop}: " . $e->getMessage());
+                            }
+                        }
+
+                        $host = $request->get('host');
+                        return redirect("/plans?shop=" . urlencode($shop) . ($host ? "&host=" . urlencode($host) : ''));
                     }
                 } else {
                     Log::error('OAuth token exchange failed: ' . $response->body());
@@ -645,7 +710,7 @@ class ProductFeedbackController extends Controller
             }
         }
 
-        return redirect("/?shop=" . urlencode($shop ?: ''));
+        return redirect("/plans?shop=" . urlencode($shop ?: ''));
     }
 
     /**
@@ -857,9 +922,8 @@ GRAPHQL;
             return response()->json(['success' => false, 'message' => 'Shop domain missing. Please refresh the page.'], 400);
         }
 
-        $apiKey = env('SHOPIFY_API_KEY');
-        $baseUrl = config('app.url', 'https://beforebuy.cannyapps.com');
-        $authUrl = "https://{$shopDomain}/admin/oauth/authorize?client_id={$apiKey}&scope=read_products&redirect_uri=" . urlencode("{$baseUrl}/auth/callback") . "&grant_options[]=value";
+        $host = $request->get('host');
+        $authUrl = "https://{$shopDomain}/admin/oauth/authorize?client_id={$apiKey}&scope=read_products&redirect_uri=" . urlencode("{$baseUrl}/auth/callback?auto_subscribe=1" . ($host ? "&host=" . urlencode($host) : '')) . "&grant_options[]=value";
 
         $token = TokenService::getValidToken($shopDomain);
         if (!$token) {
