@@ -6,6 +6,7 @@ export default function AppLayout({ children }) {
             <ui-nav-menu style={{ display: 'none' }}>
                 <a href="/" rel="home">Overview</a>
                 <a href="/submissions">Feedback Submissions</a>
+                <a href="/plans">Pricing Plans</a>
                 <a href="/settings">Settings</a>
                 <a href="/setup">Support & Setup</a>
             </ui-nav-menu>

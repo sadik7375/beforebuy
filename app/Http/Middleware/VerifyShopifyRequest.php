@@ -23,13 +23,15 @@ class VerifyShopifyRequest
             }
         }
 
-        // Set shop clean domain on request attributes if provided
+        // Set shop clean domain on request attributes if provided and valid
         if ($shop) {
             $shopClean = strtolower(trim($shop));
             if (!str_contains($shopClean, '.')) {
                 $shopClean .= '.myshopify.com';
             }
-            $request->attributes->set('shop_domain', $shopClean);
+            if (preg_match('/^[a-zA-Z0-9][a-zA-Z0-9\-]*\.myshopify\.com$/', $shopClean)) {
+                $request->attributes->set('shop_domain', $shopClean);
+            }
         }
 
         $response = $next($request);

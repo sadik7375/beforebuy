@@ -14,6 +14,12 @@ Route::get('/setup', [ProductFeedbackController::class, 'setup'])->name('setup')
 Route::get('/support', [ProductFeedbackController::class, 'support'])->name('support');
 Route::post('/support/submit', [ProductFeedbackController::class, 'submitMerchantSupport'])->name('support.submit');
 
+// Pricing Plan Routes
+Route::get('/plans', [ProductFeedbackController::class, 'plans'])->name('plans');
+Route::post('/plans/pro/subscribe', [ProductFeedbackController::class, 'subscribePro'])->name('plans.pro.subscribe');
+Route::get('/plans/callback', [ProductFeedbackController::class, 'subscribeCallback'])->name('plans.callback');
+Route::post('/plans/cancel', [ProductFeedbackController::class, 'cancelSubscription'])->name('plans.cancel');
+
 // Shopify OAuth Route
 Route::get('/auth/callback', [ProductFeedbackController::class, 'authCallback'])->name('auth.callback');
 

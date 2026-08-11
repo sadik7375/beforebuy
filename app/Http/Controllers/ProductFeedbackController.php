@@ -7,12 +7,29 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use App\Services\TokenService;
 
 class ProductFeedbackController extends Controller
 {
     /**
      * Helper to extract clean full shop domain (e.g. store.myshopify.com) from Request or Session
      */
+    /**
+     * Helper to validate and format myshopify.com domain handle safely
+     */
+    private function sanitizeShopDomain(?string $shop): ?string
+    {
+        if (!$shop) return null;
+        $shop = strtolower(trim($shop));
+        if (!str_contains($shop, '.')) {
+            $shop .= '.myshopify.com';
+        }
+        if (preg_match('/^[a-zA-Z0-9][a-zA-Z0-9\-]*\.myshopify\.com$/', $shop)) {
+            return $shop;
+        }
+        return null;
+    }
+
     /**
      * Helper to extract clean full shop domain (e.g. store.myshopify.com) from Request, host parameter, or referer
      */
@@ -21,12 +38,8 @@ class ProductFeedbackController extends Controller
         $request = $request ?: request();
         $shop = $request->get('shop') ?: $request->header('x-shopify-domain');
 
-        if ($shop) {
-            $shop = strtolower(trim($shop));
-            if (!str_contains($shop, '.')) {
-                $shop .= '.myshopify.com';
-            }
-            return $shop;
+        if ($shop && ($sanitized = $this->sanitizeShopDomain($shop))) {
+            return $sanitized;
         }
 
         // Check host parameter (e.g. host = base64 encoded admin.shopify.com/store/canny-apps)
@@ -37,8 +50,8 @@ class ProductFeedbackController extends Controller
                 $parts = explode('admin.shopify.com/store/', $decodedHost);
                 if (isset($parts[1])) {
                     $handle = explode('/', $parts[1])[0];
-                    if ($handle) {
-                        return strtolower(trim($handle)) . '.myshopify.com';
+                    if ($handle && ($sanitized = $this->sanitizeShopDomain($handle))) {
+                        return $sanitized;
                     }
                 }
             }
@@ -53,13 +66,13 @@ class ProductFeedbackController extends Controller
                     $parts = explode('/store/', $parsed['path']);
                     if (isset($parts[1])) {
                         $handle = explode('/', $parts[1])[0];
-                        if ($handle) {
-                            return strtolower(trim($handle)) . '.myshopify.com';
+                        if ($handle && ($sanitized = $this->sanitizeShopDomain($handle))) {
+                            return $sanitized;
                         }
                     }
                 }
-                if (str_contains($parsed['host'], 'myshopify.com')) {
-                    return strtolower(trim($parsed['host']));
+                if (str_contains($parsed['host'], 'myshopify.com') && ($sanitized = $this->sanitizeShopDomain($parsed['host']))) {
+                    return $sanitized;
                 }
             }
         }
@@ -502,6 +515,21 @@ class ProductFeedbackController extends Controller
             'customer_email' => 'nullable|string',
         ]);
 
+        $shopDomain = $validated['shop_domain'] ?? $this->getShopDomain($request);
+        if ($shopDomain) {
+            $planInfo = $this->getShopPlan($shopDomain);
+            if (($planInfo['plan'] ?? 'free') === 'free') {
+                $monthlyCount = $this->getMonthlySubmissionCount($shopDomain);
+                if ($monthlyCount >= 15) {
+                    return response()->json([
+                        'success' => false,
+                        'limit_reached' => true,
+                        'message' => 'Monthly feedback submission limit reached for Free plan (15/15). Upgrade to Pro for unlimited submissions.',
+                    ], 403);
+                }
+            }
+        }
+
         $feedbackId = null;
 
         // Save directly into MySQL Database
@@ -529,8 +557,21 @@ class ProductFeedbackController extends Controller
     {
         $shop = $this->getShopDomain($request);
         $code = $request->get('code');
+        $hmac = $request->get('hmac');
         $apiKey = env('SHOPIFY_API_KEY');
         $apiSecret = env('SHOPIFY_API_SECRET');
+
+        // HMAC verification for OAuth callback security
+        if ($hmac && $apiSecret) {
+            $params = $request->all();
+            unset($params['hmac'], $params['signature']);
+            ksort($params);
+            $computedHmac = hash_hmac('sha256', http_build_query($params), $apiSecret);
+            if (!hash_equals($hmac, $computedHmac)) {
+                Log::warning("OAuth Callback HMAC verification failed for shop: {$shop}");
+                return response('Unauthorized: Invalid HMAC signature', 401);
+            }
+        }
 
         if ($shop && $code) {
             try {
@@ -538,6 +579,7 @@ class ProductFeedbackController extends Controller
                     'client_id' => $apiKey,
                     'client_secret' => $apiSecret,
                     'code' => $code,
+                    'expiring' => 1,
                 ]);
 
                 if ($response->successful()) {
@@ -606,5 +648,243 @@ class ProductFeedbackController extends Controller
 
         Log::info("Webhook app/uninstalled received for shop domain: " . ($shopDomain ?: 'UNKNOWN'));
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Helper to get active shop plan ('free' or 'pro')
+     */
+    private function getShopPlan(?string $shopDomain): array
+    {
+        $default = [
+            'plan' => 'free',
+            'charge_id' => null,
+            'status' => 'ACTIVE',
+        ];
+
+        if (!$shopDomain) {
+            return $default;
+        }
+
+        try {
+            $shortHandle = explode('.myshopify.com', $shopDomain)[0];
+            $row = DB::table('app_settings')
+                ->where(function ($q) use ($shopDomain, $shortHandle) {
+                    $q->where('shop_domain', '=', $shopDomain)
+                      ->orWhere('shop_domain', '=', $shortHandle);
+                })
+                ->where('key', 'plan_subscription')
+                ->first();
+
+            if ($row && !empty($row->value)) {
+                $decoded = json_decode($row->value, true);
+                if (is_array($decoded) && isset($decoded['plan'])) {
+                    return array_merge($default, $decoded);
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning("Error fetching plan for {$shopDomain}: " . $e->getMessage());
+        }
+
+        return $default;
+    }
+
+    /**
+     * Submenu: Pricing Plans comparison & management
+     */
+    public function plans(Request $request)
+    {
+        $shopDomain = $this->getShopDomain($request);
+        $monthlyCount = $this->getMonthlySubmissionCount($shopDomain);
+        $planDetails = $this->getShopPlan($shopDomain);
+
+        return Inertia::render('Plans', [
+            'shopDomain' => $shopDomain,
+            'currentPlan' => $planDetails['plan'],
+            'subscriptionDetails' => $planDetails,
+            'monthlyCount' => $monthlyCount,
+            'freeSubmissionLimit' => 15,
+        ]);
+    }
+
+    /**
+     * Upgrade to Pro Plan ($5/month) via Shopify GraphQL appSubscriptionCreate
+     */
+    public function subscribePro(Request $request)
+    {
+        $shopDomain = $this->getShopDomain($request);
+        if (!$shopDomain) {
+            return response()->json(['success' => false, 'message' => 'Shop domain missing'], 400);
+        }
+
+        $token = TokenService::getValidToken($shopDomain);
+        if (!$token) {
+            return response()->json(['success' => false, 'message' => 'Shopify Access Token missing or invalid. Please reinstall the app.'], 401);
+        }
+
+        $host = $request->get('host');
+        $baseUrl = config('app.url', 'https://beforebuy.cannyapps.com');
+        $returnUrl = "{$baseUrl}/plans/callback?shop=" . urlencode($shopDomain) . ($host ? "&host=" . urlencode($host) : '');
+        $isTest = env('SHOPIFY_BILLING_TEST', true);
+
+        $query = <<<'GRAPHQL'
+mutation appSubscriptionCreate($name: String!, $returnUrl: URL!, $lineItems: [AppSubscriptionLineItemInput!]!, $test: Boolean) {
+  appSubscriptionCreate(name: $name, returnUrl: $returnUrl, lineItems: $lineItems, test: $test) {
+    appSubscription {
+      id
+    }
+    confirmationUrl
+    userErrors {
+      field
+      message
+    }
+  }
+}
+GRAPHQL;
+
+        $variables = [
+            'name' => 'BeforeBuy Pro Plan',
+            'returnUrl' => $returnUrl,
+            'test' => (bool)$isTest,
+            'lineItems' => [
+                [
+                    'plan' => [
+                        'appRecurringPricingDetails' => [
+                            'price' => [
+                                'amount' => 5.0,
+                                'currencyCode' => 'USD',
+                            ],
+                            'interval' => 'EVERY_30_DAYS',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::withHeaders([
+                'X-Shopify-Access-Token' => $token,
+                'Content-Type' => 'application/json',
+            ])->post("https://{$shopDomain}/admin/api/2026-07/graphql.json", [
+                'query' => $query,
+                'variables' => $variables,
+            ]);
+
+            if ($response->successful()) {
+                $result = $response->json();
+                $userErrors = $result['data']['appSubscriptionCreate']['userErrors'] ?? [];
+                if (!empty($userErrors)) {
+                    $errorMsg = implode(', ', array_column($userErrors, 'message'));
+                    return response()->json(['success' => false, 'message' => $errorMsg], 422);
+                }
+
+                $confirmationUrl = $result['data']['appSubscriptionCreate']['confirmationUrl'] ?? null;
+                if ($confirmationUrl) {
+                    return response()->json([
+                        'success' => true,
+                        'confirmationUrl' => $confirmationUrl,
+                    ]);
+                }
+            } else {
+                Log::error("Shopify GraphQL Billing Error for {$shopDomain}: " . $response->body());
+            }
+        } catch (\Throwable $e) {
+            Log::error("Subscribe Pro Exception: " . $e->getMessage());
+        }
+
+        return response()->json(['success' => false, 'message' => 'Failed to initialize Shopify Pro Plan charge.'], 500);
+    }
+
+    /**
+     * Callback after merchant approves $5 charge on Shopify Authorization screen
+     */
+    public function subscribeCallback(Request $request)
+    {
+        $shopDomain = $this->getShopDomain($request);
+        $chargeId = $request->get('charge_id');
+
+        if ($shopDomain) {
+            DB::table('app_settings')->updateOrInsert(
+                ['shop_domain' => $shopDomain, 'key' => 'plan_subscription'],
+                [
+                    'value' => json_encode([
+                        'plan' => 'pro',
+                        'charge_id' => $chargeId,
+                        'status' => 'ACTIVE',
+                        'updated_at' => now()->toDateTimeString(),
+                    ]),
+                    'updated_at' => now(),
+                ]
+            );
+            Log::info("Pro Plan successfully activated for shop: {$shopDomain}");
+        }
+
+        $host = $request->get('host');
+        $redirectUrl = "/plans?shop=" . urlencode($shopDomain ?: '') . ($host ? "&host=" . urlencode($host) : '');
+        return redirect($redirectUrl);
+    }
+
+    /**
+     * Downgrade / Cancel Pro Plan back to Free Plan
+     */
+    public function cancelSubscription(Request $request)
+    {
+        $shopDomain = $this->getShopDomain($request);
+        if (!$shopDomain) {
+            return response()->json(['success' => false, 'message' => 'Shop domain missing'], 400);
+        }
+
+        $planDetails = $this->getShopPlan($shopDomain);
+        $chargeId = $planDetails['charge_id'] ?? null;
+
+        if ($chargeId) {
+            $token = TokenService::getValidToken($shopDomain);
+            if ($token) {
+                $query = <<<'GRAPHQL'
+mutation appSubscriptionCancel($id: ID!) {
+  appSubscriptionCancel(id: $id) {
+    appSubscription {
+      id
+      status
+    }
+    userErrors {
+      field
+      message
+    }
+  }
+}
+GRAPHQL;
+                try {
+                    \Illuminate\Support\Facades\Http::withHeaders([
+                        'X-Shopify-Access-Token' => $token,
+                        'Content-Type' => 'application/json',
+                    ])->post("https://{$shopDomain}/admin/api/2026-07/graphql.json", [
+                        'query' => $query,
+                        'variables' => ['id' => $chargeId],
+                    ]);
+                } catch (\Throwable $e) {
+                    Log::warning("Cancel GraphQL Exception for {$shopDomain}: " . $e->getMessage());
+                }
+            }
+        }
+
+        // Revert database status to free plan
+        DB::table('app_settings')->updateOrInsert(
+            ['shop_domain' => $shopDomain, 'key' => 'plan_subscription'],
+            [
+                'value' => json_encode([
+                    'plan' => 'free',
+                    'charge_id' => null,
+                    'status' => 'CANCELLED',
+                    'updated_at' => now()->toDateTimeString(),
+                ]),
+                'updated_at' => now(),
+            ]
+        );
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Successfully downgraded to Free Plan.']);
+        }
+
+        return redirect()->back()->with('success', 'Plan downgraded to Free.');
     }
 }
