@@ -708,7 +708,8 @@ class ProductFeedbackController extends Controller
             $apiKey = env('SHOPIFY_API_KEY');
             $scopes = env('SHOPIFY_API_SCOPES', 'read_products,write_products,read_themes,read_purchase_options,write_purchase_options');
             $redirectUri = urlencode("{$appUrl}/auth/callback");
-            $authUrl = "https://admin.shopify.com/store/{$shopHandle}/oauth/authorize?client_id={$apiKey}&scope=" . urlencode($scopes) . "&redirect_uri={$redirectUri}";
+            $state = urlencode(base64_encode("/billing/subscribe?shop={$shopDomain}"));
+            $authUrl = "https://admin.shopify.com/store/{$shopHandle}/oauth/authorize?client_id={$apiKey}&scope=" . urlencode($scopes) . "&redirect_uri={$redirectUri}&state={$state}";
 
             if ($request->wantsJson()) {
                 return response()->json(['success' => true, 'confirmationUrl' => $authUrl]);
@@ -853,11 +854,23 @@ GRAPHQL;
                             ]
                         );
 
-                        // Always reset plan to free on new installation / re-installation
-                        $this->setShopPlan($shop, 'free', null);
+                        Log::info("Automatic OAuth token saved for shop: {$shop}");
 
-                        Log::info("Automatic OAuth token saved and plan reset to free on install for shop: {$shop}");
-                        return redirect("/?shop=" . urlencode($shop));
+                        $redirectPath = '/';
+                        $decodedState = $request->get('state');
+                        if ($decodedState) {
+                            try {
+                                $rawState = base64_decode(urldecode($decodedState), true);
+                                if ($rawState && str_starts_with($rawState, '/')) {
+                                    $redirectPath = $rawState;
+                                }
+                            } catch (\Throwable $inner) {
+                                Log::warning('Invalid OAuth state in authCallback: ' . $inner->getMessage());
+                            }
+                        }
+
+                        $separator = str_contains($redirectPath, '?') ? '&' : '?';
+                        return redirect("{$redirectPath}{$separator}shop=" . urlencode($shop));
                     }
                 } else {
                     Log::error('OAuth token exchange failed: ' . $response->body());
