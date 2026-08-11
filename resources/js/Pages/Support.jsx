@@ -180,6 +180,37 @@ export default function Support({ shopDomain = '', defaultEmail = '' }) {
                             </List>
                         </BlockStack>
                     </Card>
+
+                    {/* Developer & Testing Tools Card */}
+                    <Card>
+                        <BlockStack gap="300">
+                            <InlineStack align="space-between" blockAlign="center">
+                                <BlockStack gap="100">
+                                    <Text variant="headingSm" as="h3">🧹 Clean Database & Reset Plan (Testing Tool)</Text>
+                                    <Text tone="subdued" variant="bodySm">
+                                        Wipes all submitted feedback records and resets the shop plan back to Free ($0/mo) for testing.
+                                    </Text>
+                                </BlockStack>
+                                <a
+                                    href="/clean-db"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{
+                                        backgroundColor: '#d97706',
+                                        color: '#ffffff',
+                                        padding: '8px 16px',
+                                        borderRadius: '6px',
+                                        fontWeight: '600',
+                                        fontSize: '13px',
+                                        textDecoration: 'none',
+                                        display: 'inline-block',
+                                    }}
+                                >
+                                    Clean DB & Reset Plan
+                                </a>
+                            </InlineStack>
+                        </BlockStack>
+                    </Card>
                 </BlockStack>
             </Page>
         </AppLayout>

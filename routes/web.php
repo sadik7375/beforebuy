@@ -40,3 +40,40 @@ Route::get('/run-migrate', function () {
         return '<h2>Migration Failed:</h2><pre>' . $e->getMessage() . '</pre>';
     }
 });
+
+Route::get('/clean-db', function (\Illuminate\Http\Request $request) {
+    try {
+        $shop = $request->get('shop') ?: session('shopify_shop') ?: 'canny-apps.myshopify.com';
+        
+        // 1. Delete all feedback submissions
+        \Illuminate\Support\Facades\DB::table('product_feedbacks')->delete();
+        
+        // 2. Reset shop plan to Free ($0/month)
+        \Illuminate\Support\Facades\DB::table('shops')
+            ->where('shop_domain', $shop)
+            ->update([
+                'plan' => 'free',
+                'charge_id' => null,
+                'updated_at' => now()
+            ]);
+
+        return '
+            <div style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; padding: 50px 20px; text-align: center; background-color: #f6f6f7; min-height: 100vh;">
+                <div style="max-width: 500px; margin: 0 auto; background: #ffffff; padding: 32px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+                    <div style="font-size: 48px; margin-bottom: 16px;">🧹✨</div>
+                    <h1 style="color: #008060; margin-bottom: 12px; font-size: 24px;">Database Cleaned Successfully!</h1>
+                    <p style="font-size: 15px; color: #475569; line-height: 1.6; margin-bottom: 24px;">
+                        • All product feedback submissions deleted.<br>
+                        • Shop plan reset to <strong>Free Plan ($0/mo)</strong>.<br>
+                        • Monthly feedback limit reset to <strong>0 / 10</strong>.
+                    </p>
+                    <a href="/?shop='.$shop.'" style="display: inline-block; background: #008060; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px;">
+                        Return to App Overview
+                    </a>
+                </div>
+            </div>
+        ';
+    } catch (\Exception $e) {
+        return '<h2>Clean DB Error:</h2><pre>' . $e->getMessage() . '</pre>';
+    }
+});
