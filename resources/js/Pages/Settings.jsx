@@ -223,55 +223,33 @@ export default function Settings({ reasons = [], enable_email = true, require_em
                                             key={preset.id}
                                             onClick={() => handleThemeSelect(preset)}
                                             style={{
-                                                position: 'relative',
-                                                border: `2px solid ${isSelected ? '#2c6ecb' : isLocked ? '#e2e8f0' : '#e1e3e5'}`,
+                                                border: `2px solid ${isSelected ? '#2c6ecb' : '#e1e3e5'}`,
                                                 borderRadius: '12px',
                                                 padding: '16px',
-                                                cursor: isLocked ? 'pointer' : 'pointer',
+                                                cursor: 'pointer',
                                                 backgroundColor: isSelected ? '#f0f7ff' : '#ffffff',
                                                 transition: 'all 0.2s ease-in-out',
                                                 display: 'flex',
                                                 flexDirection: 'column',
                                                 justifyContent: 'space-between',
-                                                overflow: 'hidden'
                                             }}
                                         >
-                                            {isLocked && (
-                                                <div style={{
-                                                    position: 'absolute',
-                                                    top: 0, left: 0, right: 0, bottom: 0,
-                                                    zIndex: 10,
-                                                    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-                                                    backdropFilter: 'blur(2px)',
-                                                    display: 'flex',
-                                                    flexDirection: 'column',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    padding: '12px',
-                                                    textAlign: 'center'
-                                                }}>
-                                                    <Badge tone="attention">🔒 PRO Plan</Badge>
-                                                    <div style={{ marginTop: '8px' }}>
-                                                        <Text variant="bodyXs" weight="semibold" tone="subdued">
-                                                            Click to Upgrade
-                                                        </Text>
-                                                    </div>
-                                                </div>
-                                            )}
-
                                             <div>
                                                 <InlineStack align="space-between" blockAlign="center">
                                                     <InlineStack gap="200" blockAlign="center">
                                                         <Text variant="headingSm" as="h3">{preset.name}</Text>
-                                                        {preset.proOnly && <Badge tone="info">PRO</Badge>}
+                                                        {preset.proOnly && (
+                                                            <Badge tone={isPro ? "success" : "attention"}>
+                                                                {isPro ? "PRO" : "PRO"}
+                                                            </Badge>
+                                                        )}
                                                     </InlineStack>
                                                     <input
                                                         type="radio"
                                                         name="popup_theme_preset"
-                                                        checked={isSelected && !isLocked}
-                                                        disabled={isLocked}
+                                                        checked={isSelected}
                                                         onChange={() => handleThemeSelect(preset)}
-                                                        style={{ width: '18px', height: '18px', cursor: isLocked ? 'not-allowed' : 'pointer' }}
+                                                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
                                                     />
                                                 </InlineStack>
 
