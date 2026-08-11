@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             '/settings/save',
             '/support/submit',
+            '/plans/*',
             '/billing/*',
             '/webhooks/*',
             '/api/*',
