@@ -679,20 +679,117 @@ class ProductFeedbackController extends Controller
     }
 
     /**
-     * Helper to get active shop plan ('free' or 'pro')
+     * Helper to get active shop plan ('free' or 'pro') directly synchronized with Shopify API
      */
     private function getShopPlan(?string $shopDomain): array
     {
         $default = [
             'plan' => 'free',
             'charge_id' => null,
-            'status' => 'ACTIVE',
+            'status' => 'CANCELLED',
         ];
 
         if (!$shopDomain) {
             return $default;
         }
 
+        try {
+            $token = TokenService::getValidToken($shopDomain);
+            if ($token) {
+                $query = <<<'GRAPHQL'
+query GetActiveSubscriptions {
+  app {
+    installation {
+      activeSubscriptions {
+        id
+        name
+        status
+      }
+    }
+  }
+}
+GRAPHQL;
+                $apiVersion = env('SHOPIFY_API_VERSION', '2025-01');
+                $response = \Illuminate\Support\Facades\Http::withHeaders([
+                    'X-Shopify-Access-Token' => $token,
+                    'Content-Type' => 'application/json',
+                ])->post("https://{$shopDomain}/admin/api/{$apiVersion}/graphql.json", [
+                    'query' => $query,
+                ]);
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    $subscriptions = $data['data']['app']['installation']['activeSubscriptions'] ?? [];
+                    
+                    $activeSub = null;
+                    foreach ($subscriptions as $sub) {
+                        if (($sub['status'] ?? '') === 'ACTIVE') {
+                            $activeSub = $sub;
+                            break;
+                        }
+                    }
+
+                    $shortHandle = explode('.myshopify.com', $shopDomain)[0];
+
+                    if ($activeSub) {
+                        $planData = [
+                            'plan' => 'pro',
+                            'charge_id' => $activeSub['id'],
+                            'status' => 'ACTIVE',
+                            'updated_at' => now()->toDateTimeString(),
+                        ];
+
+                        DB::table('app_settings')
+                            ->where(function ($q) use ($shopDomain, $shortHandle) {
+                                $q->where('shop_domain', '=', $shopDomain)
+                                  ->orWhere('shop_domain', '=', $shortHandle)
+                                  ->orWhere('shop_domain', '=', 'global');
+                            })
+                            ->where('key', 'plan_subscription')
+                            ->delete();
+
+                        DB::table('app_settings')->insert([
+                            'shop_domain' => $shopDomain,
+                            'key' => 'plan_subscription',
+                            'value' => json_encode($planData),
+                            'updated_at' => now(),
+                        ]);
+
+                        return $planData;
+                    } else {
+                        // No active subscription on Shopify side -> Force reset to Free Plan
+                        $planData = [
+                            'plan' => 'free',
+                            'charge_id' => null,
+                            'status' => 'CANCELLED',
+                            'updated_at' => now()->toDateTimeString(),
+                        ];
+
+                        DB::table('app_settings')
+                            ->where(function ($q) use ($shopDomain, $shortHandle) {
+                                $q->where('shop_domain', '=', $shopDomain)
+                                  ->orWhere('shop_domain', '=', $shortHandle)
+                                  ->orWhere('shop_domain', '=', 'global');
+                            })
+                            ->where('key', 'plan_subscription')
+                            ->delete();
+
+                        DB::table('app_settings')->insert([
+                            'shop_domain' => $shopDomain,
+                            'key' => 'plan_subscription',
+                            'value' => json_encode($planData),
+                            'updated_at' => now(),
+                        ]);
+
+                        return $planData;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning("Live Shopify plan sync exception for {$shopDomain}: " . $e->getMessage());
+        }
+
+        // Fallback to local DB if API check fails
         try {
             $shortHandle = explode('.myshopify.com', $shopDomain)[0];
             $row = DB::table('app_settings')
@@ -712,7 +809,7 @@ class ProductFeedbackController extends Controller
                 }
             }
         } catch (\Throwable $e) {
-            Log::warning("Error fetching plan for {$shopDomain}: " . $e->getMessage());
+            Log::warning("Error fetching fallback plan for {$shopDomain}: " . $e->getMessage());
         }
 
         return $default;
