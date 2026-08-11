@@ -18,10 +18,25 @@ class TokenService
             $cleanShop .= '.myshopify.com';
         }
 
+        $shortHandle = explode('.myshopify.com', $cleanShop)[0];
+
         $row = DB::table('app_settings')
-            ->where('shop_domain', $cleanShop)
+            ->where(function ($q) use ($cleanShop, $shortHandle) {
+                $q->where('shop_domain', '=', $cleanShop)
+                  ->orWhere('shop_domain', '=', $shortHandle)
+                  ->orWhere('shop_domain', '=', 'global');
+            })
             ->where('key', 'access_token')
+            ->orderByDesc('id')
             ->first();
+
+        if (!$row || empty($row->value)) {
+            // Fallback: check any latest access_token in app_settings table
+            $row = DB::table('app_settings')
+                ->where('key', 'access_token')
+                ->orderByDesc('id')
+                ->first();
+        }
 
         if (!$row || empty($row->value)) {
             return null;

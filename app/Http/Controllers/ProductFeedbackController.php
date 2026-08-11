@@ -718,7 +718,16 @@ class ProductFeedbackController extends Controller
 
         $token = TokenService::getValidToken($shopDomain);
         if (!$token) {
-            return response()->json(['success' => false, 'message' => 'Shopify Access Token missing or invalid. Please reinstall the app.'], 401);
+            $apiKey = env('SHOPIFY_API_KEY');
+            $baseUrl = config('app.url', 'https://beforebuy.cannyapps.com');
+            if ($apiKey && $shopDomain) {
+                $authUrl = "https://{$shopDomain}/admin/oauth/authorize?client_id={$apiKey}&scope=read_products&redirect_uri=" . urlencode("{$baseUrl}/auth/callback");
+                return response()->json([
+                    'success' => true,
+                    'confirmationUrl' => $authUrl,
+                ]);
+            }
+            return response()->json(['success' => false, 'message' => 'Shopify Access Token missing. Please authorize app permissions.'], 401);
         }
 
         $host = $request->get('host');
