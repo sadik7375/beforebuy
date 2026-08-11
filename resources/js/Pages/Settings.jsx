@@ -12,6 +12,7 @@ export default function Settings({ reasons = [], enable_email = true, require_em
         'Unsure about size / fit / dimensions',
         'Shipping fee or delivery time is too high',
         'Product information or reviews missing',
+        'Other reason',
     ];
 
     const [reasonList, setReasonList] = useState(reasons.length > 0 ? reasons : defaultReasons);
@@ -35,21 +36,21 @@ export default function Settings({ reasons = [], enable_email = true, require_em
             name: 'Quiz Badge Pills',
             description: 'Pill items with circular A, B, C badges and highlighted active states.',
             type: 'badge',
-            proOnly: true,
+            proOnly: false,
         },
         {
             id: 'chips_grid',
             name: 'Horizontal Tag Chips',
             description: 'Compact side-by-side tags with checkmarks on active items.',
             type: 'chips',
-            proOnly: true,
+            proOnly: false,
         },
         {
             id: 'dark',
             name: 'Sleek Dark Mode',
             description: 'Dark mode modal layout with glowing active selection.',
             type: 'dark',
-            proOnly: true,
+            proOnly: false,
         },
     ];
 
@@ -228,17 +229,13 @@ export default function Settings({ reasons = [], enable_email = true, require_em
                                             <div>
                                                 <InlineStack align="space-between" blockAlign="center">
                                                     <Text variant="headingSm" as="h3">{preset.name}</Text>
-                                                    {preset.proOnly ? (
-                                                        <Badge tone="warning">Pro Only</Badge>
-                                                    ) : (
-                                                        <input
-                                                            type="radio"
-                                                            name="popup_theme_preset"
-                                                            checked={isSelected}
-                                                            onChange={() => handleThemeSelect(preset)}
-                                                            style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                                                        />
-                                                    )}
+                                                    <input
+                                                        type="radio"
+                                                        name="popup_theme_preset"
+                                                        checked={isSelected}
+                                                        onChange={() => handleThemeSelect(preset)}
+                                                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                                    />
                                                 </InlineStack>
 
                                                 <Box paddingBlockStart="100">

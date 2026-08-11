@@ -314,7 +314,10 @@ class ProductFeedbackController extends Controller
         $config = $this->getAppSettings($shopDomain);
 
         return Inertia::render('Settings', [
-            'settings' => $config,
+            'reasons' => $config['reasons'] ?? [],
+            'enable_email' => (bool)($config['enable_email'] ?? true),
+            'require_email' => (bool)($config['require_email'] ?? false),
+            'popup_theme' => $config['popup_theme'] ?? 'modern',
             'shopDomain' => $shopDomain,
         ]);
     }
