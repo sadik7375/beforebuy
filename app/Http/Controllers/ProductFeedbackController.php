@@ -709,7 +709,7 @@ class ProductFeedbackController extends Controller
             $scopes = env('SHOPIFY_API_SCOPES', 'read_products,write_products,read_themes,read_purchase_options,write_purchase_options');
             $redirectUri = urlencode("{$appUrl}/auth/callback");
             $state = urlencode(base64_encode("/billing/subscribe?shop={$shopDomain}"));
-            $authUrl = "https://admin.shopify.com/store/{$shopHandle}/oauth/authorize?client_id={$apiKey}&scope=" . urlencode($scopes) . "&redirect_uri={$redirectUri}&state={$state}";
+            $authUrl = "https://admin.shopify.com/store/{$shopHandle}/oauth/authorize?client_id={$apiKey}&scope=" . urlencode($scopes) . "&redirect_uri={$redirectUri}&state={$state}&access_mode=offline";
 
             if ($request->wantsJson()) {
                 return response()->json(['success' => true, 'confirmationUrl' => $authUrl]);
@@ -799,7 +799,8 @@ GRAPHQL;
                 $apiKey = env('SHOPIFY_API_KEY');
                 $scopes = env('SHOPIFY_API_SCOPES', 'read_products,write_products,read_themes,read_purchase_options,write_purchase_options');
                 $redirectUri = urlencode("{$appUrl}/auth/callback");
-                $authUrl = "https://admin.shopify.com/store/{$shortHandle}/oauth/authorize?client_id={$apiKey}&scope=" . urlencode($scopes) . "&redirect_uri={$redirectUri}";
+                $state = urlencode(base64_encode("/billing/subscribe?shop={$shopDomain}"));
+                $authUrl = "https://admin.shopify.com/store/{$shortHandle}/oauth/authorize?client_id={$apiKey}&scope=" . urlencode($scopes) . "&redirect_uri={$redirectUri}&state={$state}&access_mode=offline";
 
                 if ($request->wantsJson()) {
                     return response()->json(['success' => true, 'confirmationUrl' => $authUrl]);
@@ -846,10 +847,24 @@ GRAPHQL;
                     $accessToken = $body['access_token'] ?? null;
 
                     if ($accessToken) {
+                        $tokenValue = [
+                            'token' => $accessToken,
+                            'updated_at' => now()->toDateTimeString(),
+                        ];
+
+                        if (!empty($body['refresh_token'])) {
+                            $tokenValue['refresh_token'] = $body['refresh_token'];
+                        }
+
+                        if (!empty($body['expires_in'])) {
+                            $tokenValue['expires_in'] = $body['expires_in'];
+                            $tokenValue['expires_at'] = now()->addSeconds($body['expires_in'])->toDateTimeString();
+                        }
+
                         DB::table('app_settings')->updateOrInsert(
                             ['shop_domain' => $shop, 'key' => 'access_token'],
                             [
-                                'value' => json_encode(['token' => $accessToken, 'updated_at' => now()->toDateTimeString()]),
+                                'value' => json_encode($tokenValue),
                                 'updated_at' => now(),
                             ]
                         );
