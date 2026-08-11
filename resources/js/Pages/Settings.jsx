@@ -23,6 +23,8 @@ export default function Settings({ reasons = [], enable_email = true, require_em
     const [saved, setSaved] = useState(false);
     const [saving, setSaving] = useState(false);
 
+    const [previewSelectedBadge, setPreviewSelectedBadge] = useState('A');
+
     const themePresets = [
         {
             id: 'modern',
@@ -33,8 +35,8 @@ export default function Settings({ reasons = [], enable_email = true, require_em
         },
         {
             id: 'badge_list',
-            name: 'Quiz Badge Pills',
-            description: 'Pill items with circular A, B, C badges and highlighted active states.',
+            name: 'Quiz Selection Badges',
+            description: 'Interactive pill items with circular A, B badges and radio selection highlights.',
             type: 'badge',
             proOnly: false,
         },
@@ -261,12 +263,62 @@ export default function Settings({ reasons = [], enable_email = true, require_em
 
                                                 {preset.type === 'badge' && (
                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                                        <div style={{ padding: '4px 8px', borderRadius: '20px', border: '2px solid #22c55e', background: '#dcfce7', fontSize: '11px', color: '#14532d', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                            <span style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#fef08a', border: '1px solid #eab308', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#854d0e', fontWeight: '800' }}>A</span> High Price
-                                                        </div>
-                                                        <div style={{ padding: '4px 8px', borderRadius: '20px', border: '1.5px solid #1e293b', background: '#fff', fontSize: '11px', color: '#1e293b', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                            <span style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#fef08a', border: '1px solid #eab308', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#854d0e', fontWeight: '800' }}>B</span> Unsure Size
-                                                        </div>
+                                                        {[
+                                                            { id: 'A', text: 'High Price' },
+                                                            { id: 'B', text: 'Unsure Size' }
+                                                        ].map((opt) => {
+                                                            const isOptSelected = previewSelectedBadge === opt.id;
+                                                            return (
+                                                                <div
+                                                                    key={opt.id}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setPreviewSelectedBadge(opt.id);
+                                                                    }}
+                                                                    style={{
+                                                                        padding: '6px 12px',
+                                                                        borderRadius: '20px',
+                                                                        border: isOptSelected ? '2px solid #22c55e' : '1.5px solid #cbd5e1',
+                                                                        background: isOptSelected ? '#dcfce7' : '#ffffff',
+                                                                        fontSize: '11px',
+                                                                        color: isOptSelected ? '#14532d' : '#334155',
+                                                                        fontWeight: isOptSelected ? '700' : '600',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'space-between',
+                                                                        cursor: 'pointer',
+                                                                        transition: 'all 0.15s ease',
+                                                                    }}
+                                                                >
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                        <span style={{
+                                                                            width: '20px',
+                                                                            height: '20px',
+                                                                            borderRadius: '50%',
+                                                                            background: '#fef08a',
+                                                                            border: '1px solid #eab308',
+                                                                            display: 'inline-flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'center',
+                                                                            fontSize: '10px',
+                                                                            color: '#854d0e',
+                                                                            fontWeight: '800'
+                                                                        }}>
+                                                                            {opt.id}
+                                                                        </span>
+                                                                        <span>{opt.text}</span>
+                                                                    </div>
+                                                                    <div style={{
+                                                                        width: '14px',
+                                                                        height: '14px',
+                                                                        borderRadius: '50%',
+                                                                        border: isOptSelected ? '4px solid #22c55e' : '1.5px solid #94a3b8',
+                                                                        background: isOptSelected ? '#ffffff' : 'transparent',
+                                                                        boxSizing: 'border-box'
+                                                                    }} />
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
                                                 )}
 
