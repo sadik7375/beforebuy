@@ -23,9 +23,12 @@ Route::post('/plans/cancel', [ProductFeedbackController::class, 'cancelSubscript
 // Shopify OAuth Route
 Route::get('/auth/callback', [ProductFeedbackController::class, 'authCallback'])->name('auth.callback');
 
-// Webhook Handler
+// Webhook Handlers (Mandatory Compliance & App Uninstalled)
 Route::post('/webhooks/app-uninstalled', [ProductFeedbackController::class, 'handleAppUninstalled']);
 Route::post('/webhooks/app/uninstalled', [ProductFeedbackController::class, 'handleAppUninstalled']);
+Route::post('/webhooks/customers/data-request', [ProductFeedbackController::class, 'handleCustomersDataRequest']);
+Route::post('/webhooks/customers/redact', [ProductFeedbackController::class, 'handleCustomersRedact']);
+Route::post('/webhooks/shop/redact', [ProductFeedbackController::class, 'handleShopRedact']);
 
 // Privacy Policy Public Route (Required for Shopify App Store Listing)
 Route::get('/privacy', function () {

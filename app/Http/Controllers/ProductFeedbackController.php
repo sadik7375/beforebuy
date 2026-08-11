@@ -1296,4 +1296,146 @@ GRAPHQL;
         $host = $request->get('host');
         return redirect("/plans?shop=" . urlencode($shopDomain) . ($host ? "&host=" . urlencode($host) : ''));
     }
+
+    /**
+     * Verify Shopify Webhook HMAC Signature
+     */
+    private function verifyShopifyWebhook(Request $request): bool
+    {
+        $hmacHeader = $request->header('X-Shopify-Hmac-Sha256') ?? $request->get('hmac');
+        
+        if (!$hmacHeader) {
+            return false;
+        }
+
+        $secret = env('SHOPIFY_API_SECRET');
+        if (!$secret) {
+            Log::warning('SHOPIFY_API_SECRET missing in .env for HMAC verification.');
+            return true;
+        }
+
+        $data = $request->getContent();
+        $calculatedHmac = base64_encode(hash_hmac('sha256', $data, $secret, true));
+
+        return hash_equals($calculatedHmac, $hmacHeader);
+    }
+
+    /**
+     * Mandatory Webhook: customers/data_request
+     * Triggered when a customer requests their personal data.
+     */
+    public function handleCustomersDataRequest(Request $request)
+    {
+        Log::info('Webhook received: customers/data_request', $request->all());
+
+        if (!$this->verifyShopifyWebhook($request)) {
+            Log::warning('HMAC verification failed for customers/data_request webhook');
+            return response()->json(['message' => 'Invalid HMAC signature'], 401);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Customer data request processed successfully.',
+        ], 200);
+    }
+
+    /**
+     * Mandatory Webhook: customers/redact
+     * Triggered when a customer requests deletion of their personal data.
+     */
+    public function handleCustomersRedact(Request $request)
+    {
+        Log::info('Webhook received: customers/redact', $request->all());
+
+        if (!$this->verifyShopifyWebhook($request)) {
+            Log::warning('HMAC verification failed for customers/redact webhook');
+            return response()->json(['message' => 'Invalid HMAC signature'], 401);
+        }
+
+        $customerEmail = $request->input('customer.email');
+        if ($customerEmail) {
+            DB::table('product_feedbacks')
+                ->where('customer_email', $customerEmail)
+                ->update(['customer_email' => null]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Customer data redacted successfully.',
+        ], 200);
+    }
+
+    /**
+     * Mandatory Webhook: shop/redact
+     * Triggered 48 hours after a merchant uninstalls the app to delete all store data.
+     */
+    public function handleShopRedact(Request $request)
+    {
+        Log::info('Webhook received: shop/redact', $request->all());
+
+        if (!$this->verifyShopifyWebhook($request)) {
+            Log::warning('HMAC verification failed for shop/redact webhook');
+            return response()->json(['message' => 'Invalid HMAC signature'], 401);
+        }
+
+        $shopDomain = $request->input('shop_domain');
+        if ($shopDomain) {
+            $shortHandle = explode('.myshopify.com', $shopDomain)[0];
+
+            DB::table('app_settings')
+                ->where('shop_domain', $shopDomain)
+                ->orWhere('shop_domain', $shortHandle)
+                ->delete();
+
+            DB::table('product_feedbacks')
+                ->where('shop_domain', $shopDomain)
+                ->orWhere('shop_domain', $shortHandle)
+                ->delete();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Shop data redacted successfully.',
+        ], 200);
+    }
+
+    /**
+     * Webhook: app/uninstalled
+     * Triggered immediately when a merchant uninstalls the app.
+     */
+    public function handleAppUninstalled(Request $request)
+    {
+        Log::info('Webhook received: app/uninstalled', $request->all());
+
+        if (!$this->verifyShopifyWebhook($request)) {
+            Log::warning('HMAC verification failed for app/uninstalled webhook');
+            return response()->json(['message' => 'Invalid HMAC signature'], 401);
+        }
+
+        $shopDomain = $request->input('myshopify_domain') ?? $request->header('X-Shopify-Shop-Domain');
+        if ($shopDomain) {
+            $shortHandle = explode('.myshopify.com', $shopDomain)[0];
+
+            DB::table('app_settings')
+                ->where(function ($q) use ($shopDomain, $shortHandle) {
+                    $q->where('shop_domain', $shopDomain)
+                      ->orWhere('shop_domain', $shortHandle);
+                })
+                ->where('key', 'plan_subscription')
+                ->update([
+                    'value' => json_encode([
+                        'plan' => 'free',
+                        'charge_id' => null,
+                        'status' => 'UNINSTALLED',
+                        'updated_at' => now()->toDateTimeString(),
+                    ]),
+                    'updated_at' => now(),
+                ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'App uninstalled webhook processed.',
+        ], 200);
+    }
 }
