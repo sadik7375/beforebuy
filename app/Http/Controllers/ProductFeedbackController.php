@@ -783,35 +783,39 @@ GRAPHQL;
 
                         return $planData;
                     }
+                } else {
+                    // Token rejected or 401 Unauthorized -> App was uninstalled/reinstalled!
+                    Log::info("Shopify API returned non-successful response ({$response->status()}) for {$shopDomain}. Resetting plan to Free.");
+                    $shortHandle = explode('.myshopify.com', $shopDomain)[0];
+                    DB::table('app_settings')
+                        ->where(function ($q) use ($shopDomain, $shortHandle) {
+                            $q->where('shop_domain', '=', $shopDomain)
+                              ->orWhere('shop_domain', '=', $shortHandle)
+                              ->orWhere('shop_domain', '=', 'global');
+                        })
+                        ->where('key', 'plan_subscription')
+                        ->delete();
+
+                    DB::table('app_settings')->insert([
+                        'shop_domain' => $shopDomain,
+                        'key' => 'plan_subscription',
+                        'value' => json_encode([
+                            'plan' => 'free',
+                            'charge_id' => null,
+                            'status' => 'CANCELLED',
+                            'updated_at' => now()->toDateTimeString(),
+                        ]),
+                        'updated_at' => now(),
+                    ]);
+
+                    return $default;
                 }
             }
         } catch (\Throwable $e) {
             Log::warning("Live Shopify plan sync exception for {$shopDomain}: " . $e->getMessage());
         }
 
-        // Fallback to local DB if API check fails
-        try {
-            $shortHandle = explode('.myshopify.com', $shopDomain)[0];
-            $row = DB::table('app_settings')
-                ->where(function ($q) use ($shopDomain, $shortHandle) {
-                    $q->where('shop_domain', '=', $shopDomain)
-                      ->orWhere('shop_domain', '=', $shortHandle)
-                      ->orWhere('shop_domain', '=', 'global');
-                })
-                ->where('key', 'plan_subscription')
-                ->orderByDesc('id')
-                ->first();
-
-            if ($row && !empty($row->value)) {
-                $decoded = json_decode($row->value, true);
-                if (is_array($decoded) && isset($decoded['plan'])) {
-                    return array_merge($default, $decoded);
-                }
-            }
-        } catch (\Throwable $e) {
-            Log::warning("Error fetching fallback plan for {$shopDomain}: " . $e->getMessage());
-        }
-
+        // Fallback to default free plan if API check fails
         return $default;
     }
 
