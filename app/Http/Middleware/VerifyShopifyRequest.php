@@ -23,18 +23,13 @@ class VerifyShopifyRequest
             }
         }
 
-        // Store clean shop domain in session if provided
+        // Set shop clean domain on request attributes if provided
         if ($shop) {
             $shopClean = strtolower(trim($shop));
             if (!str_contains($shopClean, '.')) {
                 $shopClean .= '.myshopify.com';
             }
-            session(['shop_domain' => $shopClean]);
-        }
-
-        $token = $request->header('X-Shopify-Access-Token') ?: $request->get('token');
-        if ($token) {
-            session(['shopify_token' => $token]);
+            $request->attributes->set('shop_domain', $shopClean);
         }
 
         return $next($request);
