@@ -36,21 +36,21 @@ export default function Settings({ reasons = [], enable_email = true, require_em
             name: 'Quiz Badge Pills',
             description: 'Pill items with circular A, B, C badges and highlighted active states.',
             type: 'badge',
-            proOnly: true,
+            proOnly: false,
         },
         {
             id: 'chips_grid',
             name: 'Horizontal Tag Chips',
             description: 'Compact side-by-side tags with checkmarks on active items.',
             type: 'chips',
-            proOnly: true,
+            proOnly: false,
         },
         {
             id: 'dark',
             name: 'Sleek Dark Mode',
             description: 'Dark mode modal layout with glowing active selection.',
             type: 'dark',
-            proOnly: true,
+            proOnly: false,
         },
     ];
 
@@ -72,18 +72,7 @@ export default function Settings({ reasons = [], enable_email = true, require_em
         setReasonList(reasonList.filter((_, index) => index !== indexToRemove));
     };
 
-    const handleUpgradeRedirect = () => {
-        const params = new URLSearchParams(window.location.search);
-        const host = params.get('host') || '';
-        const shop = shopDomain || params.get('shop') || '';
-        router.visit(`/plans?shop=${encodeURIComponent(shop)}${host ? `&host=${encodeURIComponent(host)}` : ''}`);
-    };
-
     const handleThemeSelect = (preset) => {
-        if (preset.proOnly && !isPro) {
-            handleUpgradeRedirect();
-            return;
-        }
         setSelectedTheme(preset.id);
     };
 
@@ -236,14 +225,7 @@ export default function Settings({ reasons = [], enable_email = true, require_em
                                         >
                                             <div>
                                                 <InlineStack align="space-between" blockAlign="center">
-                                                    <InlineStack gap="200" blockAlign="center">
-                                                        <Text variant="headingSm" as="h3">{preset.name}</Text>
-                                                        {preset.proOnly && (
-                                                            <Badge tone={isPro ? "success" : "attention"}>
-                                                                {isPro ? "PRO" : "PRO"}
-                                                            </Badge>
-                                                        )}
-                                                    </InlineStack>
+                                                    <Text variant="headingSm" as="h3">{preset.name}</Text>
                                                     <input
                                                         type="radio"
                                                         name="popup_theme_preset"

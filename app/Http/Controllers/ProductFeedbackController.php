@@ -154,18 +154,12 @@ class ProductFeedbackController extends Controller
             if ($setting && !empty($setting->value)) {
                 $decoded = json_decode($setting->value, true);
                 if (is_array($decoded)) {
-                    $config = isset($decoded['reasons']) ? array_merge($default, $decoded) : array_merge($default, ['reasons' => $decoded]);
-
-                    // If shop is not on Pro plan, fallback Pro-only themes to 'modern'
-                    $theme = $config['popup_theme'] ?? 'modern';
-                    if (in_array($theme, ['badge_list', 'chips_grid', 'dark'])) {
-                        $planInfo = $this->getShopPlan($shopDomain);
-                        if (($planInfo['plan'] ?? 'free') !== 'pro') {
-                            $config['popup_theme'] = 'modern';
-                        }
+                    if (isset($decoded['reasons'])) {
+                        return array_merge($default, $decoded);
+                    } else {
+                        $default['reasons'] = $decoded;
+                        return $default;
                     }
-
-                    return $config;
                 }
             }
         } catch (\Throwable $e) {
@@ -367,18 +361,12 @@ class ProductFeedbackController extends Controller
         ]);
 
         $shopDomain = $this->getShopDomain($request);
-        $planDetails = $this->getShopPlan($shopDomain);
-
-        $selectedTheme = $validated['popup_theme'];
-        if (in_array($selectedTheme, ['badge_list', 'chips_grid', 'dark']) && $planDetails['plan'] !== 'pro') {
-            $selectedTheme = 'modern';
-        }
 
         $config = [
             'reasons' => array_values(array_filter($validated['reasons'])),
             'enable_email' => $validated['enable_email'],
             'require_email' => $validated['require_email'],
-            'popup_theme' => $selectedTheme,
+            'popup_theme' => $validated['popup_theme'],
         ];
 
         try {
