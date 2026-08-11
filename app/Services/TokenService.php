@@ -31,14 +31,6 @@ class TokenService
             ->first();
 
         if (!$row || empty($row->value)) {
-            // Fallback: check any latest access_token in app_settings table
-            $row = DB::table('app_settings')
-                ->where('key', 'access_token')
-                ->orderByDesc('id')
-                ->first();
-        }
-
-        if (!$row || empty($row->value)) {
             return null;
         }
 

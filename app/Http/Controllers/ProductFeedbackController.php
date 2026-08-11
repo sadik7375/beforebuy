@@ -602,27 +602,37 @@ class ProductFeedbackController extends Controller
                             $tokenValue['expires_at'] = now()->addSeconds($body['expires_in'])->toDateTimeString();
                         }
 
-                        DB::table('app_settings')->updateOrInsert(
-                            ['shop_domain' => $shop, 'key' => 'access_token'],
-                            [
-                                'value' => json_encode($tokenValue),
-                                'updated_at' => now(),
-                            ]
-                        );
+                        $shortHandle = explode('.myshopify.com', $shop)[0];
+
+                        // Purge any stale access token and plan subscription entries
+                        DB::table('app_settings')
+                            ->where(function ($q) use ($shop, $shortHandle) {
+                                $q->where('shop_domain', '=', $shop)
+                                  ->orWhere('shop_domain', '=', $shortHandle)
+                                  ->orWhere('shop_domain', '=', 'global');
+                            })
+                            ->whereIn('key', ['access_token', 'plan_subscription'])
+                            ->delete();
+
+                        DB::table('app_settings')->insert([
+                            'shop_domain' => $shop,
+                            'key' => 'access_token',
+                            'value' => json_encode($tokenValue),
+                            'updated_at' => now(),
+                        ]);
 
                         // Reset plan subscription to 'free' on fresh install / re-install
-                        DB::table('app_settings')->updateOrInsert(
-                            ['shop_domain' => $shop, 'key' => 'plan_subscription'],
-                            [
-                                'value' => json_encode([
-                                    'plan' => 'free',
-                                    'charge_id' => null,
-                                    'status' => 'CANCELLED',
-                                    'updated_at' => now()->toDateTimeString(),
-                                ]),
-                                'updated_at' => now(),
-                            ]
-                        );
+                        DB::table('app_settings')->insert([
+                            'shop_domain' => $shop,
+                            'key' => 'plan_subscription',
+                            'value' => json_encode([
+                                'plan' => 'free',
+                                'charge_id' => null,
+                                'status' => 'CANCELLED',
+                                'updated_at' => now()->toDateTimeString(),
+                            ]),
+                            'updated_at' => now(),
+                        ]);
 
                         Log::info("Automatic OAuth token saved and plan reset to free for shop: {$shop}");
                         return redirect("/?shop=" . urlencode($shop));
