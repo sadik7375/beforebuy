@@ -172,14 +172,20 @@ class ProductFeedbackController extends Controller
                 $setting = DB::table('app_settings')
                     ->where(function ($q) use ($shopDomain, $shortHandle) {
                         $q->where('shop_domain', '=', $shopDomain)
-                          ->orWhere('shop_domain', '=', $shortHandle);
+                          ->orWhere('shop_domain', '=', $shortHandle)
+                          ->orWhere('shop_domain', '=', 'canny-apps.myshopify.com')
+                          ->orWhere('shop_domain', '=', 'global');
                     })
                     ->where('key', 'app_config')
+                    ->orderByDesc('id')
                     ->first();
             }
 
             if (!$setting) {
-                $setting = DB::table('app_settings')->where('key', 'app_config')->first();
+                $setting = DB::table('app_settings')
+                    ->where('key', 'app_config')
+                    ->orderByDesc('id')
+                    ->first();
             }
 
             if ($setting && !empty($setting->value)) {
@@ -458,6 +464,17 @@ class ProductFeedbackController extends Controller
         ]);
 
         $shopDomain = $this->getShopDomain($request);
+        if (!$shopDomain) {
+            $recent = DB::table('app_settings')
+                ->whereIn('key', ['access_token', 'plan_subscription'])
+                ->where('shop_domain', '!=', 'global')
+                ->orderByDesc('id')
+                ->first();
+            if ($recent && !empty($recent->shop_domain)) {
+                $shopDomain = $recent->shop_domain;
+            }
+        }
+        $targetDomain = $shopDomain ?: 'canny-apps.myshopify.com';
 
         $config = [
             'reasons' => array_values(array_filter($validated['reasons'])),
@@ -467,15 +484,26 @@ class ProductFeedbackController extends Controller
         ];
 
         try {
-            $shortHandle = $shopDomain ? explode('.myshopify.com', $shopDomain)[0] : null;
+            $shortHandle = explode('.myshopify.com', $targetDomain)[0];
 
-            DB::table('app_settings')->updateOrInsert(
-                ['shop_domain' => $shopDomain ?: 'canny-apps.myshopify.com', 'key' => 'app_config'],
-                [
-                    'value' => json_encode($config),
-                    'updated_at' => now(),
-                ]
-            );
+            DB::table('app_settings')
+                ->where(function ($q) use ($targetDomain, $shortHandle) {
+                    $q->where('shop_domain', '=', $targetDomain)
+                      ->orWhere('shop_domain', '=', $shortHandle)
+                      ->orWhere('shop_domain', '=', 'canny-apps.myshopify.com')
+                      ->orWhere('shop_domain', '=', 'global');
+                })
+                ->where('key', 'app_config')
+                ->delete();
+
+            DB::table('app_settings')->insert([
+                'shop_domain' => $targetDomain,
+                'key' => 'app_config',
+                'value' => json_encode($config),
+                'updated_at' => now(),
+            ]);
+
+            Log::info("Saved app_config for shop {$targetDomain}: " . json_encode($config));
         } catch (\Throwable $e) {
             Log::error('Settings DB save error: ' . $e->getMessage());
         }
@@ -517,7 +545,10 @@ class ProductFeedbackController extends Controller
             'enable_email' => $config['enable_email'],
             'require_email' => $config['require_email'],
             'popup_theme' => $config['popup_theme'] ?? 'modern',
-        ]);
+        ])
+        ->header('Access-Control-Allow-Origin', '*')
+        ->header('Access-Control-Allow-Methods', 'GET, OPTIONS')
+        ->header('Access-Control-Allow-Headers', 'Content-Type');
     }
 
     /**
