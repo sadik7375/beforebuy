@@ -1302,16 +1302,17 @@ GRAPHQL;
      */
     private function verifyShopifyWebhook(Request $request): bool
     {
-        $hmacHeader = $request->header('X-Shopify-Hmac-Sha256') ?? $request->get('hmac');
+        $hmacHeader = $request->header('X-Shopify-Hmac-Sha256') 
+            ?? $request->header('x-shopify-hmac-sha256') 
+            ?? $request->get('hmac');
         
         if (!$hmacHeader) {
             return false;
         }
 
         $secret = env('SHOPIFY_API_SECRET');
-        if (!$secret) {
-            Log::warning('SHOPIFY_API_SECRET missing in .env for HMAC verification.');
-            return true;
+        if (empty($secret)) {
+            return false;
         }
 
         $data = $request->getContent();

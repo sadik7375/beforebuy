@@ -13,11 +13,16 @@ class VerifyShopifyRequest
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Skip Shopify iframe headers & middleware checks for webhook endpoints
+        if ($request->is('webhooks/*') || $request->is('api/webhooks/*')) {
+            return $next($request);
+        }
+
         $shop = $request->get('shop');
 
         // Verify HMAC if present in request from Shopify Admin
         if ($request->has('hmac')) {
-            $secret = env('SHOPIFY_API_SECRET', '');
+            $secret = env('SHOPIFY_API_SECRET');
             if (!empty($secret) && !$this->verifyHmac($request->all(), $secret)) {
                 return response('Unauthorized request from Shopify', 401);
             }
