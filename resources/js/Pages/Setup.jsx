@@ -55,6 +55,11 @@ export default function Setup({ shopDomain = '', defaultEmail = '' }) {
         }
     };
 
+    const cleanShopHandle = shopDomain ? shopDomain.replace('.myshopify.com', '') : '';
+    const themeEditorUrl = cleanShopHandle 
+        ? `https://admin.shopify.com/store/${cleanShopHandle}/themes/current/editor` 
+        : 'https://admin.shopify.com';
+
     return (
         <AppLayout>
             <Page
@@ -71,7 +76,7 @@ export default function Setup({ shopDomain = '', defaultEmail = '' }) {
                             <Text variant="headingMd" as="h2">Step 1: Open Theme Editor</Text>
                             <Text tone="subdued" variant="bodySm">Click the button below to navigate to your live Shopify Online Store Theme Editor.</Text>
                             <Box paddingBlockStart="200">
-                                <Button variant="primary" onClick={() => window.open('https://admin.shopify.com', '_blank')}>
+                                <Button variant="primary" onClick={() => window.open(themeEditorUrl, '_blank')}>
                                     Open Shopify Theme Editor ↗
                                 </Button>
                             </Box>
