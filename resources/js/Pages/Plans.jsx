@@ -3,7 +3,7 @@ import { Page, BlockStack, Card, Text, Grid, Badge, InlineStack, Banner, Button,
 import { router } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 
-export default function Plans({ shopDomain = '', currentPlan = 'free', subscriptionDetails = {}, monthlyCount = 0, freeSubmissionLimit = 15 }) {
+export default function Plans({ shopDomain = '', currentPlan = 'free', subscriptionDetails = {}, monthlyCount = 0, freeSubmissionLimit = 10 }) {
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
 
@@ -139,7 +139,7 @@ export default function Plans({ shopDomain = '', currentPlan = 'free', subscript
                                                 <BlockStack gap="200">
                                                     <Text weight="semibold" variant="bodyMd">Included Features:</Text>
                                                     <List type="bullet">
-                                                        <List.Item>Up to <strong>15 Feedback Submissions</strong> / month</List.Item>
+                                                        <List.Item>Up to <strong>10 Feedback Submissions</strong> / month</List.Item>
                                                         <List.Item>Standard Storefront Popup Theme</List.Item>
                                                         <List.Item>Basic Customer Objections Analytics</List.Item>
                                                         <List.Item>Standard Merchant Support</List.Item>
@@ -199,7 +199,6 @@ export default function Plans({ shopDomain = '', currentPlan = 'free', subscript
                                                     <Text weight="semibold" variant="bodyMd">Everything in Free, plus:</Text>
                                                     <List type="bullet">
                                                         <List.Item><strong>Unlimited Feedback Submissions</strong></List.Item>
-                                                        <List.Item>All Storefront Popup Themes & Custom Colors</List.Item>
                                                         <List.Item>Complete <strong>AI Insights & Weekly Reports</strong></List.Item>
                                                         <List.Item>Optional & Mandatory Customer Email Collection</List.Item>
                                                         <List.Item><strong>Priority 24/7 Merchant Support</strong></List.Item>

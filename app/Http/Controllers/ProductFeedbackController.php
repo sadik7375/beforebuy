@@ -238,6 +238,7 @@ class ProductFeedbackController extends Controller
     {
         $shopDomain = $this->getShopDomain($request);
         $monthlyCount = $this->getMonthlySubmissionCount($shopDomain);
+        $planDetails = $this->getShopPlan($shopDomain);
 
         try {
             $query = DB::table('product_feedbacks');
@@ -255,6 +256,8 @@ class ProductFeedbackController extends Controller
             'reasons' => $config['reasons'] ?? [],
             'shopDomain' => $shopDomain,
             'monthlyCount' => $monthlyCount,
+            'currentPlan' => $planDetails['plan'],
+            'freeSubmissionLimit' => 10,
         ]);
     }
 
@@ -265,6 +268,7 @@ class ProductFeedbackController extends Controller
     {
         $shopDomain = $this->getShopDomain($request);
         $monthlyCount = $this->getMonthlySubmissionCount($shopDomain);
+        $planDetails = $this->getShopPlan($shopDomain);
 
         try {
             $query = DB::table('product_feedbacks');
@@ -282,6 +286,8 @@ class ProductFeedbackController extends Controller
             'reasons' => $config['reasons'] ?? [],
             'shopDomain' => $shopDomain,
             'monthlyCount' => $monthlyCount,
+            'currentPlan' => $planDetails['plan'],
+            'freeSubmissionLimit' => 10,
         ]);
     }
 
@@ -292,6 +298,7 @@ class ProductFeedbackController extends Controller
     {
         $shopDomain = $this->getShopDomain($request);
         $monthlyCount = $this->getMonthlySubmissionCount($shopDomain);
+        $planDetails = $this->getShopPlan($shopDomain);
 
         try {
             $query = DB::table('product_feedbacks');
@@ -315,6 +322,8 @@ class ProductFeedbackController extends Controller
             'repeatCustomers' => $repeatCustomers,
             'shopDomain' => $shopDomain,
             'monthlyCount' => $monthlyCount,
+            'currentPlan' => $planDetails['plan'],
+            'freeSubmissionLimit' => 10,
         ]);
     }
 
@@ -520,11 +529,11 @@ class ProductFeedbackController extends Controller
             $planInfo = $this->getShopPlan($shopDomain);
             if (($planInfo['plan'] ?? 'free') === 'free') {
                 $monthlyCount = $this->getMonthlySubmissionCount($shopDomain);
-                if ($monthlyCount >= 15) {
+                if ($monthlyCount >= 10) {
                     return response()->json([
                         'success' => false,
                         'limit_reached' => true,
-                        'message' => 'Monthly feedback submission limit reached for Free plan (15/15). Upgrade to Pro for unlimited submissions.',
+                        'message' => 'Monthly feedback submission limit reached for Free plan (10/10). Upgrade to Pro for unlimited submissions.',
                     ], 403);
                 }
             }
@@ -909,7 +918,7 @@ GRAPHQL;
             'currentPlan' => $planDetails['plan'],
             'subscriptionDetails' => $planDetails,
             'monthlyCount' => $monthlyCount,
-            'freeSubmissionLimit' => 15,
+            'freeSubmissionLimit' => 10,
         ]);
     }
 
