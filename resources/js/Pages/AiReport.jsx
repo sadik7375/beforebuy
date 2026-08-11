@@ -29,17 +29,6 @@ export default function AiReport({ stats = {}, repeatCustomers = [], plan = 'fre
                 subtitle="Automated AI analytics and actionable product recommendations"
             >
                 <BlockStack gap="500">
-                    {!isPro && (
-                        <Banner
-                            title="Pro Feature: Weekly AI Sentiment & Executive Reports"
-                            tone="info"
-                            action={{ content: 'Upgrade to Pro ($5/mo)', onAction: () => router.visit('/pricing') }}
-                        >
-                            <p>You are viewing a preview of the Weekly AI Report. Upgrade to <strong>BeforeBuy Pro Plan ($5/mo)</strong> to unlock full AI strategic insights, high-intent lead intelligence, and actionable recommendations for your store.</p>
-                        </Banner>
-                    )}
-
-
                     {/* Executive Summary Box */}
                     <Card>
                         <BlockStack gap="300">
@@ -61,88 +50,82 @@ export default function AiReport({ stats = {}, repeatCustomers = [], plan = 'fre
                     </Card>
 
                     {/* AI Strategic Analysis Cards */}
-                    <div style={{
-                        filter: !isPro ? 'blur(3px)' : 'none',
-                        pointerEvents: !isPro ? 'none' : 'auto',
-                        opacity: !isPro ? 0.6 : 1,
-                    }}>
-                        <BlockStack gap="500">
-                            <Text variant="headingLg" as="h2">AI Strategic Insights & Analysis</Text>
+                    <BlockStack gap="500">
+                        <Text variant="headingLg" as="h2">AI Strategic Insights & Analysis</Text>
 
-                            <Grid>
-                                {/* Insight 1: Price & Value Sensitivity */}
-                                <Grid.Cell columnSpan={{ xs: 12, sm: 6, md: 6, lg: 6, xl: 6 }}>
-                                    <Card>
-                                        <BlockStack gap="300">
-                                            <InlineStack align="space-between" blockAlign="center">
-                                                <Text variant="headingSm" as="h3">AI Price & Value Insight</Text>
-                                                <Badge tone={totalCount > 0 ? 'success' : 'subdued'}>
-                                                    {totalCount > 0 ? 'Action Opportunity' : 'Pending Data'}
-                                                </Badge>
-                                            </InlineStack>
+                        <Grid>
+                            {/* Insight 1: Price & Value Sensitivity */}
+                            <Grid.Cell columnSpan={{ xs: 12, sm: 6, md: 6, lg: 6, xl: 6 }}>
+                                <Card>
+                                    <BlockStack gap="300">
+                                        <InlineStack align="space-between" blockAlign="center">
+                                            <Text variant="headingSm" as="h3">AI Price & Value Insight</Text>
+                                            <Badge tone={totalCount > 0 ? 'success' : 'subdued'}>
+                                                {totalCount > 0 ? 'Action Opportunity' : 'Pending Data'}
+                                            </Badge>
+                                        </InlineStack>
 
-                                            <Text variant="bodySm" tone="subdued">
-                                                {totalCount > 0
-                                                    ? `Primary objection recorded is "${topReason || 'Price concerns'}". Offering targeted discount codes or highlighting deposit / instalment payment options can recover lost checkout intent.`
-                                                    : 'No price sensitivity data collected yet. Once feedback is received, AI will pinpoint high-risk items and suggest pricing strategies.'
-                                                }
-                                            </Text>
-                                        </BlockStack>
-                                    </Card>
-                                </Grid.Cell>
+                                        <Text variant="bodySm" tone="subdued">
+                                            {totalCount > 0
+                                                ? `Primary objection recorded is "${topReason || 'Price concerns'}". Offering targeted discount codes or highlighting deposit / instalment payment options can recover lost checkout intent.`
+                                                : 'No price sensitivity data collected yet. Once feedback is received, AI will pinpoint high-risk items and suggest pricing strategies.'
+                                            }
+                                        </Text>
+                                    </BlockStack>
+                                </Card>
+                            </Grid.Cell>
 
-                                {/* Insight 2: Product Content & Specs */}
-                                <Grid.Cell columnSpan={{ xs: 12, sm: 6, md: 6, lg: 6, xl: 6 }}>
-                                    <Card>
-                                        <BlockStack gap="300">
-                                            <InlineStack align="space-between" blockAlign="center">
-                                                <Text variant="headingSm" as="h3">AI Product Content & Specs Analysis</Text>
-                                                <Badge tone={totalCount > 0 ? 'warning' : 'subdued'}>
-                                                    {totalCount > 0 ? 'Content Optimization' : 'Pending Data'}
-                                                </Badge>
-                                            </InlineStack>
+                            {/* Insight 2: Product Content & Specs */}
+                            <Grid.Cell columnSpan={{ xs: 12, sm: 6, md: 6, lg: 6, xl: 6 }}>
+                                <Card>
+                                    <BlockStack gap="300">
+                                        <InlineStack align="space-between" blockAlign="center">
+                                            <Text variant="headingSm" as="h3">AI Product Content & Specs Analysis</Text>
+                                            <Badge tone={totalCount > 0 ? 'warning' : 'subdued'}>
+                                                {totalCount > 0 ? 'Content Optimization' : 'Pending Data'}
+                                            </Badge>
+                                        </InlineStack>
 
-                                            <Text variant="bodySm" tone="subdued">
-                                                {totalCount > 0
-                                                    ? `Customers looking at ${topProductName || 'your products'} frequently ask for size, fit, or additional details. Updating product descriptions and adding clear size charts will reduce pre-purchase hesitation.`
-                                                    : 'No content gap data collected yet. AI will identify missing product specifications or sizing concerns as feedback arrives.'
-                                                }
-                                            </Text>
-                                        </BlockStack>
-                                    </Card>
-                                </Grid.Cell>
-                            </Grid>
+                                        <Text variant="bodySm" tone="subdued">
+                                            {totalCount > 0
+                                                ? `Customers looking at ${topProductName || 'your products'} frequently ask for size, fit, or additional details. Updating product descriptions and adding clear size charts will reduce pre-purchase hesitation.`
+                                                : 'No content gap data collected yet. AI will identify missing product specifications or sizing concerns as feedback arrives.'
+                                            }
+                                        </Text>
+                                    </BlockStack>
+                                </Card>
+                            </Grid.Cell>
+                        </Grid>
 
-                            {/* Person / Customer Target Intelligence Card */}
-                            <Card>
-                                <BlockStack gap="400">
-                                    <InlineStack align="space-between" blockAlign="center">
-                                        <BlockStack gap="100">
-                                            <Text variant="headingMd" as="h2">High-Intent Lead Intelligence (Repeat Objections)</Text>
-                                            <Text tone="subdued" variant="bodySm">
-                                                Detailed AI analysis of high-intent visitors who submitted multiple feedback entries across products.
-                                            </Text>
-                                        </BlockStack>
-                                        <Badge tone="info">Behavioral Analytics</Badge>
-                                    </InlineStack>
+                        {/* Person / Customer Target Intelligence Card */}
+                        <Card>
+                            <BlockStack gap="400">
+                                <InlineStack align="space-between" blockAlign="center">
+                                    <BlockStack gap="100">
+                                        <Text variant="headingMd" as="h2">High-Intent Lead Intelligence (Repeat Objections)</Text>
+                                        <Text tone="subdued" variant="bodySm">
+                                            Detailed AI analysis of high-intent visitors who submitted multiple feedback entries across products.
+                                        </Text>
+                                    </BlockStack>
+                                    <Badge tone="info">Behavioral Analytics</Badge>
+                                </InlineStack>
 
-                                    {repeatList.length === 0 ? (
-                                        <div style={{ padding: '32px 16px', textAlign: 'center' }}>
-                                            <Text tone="subdued" alignment="center">
-                                                No repeat feedback leads recorded yet.
-                                            </Text>
-                                        </div>
-                                    ) : (
-                                        <DataTable
-                                            columnContentTypes={['text', 'text', 'text', 'text']}
-                                            headings={['Customer Email', 'Total Objections Shared', 'Products Browsed', 'AI Intent Score']}
-                                            rows={customerRows}
-                                        />
-                                    )}
-                                </BlockStack>
-                            </Card>
-                        </BlockStack>
-                    </div>
+                                {repeatList.length === 0 ? (
+                                    <div style={{ padding: '32px 16px', textAlign: 'center' }}>
+                                        <Text tone="subdued" alignment="center">
+                                            No repeat feedback leads recorded yet.
+                                        </Text>
+                                    </div>
+                                ) : (
+                                    <DataTable
+                                        columnContentTypes={['text', 'text', 'text', 'text']}
+                                        headings={['Customer Email', 'Total Objections Shared', 'Products Browsed', 'AI Intent Score']}
+                                        rows={customerRows}
+                                    />
+                                )}
+                            </BlockStack>
+                        </Card>
+                    </BlockStack>
                 </BlockStack>
             </Page>
         </AppLayout>

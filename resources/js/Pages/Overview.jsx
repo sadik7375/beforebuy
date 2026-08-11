@@ -27,24 +27,6 @@ export default function Overview({ feedbacks = [], stats = {}, plan = 'free', mo
         <AppLayout>
             <Page fullWidth>
                 <BlockStack gap="600">
-                    {!isPro && monthlyCount >= 10 && (
-                        <Banner
-                            title="Free Plan Submission Limit Reached (10/10)"
-                            tone="warning"
-                            action={{ content: 'Upgrade to Pro ($5/mo)', onAction: () => router.visit('/pricing') }}
-                        >
-                            <p>Your store has reached the 10 free monthly feedback submissions limit. Customer feedback collection is currently paused until upgraded to Pro.</p>
-                        </Banner>
-                    )}
-                    {!isPro && monthlyCount >= 8 && monthlyCount < 10 && (
-                        <Banner
-                            title="Approaching Free Submission Limit"
-                            tone="warning"
-                            action={{ content: 'Upgrade Plan', onAction: () => router.visit('/pricing') }}
-                        >
-                            <p>You have used {monthlyCount} of your 10 free monthly feedback submissions. Upgrade to Pro for unlimited submissions.</p>
-                        </Banner>
-                    )}
                     {/* Header Section */}
                     <InlineStack align="space-between" blockAlign="center">
                         <BlockStack gap="100">
