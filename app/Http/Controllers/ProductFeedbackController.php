@@ -859,6 +859,11 @@ GRAPHQL;
      */
     public function handleAppUninstalled(Request $request)
     {
+        if (!$this->verifyShopifyWebhook($request)) {
+            Log::warning('HMAC verification failed for app/uninstalled webhook');
+            return response()->json(['message' => 'Invalid HMAC signature'], 401);
+        }
+
         $shopDomain = $request->header('X-Shopify-Shop-Domain')
             ?: $request->header('x-shopify-shop-domain')
             ?: $request->get('shop')
@@ -891,7 +896,7 @@ GRAPHQL;
             Log::info("Cleaned app_settings (plan and tokens) for uninstalled shop domain: {$shopDomain}");
         }
 
-        return response()->json(['success' => true]);
+        return response()->json(['success' => true], 200);
     }
 
     /**
@@ -1397,46 +1402,6 @@ GRAPHQL;
         return response()->json([
             'success' => true,
             'message' => 'Shop data redacted successfully.',
-        ], 200);
-    }
-
-    /**
-     * Webhook: app/uninstalled
-     * Triggered immediately when a merchant uninstalls the app.
-     */
-    public function handleAppUninstalled(Request $request)
-    {
-        Log::info('Webhook received: app/uninstalled', $request->all());
-
-        if (!$this->verifyShopifyWebhook($request)) {
-            Log::warning('HMAC verification failed for app/uninstalled webhook');
-            return response()->json(['message' => 'Invalid HMAC signature'], 401);
-        }
-
-        $shopDomain = $request->input('myshopify_domain') ?? $request->header('X-Shopify-Shop-Domain');
-        if ($shopDomain) {
-            $shortHandle = explode('.myshopify.com', $shopDomain)[0];
-
-            DB::table('app_settings')
-                ->where(function ($q) use ($shopDomain, $shortHandle) {
-                    $q->where('shop_domain', $shopDomain)
-                      ->orWhere('shop_domain', $shortHandle);
-                })
-                ->where('key', 'plan_subscription')
-                ->update([
-                    'value' => json_encode([
-                        'plan' => 'free',
-                        'charge_id' => null,
-                        'status' => 'UNINSTALLED',
-                        'updated_at' => now()->toDateTimeString(),
-                    ]),
-                    'updated_at' => now(),
-                ]);
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'App uninstalled webhook processed.',
         ], 200);
     }
 }
