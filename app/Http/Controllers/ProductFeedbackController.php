@@ -154,12 +154,18 @@ class ProductFeedbackController extends Controller
             if ($setting && !empty($setting->value)) {
                 $decoded = json_decode($setting->value, true);
                 if (is_array($decoded)) {
-                    if (isset($decoded['reasons'])) {
-                        return array_merge($default, $decoded);
-                    } else {
-                        $default['reasons'] = $decoded;
-                        return $default;
+                    $config = isset($decoded['reasons']) ? array_merge($default, $decoded) : array_merge($default, ['reasons' => $decoded]);
+
+                    // If shop is not on Pro plan, fallback Pro-only themes to 'modern'
+                    $theme = $config['popup_theme'] ?? 'modern';
+                    if (in_array($theme, ['badge_list', 'chips_grid', 'dark'])) {
+                        $planInfo = $this->getShopPlan($shopDomain);
+                        if (($planInfo['plan'] ?? 'free') !== 'pro') {
+                            $config['popup_theme'] = 'modern';
+                        }
                     }
+
+                    return $config;
                 }
             }
         } catch (\Throwable $e) {
