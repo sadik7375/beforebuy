@@ -25,6 +25,7 @@ Route::get('/auth/callback', [ProductFeedbackController::class, 'authCallback'])
 
 // Webhook Handler
 Route::post('/webhooks/app-uninstalled', [ProductFeedbackController::class, 'handleAppUninstalled']);
+Route::post('/webhooks/app/uninstalled', [ProductFeedbackController::class, 'handleAppUninstalled']);
 
 // API Endpoints for Storefront Popup
 Route::post('/api/feedback', [ProductFeedbackController::class, 'store']);

@@ -610,7 +610,21 @@ class ProductFeedbackController extends Controller
                             ]
                         );
 
-                        Log::info("Automatic OAuth token saved for shop: {$shop}");
+                        // Reset plan subscription to 'free' on fresh install / re-install
+                        DB::table('app_settings')->updateOrInsert(
+                            ['shop_domain' => $shop, 'key' => 'plan_subscription'],
+                            [
+                                'value' => json_encode([
+                                    'plan' => 'free',
+                                    'charge_id' => null,
+                                    'status' => 'CANCELLED',
+                                    'updated_at' => now()->toDateTimeString(),
+                                ]),
+                                'updated_at' => now(),
+                            ]
+                        );
+
+                        Log::info("Automatic OAuth token saved and plan reset to free for shop: {$shop}");
                         return redirect("/?shop=" . urlencode($shop));
                     }
                 } else {
@@ -647,7 +661,20 @@ class ProductFeedbackController extends Controller
             }
         }
 
-        Log::info("Webhook app/uninstalled received for shop domain: " . ($shopDomain ?: 'UNKNOWN'));
+        if ($shopDomain) {
+            $shortHandle = explode('.myshopify.com', $shopDomain)[0];
+
+            DB::table('app_settings')
+                ->where(function ($q) use ($shopDomain, $shortHandle) {
+                    $q->where('shop_domain', '=', $shopDomain)
+                      ->orWhere('shop_domain', '=', $shortHandle);
+                })
+                ->whereIn('key', ['plan_subscription', 'access_token'])
+                ->delete();
+
+            Log::info("Cleaned app_settings (plan and tokens) for uninstalled shop domain: {$shopDomain}");
+        }
+
         return response()->json(['success' => true]);
     }
 
