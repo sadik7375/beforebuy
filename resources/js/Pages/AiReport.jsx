@@ -3,7 +3,7 @@ import { Page, BlockStack, Card, Text, Badge, Grid, InlineStack, DataTable, Butt
 import { router } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 
-export default function AiReport({ stats = {}, repeatCustomers = [], plan = 'free', currentPlan = 'free', shopDomain = '' }) {
+export default function AiReport({ stats = {}, repeatCustomers = [], plan = 'free', currentPlan = 'free', shopDomain = '', aiAnalysis = null }) {
     const isPro = (currentPlan === 'pro' || plan === 'pro');
 
     const totalCount = stats.total_feedbacks || 0;
@@ -94,6 +94,34 @@ export default function AiReport({ stats = {}, repeatCustomers = [], plan = 'fre
                         userSelect: 'none',
                     } : {}}>
                         <BlockStack gap="500">
+                            {/* OpenRouter AI Live Report Card */}
+                            {aiAnalysis && (
+                                <Card>
+                                    <BlockStack gap="300">
+                                        <InlineStack align="space-between" blockAlign="center">
+                                            <InlineStack gap="200" blockAlign="center">
+                                                <span style={{ fontSize: '20px' }}>🤖</span>
+                                                <Text variant="headingMd" as="h2" weight="bold">Live OpenRouter AI Recommendations</Text>
+                                            </InlineStack>
+                                            <Badge tone="success">OpenRouter AI Active</Badge>
+                                        </InlineStack>
+
+                                        <div style={{
+                                            backgroundColor: '#f8fafc',
+                                            padding: '16px',
+                                            borderRadius: '8px',
+                                            border: '1px solid #e2e8f0',
+                                            whiteSpace: 'pre-line',
+                                            fontSize: '14px',
+                                            lineHeight: '1.6',
+                                            color: '#334155',
+                                        }}>
+                                            {aiAnalysis}
+                                        </div>
+                                    </BlockStack>
+                                </Card>
+                            )}
+
                             {/* Executive Summary Box */}
                             <Card>
                                 <BlockStack gap="300">

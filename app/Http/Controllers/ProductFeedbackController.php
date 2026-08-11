@@ -316,6 +316,7 @@ class ProductFeedbackController extends Controller
         }
 
         $stats = $this->getStats($shopDomain);
+        $aiAnalysis = $this->generateOpenAiAnalysis($shopDomain);
 
         return Inertia::render('AiReport', [
             'stats' => $stats,
@@ -324,7 +325,71 @@ class ProductFeedbackController extends Controller
             'monthlyCount' => $monthlyCount,
             'currentPlan' => $planDetails['plan'],
             'freeSubmissionLimit' => 10,
+            'aiAnalysis' => $aiAnalysis,
         ]);
+    }
+
+    /**
+     * Generate real AI analysis using OpenRouter API
+     */
+    private function generateOpenAiAnalysis($shopDomain)
+    {
+        $apiKey = env('OPENROUTER_API_KEY');
+        if (!$apiKey) {
+            return null;
+        }
+
+        try {
+            $query = DB::table('product_feedbacks');
+            $this->applyShopFilter($query, $shopDomain);
+            $recentFeedbacks = $query->orderByDesc('id')->take(20)->get(['product_title', 'reason', 'custom_comment', 'customer_email', 'created_at']);
+
+            if ($recentFeedbacks->isEmpty()) {
+                return null;
+            }
+
+            $cacheKey = "openrouter_ai_report_" . md5($shopDomain . "_" . $recentFeedbacks->count());
+            return \Illuminate\Support\Facades\Cache::remember($cacheKey, 1800, function () use ($apiKey, $recentFeedbacks) {
+                $feedbackSummary = $recentFeedbacks->map(function ($f) {
+                    return "- Product: " . ($f->product_title ?: 'General Product') . " | Reason: " . $f->reason . ($f->custom_comment ? " | Comment: " . $f->custom_comment : "");
+                })->implode("\n");
+
+                $model = env('OPENROUTER_MODEL', 'google/gemini-2.5-flash');
+
+                $response = \Illuminate\Support\Facades\Http::withHeaders([
+                    'Authorization' => 'Bearer ' . $apiKey,
+                    'Content-Type' => 'application/json',
+                    'HTTP-Referer' => config('app.url', 'https://beforebuy.cannyapps.com'),
+                    'X-Title' => 'BeforeBuy Shopify App',
+                ])->timeout(15)->post('https://openrouter.ai/api/v1/chat/completions', [
+                    'model' => $model,
+                    'messages' => [
+                        [
+                            'role' => 'system',
+                            'content' => 'You are an elite E-commerce Conversion Optimization AI for Shopify store merchants. Analyze customer pre-purchase feedback reasons and notes, then write a concise executive summary with 3 clear actionable strategies to convert abandoners into buyers.'
+                        ],
+                        [
+                            'role' => 'user',
+                            'content' => "Here is the latest customer feedback collected on our store:\n" . $feedbackSummary
+                        ]
+                    ],
+                    'max_tokens' => 500,
+                    'temperature' => 0.7,
+                ]);
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    return $data['choices'][0]['message']['content'] ?? null;
+                } else {
+                    Log::warning("OpenRouter API Error: " . $response->status() . " - " . $response->body());
+                }
+                return null;
+            });
+        } catch (\Throwable $e) {
+            Log::error("OpenRouter API Exception: " . $e->getMessage());
+        }
+
+        return null;
     }
 
     /**
