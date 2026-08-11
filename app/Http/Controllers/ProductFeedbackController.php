@@ -39,6 +39,7 @@ class ProductFeedbackController extends Controller
         $shop = $request->get('shop') ?: $request->header('x-shopify-domain');
 
         if ($shop && ($sanitized = $this->sanitizeShopDomain($shop))) {
+            try { session(['shopify_domain' => $sanitized]); } catch (\Throwable $e) {}
             return $sanitized;
         }
 
@@ -51,6 +52,7 @@ class ProductFeedbackController extends Controller
                 if (isset($parts[1])) {
                     $handle = explode('/', $parts[1])[0];
                     if ($handle && ($sanitized = $this->sanitizeShopDomain($handle))) {
+                        try { session(['shopify_domain' => $sanitized]); } catch (\Throwable $e) {}
                         return $sanitized;
                     }
                 }
@@ -61,21 +63,50 @@ class ProductFeedbackController extends Controller
         $referer = $request->header('referer');
         if ($referer) {
             $parsed = parse_url($referer);
+            if (isset($parsed['query'])) {
+                parse_str($parsed['query'], $queryParams);
+                if (!empty($queryParams['shop']) && ($sanitized = $this->sanitizeShopDomain($queryParams['shop']))) {
+                    try { session(['shopify_domain' => $sanitized]); } catch (\Throwable $e) {}
+                    return $sanitized;
+                }
+            }
             if (isset($parsed['host']) && (str_contains($parsed['host'], 'myshopify.com') || str_contains($parsed['host'], 'shopify.com'))) {
                 if (isset($parsed['path']) && str_contains($parsed['path'], '/store/')) {
                     $parts = explode('/store/', $parsed['path']);
                     if (isset($parts[1])) {
                         $handle = explode('/', $parts[1])[0];
                         if ($handle && ($sanitized = $this->sanitizeShopDomain($handle))) {
+                            try { session(['shopify_domain' => $sanitized]); } catch (\Throwable $e) {}
                             return $sanitized;
                         }
                     }
                 }
                 if (str_contains($parsed['host'], 'myshopify.com') && ($sanitized = $this->sanitizeShopDomain($parsed['host']))) {
+                    try { session(['shopify_domain' => $sanitized]); } catch (\Throwable $e) {}
                     return $sanitized;
                 }
             }
         }
+
+        // Check Session fallback
+        try {
+            if ($sessionShop = session('shopify_domain')) {
+                return $sessionShop;
+            }
+        } catch (\Throwable $e) {}
+
+        // Check database fallback for the latest active shop domain in app_settings
+        try {
+            $recent = DB::table('app_settings')
+                ->whereIn('key', ['access_token', 'plan_subscription'])
+                ->where('shop_domain', '!=', 'global')
+                ->whereNotNull('shop_domain')
+                ->orderByDesc('id')
+                ->first();
+            if ($recent && !empty($recent->shop_domain)) {
+                return $this->sanitizeShopDomain($recent->shop_domain);
+            }
+        } catch (\Throwable $e) {}
 
         return null;
     }
@@ -324,6 +355,7 @@ class ProductFeedbackController extends Controller
             'shopDomain' => $shopDomain,
             'monthlyCount' => $monthlyCount,
             'currentPlan' => $planDetails['plan'],
+            'plan' => $planDetails['plan'],
             'freeSubmissionLimit' => 10,
             'aiAnalysis' => $aiAnalysis,
         ]);
@@ -910,65 +942,47 @@ GRAPHQL;
 
                         return $planData;
                     } else {
-                        // No active subscription on Shopify side -> Force reset to Free Plan
-                        $planData = [
-                            'plan' => 'free',
-                            'charge_id' => null,
-                            'status' => 'CANCELLED',
-                            'updated_at' => now()->toDateTimeString(),
-                        ];
-
-                        DB::table('app_settings')
+                        // Check if local DB already has an active Pro plan before resetting to free
+                        $localDbSetting = DB::table('app_settings')
                             ->where(function ($q) use ($shopDomain, $shortHandle) {
                                 $q->where('shop_domain', '=', $shopDomain)
                                   ->orWhere('shop_domain', '=', $shortHandle)
                                   ->orWhere('shop_domain', '=', 'global');
                             })
                             ->where('key', 'plan_subscription')
-                            ->delete();
+                            ->first();
 
-                        DB::table('app_settings')->insert([
-                            'shop_domain' => $shopDomain,
-                            'key' => 'plan_subscription',
-                            'value' => json_encode($planData),
-                            'updated_at' => now(),
-                        ]);
-
-                        return $planData;
+                        if ($localDbSetting && !empty($localDbSetting->value)) {
+                            $localDecoded = json_decode($localDbSetting->value, true);
+                            if (is_array($localDecoded) && ($localDecoded['plan'] ?? '') === 'pro') {
+                                return $localDecoded;
+                            }
+                        }
                     }
-                } else {
-                    // Token rejected or 401 Unauthorized -> App was uninstalled/reinstalled!
-                    Log::info("Shopify API returned non-successful response ({$response->status()}) for {$shopDomain}. Wiping dead access token and resetting plan to Free.");
-                    $shortHandle = explode('.myshopify.com', $shopDomain)[0];
-                    DB::table('app_settings')
-                        ->where(function ($q) use ($shopDomain, $shortHandle) {
-                            $q->where('shop_domain', '=', $shopDomain)
-                              ->orWhere('shop_domain', '=', $shortHandle)
-                              ->orWhere('shop_domain', '=', 'global');
-                        })
-                        ->whereIn('key', ['access_token', 'plan_subscription'])
-                        ->delete();
-
-                    DB::table('app_settings')->insert([
-                        'shop_domain' => $shopDomain,
-                        'key' => 'plan_subscription',
-                        'value' => json_encode([
-                            'plan' => 'free',
-                            'charge_id' => null,
-                            'status' => 'CANCELLED',
-                            'updated_at' => now()->toDateTimeString(),
-                        ]),
-                        'updated_at' => now(),
-                    ]);
-
-                    return $default;
                 }
             }
         } catch (\Throwable $e) {
             Log::warning("Live Shopify plan sync exception for {$shopDomain}: " . $e->getMessage());
         }
 
-        // Fallback to default free plan if API check fails
+        // Fallback: Check local DB if plan_subscription was stored
+        $shortHandle = explode('.myshopify.com', $shopDomain)[0];
+        $localDbSetting = DB::table('app_settings')
+            ->where(function ($q) use ($shopDomain, $shortHandle) {
+                $q->where('shop_domain', '=', $shopDomain)
+                  ->orWhere('shop_domain', '=', $shortHandle)
+                  ->orWhere('shop_domain', '=', 'global');
+            })
+            ->where('key', 'plan_subscription')
+            ->first();
+
+        if ($localDbSetting && !empty($localDbSetting->value)) {
+            $localDecoded = json_decode($localDbSetting->value, true);
+            if (is_array($localDecoded) && isset($localDecoded['plan'])) {
+                return $localDecoded;
+            }
+        }
+
         return $default;
     }
 

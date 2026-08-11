@@ -228,7 +228,7 @@ export default function Overview({ feedbacks = [], stats = {}, plan = 'free', cu
 
                                         <div style={{ marginTop: '20px' }}>
                                             <button
-                                                onClick={() => router.visit('/ai-report')}
+                                                onClick={() => router.visit('/ai-report' + window.location.search)}
                                                 style={{
                                                     backgroundColor: '#000000',
                                                     color: '#ffffff',
