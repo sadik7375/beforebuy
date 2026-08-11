@@ -698,9 +698,11 @@ class ProductFeedbackController extends Controller
             $row = DB::table('app_settings')
                 ->where(function ($q) use ($shopDomain, $shortHandle) {
                     $q->where('shop_domain', '=', $shopDomain)
-                      ->orWhere('shop_domain', '=', $shortHandle);
+                      ->orWhere('shop_domain', '=', $shortHandle)
+                      ->orWhere('shop_domain', '=', 'global');
                 })
                 ->where('key', 'plan_subscription')
+                ->orderByDesc('id')
                 ->first();
 
             if ($row && !empty($row->value)) {
@@ -878,18 +880,28 @@ GRAPHQL;
         $chargeId = $request->get('charge_id');
 
         if ($shopDomain) {
-            DB::table('app_settings')->updateOrInsert(
-                ['shop_domain' => $shopDomain, 'key' => 'plan_subscription'],
-                [
-                    'value' => json_encode([
-                        'plan' => 'pro',
-                        'charge_id' => $chargeId,
-                        'status' => 'ACTIVE',
-                        'updated_at' => now()->toDateTimeString(),
-                    ]),
-                    'updated_at' => now(),
-                ]
-            );
+            $shortHandle = explode('.myshopify.com', $shopDomain)[0];
+
+            DB::table('app_settings')
+                ->where(function ($q) use ($shopDomain, $shortHandle) {
+                    $q->where('shop_domain', '=', $shopDomain)
+                      ->orWhere('shop_domain', '=', $shortHandle)
+                      ->orWhere('shop_domain', '=', 'global');
+                })
+                ->where('key', 'plan_subscription')
+                ->delete();
+
+            DB::table('app_settings')->insert([
+                'shop_domain' => $shopDomain,
+                'key' => 'plan_subscription',
+                'value' => json_encode([
+                    'plan' => 'pro',
+                    'charge_id' => $chargeId,
+                    'status' => 'ACTIVE',
+                    'updated_at' => now()->toDateTimeString(),
+                ]),
+                'updated_at' => now(),
+            ]);
             Log::info("Pro Plan successfully activated for shop: {$shopDomain}");
         }
 
@@ -944,24 +956,31 @@ GRAPHQL;
             }
         }
 
-        // Revert database status to free plan
-        DB::table('app_settings')->updateOrInsert(
-            ['shop_domain' => $shopDomain, 'key' => 'plan_subscription'],
-            [
-                'value' => json_encode([
-                    'plan' => 'free',
-                    'charge_id' => null,
-                    'status' => 'CANCELLED',
-                    'updated_at' => now()->toDateTimeString(),
-                ]),
-                'updated_at' => now(),
-            ]
-        );
+        $shortHandle = explode('.myshopify.com', $shopDomain)[0];
 
-        if ($request->wantsJson()) {
-            return response()->json(['success' => true, 'message' => 'Successfully downgraded to Free Plan.']);
-        }
+        // Revert database status to free plan by wiping old rows first
+        DB::table('app_settings')
+            ->where(function ($q) use ($shopDomain, $shortHandle) {
+                $q->where('shop_domain', '=', $shopDomain)
+                  ->orWhere('shop_domain', '=', $shortHandle)
+                  ->orWhere('shop_domain', '=', 'global');
+            })
+            ->where('key', 'plan_subscription')
+            ->delete();
 
-        return redirect()->back()->with('success', 'Plan downgraded to Free.');
+        DB::table('app_settings')->insert([
+            'shop_domain' => $shopDomain,
+            'key' => 'plan_subscription',
+            'value' => json_encode([
+                'plan' => 'free',
+                'charge_id' => null,
+                'status' => 'CANCELLED',
+                'updated_at' => now()->toDateTimeString(),
+            ]),
+            'updated_at' => now(),
+        ]);
+
+        $host = $request->get('host');
+        return redirect("/plans?shop=" . urlencode($shopDomain) . ($host ? "&host=" . urlencode($host) : ''));
     }
 }
