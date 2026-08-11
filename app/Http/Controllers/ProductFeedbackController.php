@@ -795,7 +795,7 @@ GRAPHQL;
                     }
                 } else {
                     // Token rejected or 401 Unauthorized -> App was uninstalled/reinstalled!
-                    Log::info("Shopify API returned non-successful response ({$response->status()}) for {$shopDomain}. Resetting plan to Free.");
+                    Log::info("Shopify API returned non-successful response ({$response->status()}) for {$shopDomain}. Wiping dead access token and resetting plan to Free.");
                     $shortHandle = explode('.myshopify.com', $shopDomain)[0];
                     DB::table('app_settings')
                         ->where(function ($q) use ($shopDomain, $shortHandle) {
@@ -803,7 +803,7 @@ GRAPHQL;
                               ->orWhere('shop_domain', '=', $shortHandle)
                               ->orWhere('shop_domain', '=', 'global');
                         })
-                        ->where('key', 'plan_subscription')
+                        ->whereIn('key', ['access_token', 'plan_subscription'])
                         ->delete();
 
                     DB::table('app_settings')->insert([
