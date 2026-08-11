@@ -840,7 +840,7 @@ GRAPHQL;
     {
         $shopDomain = $this->getShopDomain($request);
         if (!$shopDomain) {
-            return response()->json(['success' => false, 'message' => 'Shop domain missing'], 400);
+            return response()->json(['success' => false, 'message' => 'Shop domain missing. Please refresh the page.'], 400);
         }
 
         $apiKey = env('SHOPIFY_API_KEY');
@@ -906,13 +906,16 @@ GRAPHQL;
                 'variables' => $variables,
             ]);
 
+            $body = $response->body();
+            $statusCode = $response->status();
+
             if ($response->successful()) {
                 $result = $response->json();
                 $responseStr = json_encode($result);
 
-                // Handle Non-expiring token rejection error from Shopify
-                if (str_contains($responseStr, 'Non-expiring access tokens are no longer accepted')) {
-                    Log::warning("Non-expiring access token rejected for {$shopDomain}. Wiping token and initiating re-auth.");
+                // Handle Non-expiring or invalid token rejection error from Shopify
+                if (str_contains($responseStr, 'Non-expiring access tokens are no longer accepted') || str_contains($responseStr, 'Invalid API key or access token')) {
+                    Log::warning("Token rejected for {$shopDomain}. Wiping token and initiating re-auth.");
                     DB::table('app_settings')
                         ->where(function ($q) use ($shopDomain) {
                             $shortHandle = explode('.myshopify.com', $shopDomain)[0];
@@ -928,10 +931,17 @@ GRAPHQL;
                     ]);
                 }
 
+                if (!empty($result['errors'])) {
+                    $topError = $result['errors'][0]['message'] ?? 'GraphQL error';
+                    Log::error("Shopify GraphQL Error for {$shopDomain}: " . json_encode($result['errors']));
+                    return response()->json(['success' => false, 'message' => "Shopify API Error: {$topError}"], 422);
+                }
+
                 $userErrors = $result['data']['appSubscriptionCreate']['userErrors'] ?? [];
                 if (!empty($userErrors)) {
                     $errorMsg = implode(', ', array_column($userErrors, 'message'));
-                    return response()->json(['success' => false, 'message' => $errorMsg], 422);
+                    Log::error("Shopify appSubscriptionCreate User Errors for {$shopDomain}: " . $errorMsg);
+                    return response()->json(['success' => false, 'message' => "Shopify Billing Error: {$errorMsg}"], 422);
                 }
 
                 $confirmationUrl = $result['data']['appSubscriptionCreate']['confirmationUrl'] ?? null;
@@ -942,10 +952,9 @@ GRAPHQL;
                     ]);
                 }
             } else {
-                $body = $response->body();
-                Log::error("Shopify GraphQL Billing Error for {$shopDomain}: " . $body);
-                if (str_contains($body, 'Non-expiring access tokens are no longer accepted')) {
-                    Log::warning("Wiping dead token and initiating top-window OAuth re-authorization for {$shopDomain}");
+                Log::error("Shopify GraphQL Billing Error ({$statusCode}) for {$shopDomain}: " . $body);
+                if ($statusCode === 401 || str_contains($body, 'Non-expiring access tokens are no longer accepted') || str_contains($body, 'Invalid API key')) {
+                    Log::warning("Unauthorized token for {$shopDomain}. Wiping token and initiating re-auth.");
                     DB::table('app_settings')
                         ->where(function ($q) use ($shopDomain) {
                             $shortHandle = explode('.myshopify.com', $shopDomain)[0];
@@ -960,9 +969,12 @@ GRAPHQL;
                         'confirmationUrl' => $authUrl,
                     ]);
                 }
+
+                return response()->json(['success' => false, 'message' => "Shopify Error ({$statusCode}): {$body}"], 500);
             }
         } catch (\Throwable $e) {
             Log::error("Subscribe Pro Exception: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
         }
 
         return response()->json(['success' => false, 'message' => 'Failed to initialize Shopify Pro Plan charge.'], 500);

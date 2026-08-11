@@ -16,6 +16,7 @@ export default function Plans({ shopDomain = '', currentPlan = 'free', subscript
         try {
             const urlParams = new URLSearchParams(window.location.search);
             const host = urlParams.get('host');
+            const activeShopDomain = shopDomain || urlParams.get('shop') || '';
 
             const response = await fetch('/plans/pro/subscribe', {
                 method: 'POST',
@@ -25,7 +26,7 @@ export default function Plans({ shopDomain = '', currentPlan = 'free', subscript
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                 },
                 body: JSON.stringify({
-                    shop: shopDomain,
+                    shop: activeShopDomain,
                     host: host,
                 }),
             });
