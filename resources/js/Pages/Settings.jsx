@@ -4,8 +4,8 @@ import { DeleteIcon, PlusIcon } from '@shopify/polaris-icons';
 import { router } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 
-export default function Settings({ reasons = [], enable_email = true, require_email = false, popup_theme = 'modern', plan = 'free' }) {
-    const isPro = plan === 'pro';
+export default function Settings({ reasons = [], enable_email = true, require_email = false, popup_theme = 'modern', plan = 'free', currentPlan = 'free', shopDomain = '' }) {
+    const isPro = (currentPlan === 'pro' || plan === 'pro');
 
     const defaultReasons = [
         'Price is higher than expected',
@@ -36,21 +36,21 @@ export default function Settings({ reasons = [], enable_email = true, require_em
             name: 'Quiz Badge Pills',
             description: 'Pill items with circular A, B, C badges and highlighted active states.',
             type: 'badge',
-            proOnly: false,
+            proOnly: true,
         },
         {
             id: 'chips_grid',
             name: 'Horizontal Tag Chips',
             description: 'Compact side-by-side tags with checkmarks on active items.',
             type: 'chips',
-            proOnly: false,
+            proOnly: true,
         },
         {
             id: 'dark',
             name: 'Sleek Dark Mode',
             description: 'Dark mode modal layout with glowing active selection.',
             type: 'dark',
-            proOnly: false,
+            proOnly: true,
         },
     ];
 
@@ -72,7 +72,18 @@ export default function Settings({ reasons = [], enable_email = true, require_em
         setReasonList(reasonList.filter((_, index) => index !== indexToRemove));
     };
 
+    const handleUpgradeRedirect = () => {
+        const params = new URLSearchParams(window.location.search);
+        const host = params.get('host') || '';
+        const shop = shopDomain || params.get('shop') || '';
+        router.visit(`/plans?shop=${encodeURIComponent(shop)}${host ? `&host=${encodeURIComponent(host)}` : ''}`);
+    };
+
     const handleThemeSelect = (preset) => {
+        if (preset.proOnly && !isPro) {
+            handleUpgradeRedirect();
+            return;
+        }
         setSelectedTheme(preset.id);
     };
 
@@ -115,8 +126,6 @@ export default function Settings({ reasons = [], enable_email = true, require_em
                             <p>App settings saved successfully! Storefront popup will now reflect these options.</p>
                         </Banner>
                     )}
-
-
 
                     {/* 1. Pre-Defined Feedback Reasons Card */}
                     <Card>
@@ -214,27 +223,55 @@ export default function Settings({ reasons = [], enable_email = true, require_em
                                             key={preset.id}
                                             onClick={() => handleThemeSelect(preset)}
                                             style={{
-                                                border: `2px solid ${isSelected ? '#2c6ecb' : '#e1e3e5'}`,
+                                                position: 'relative',
+                                                border: `2px solid ${isSelected ? '#2c6ecb' : isLocked ? '#e2e8f0' : '#e1e3e5'}`,
                                                 borderRadius: '12px',
                                                 padding: '16px',
-                                                cursor: isLocked ? 'not-allowed' : 'pointer',
+                                                cursor: isLocked ? 'pointer' : 'pointer',
                                                 backgroundColor: isSelected ? '#f0f7ff' : '#ffffff',
-                                                opacity: isLocked ? 0.75 : 1,
                                                 transition: 'all 0.2s ease-in-out',
                                                 display: 'flex',
                                                 flexDirection: 'column',
                                                 justifyContent: 'space-between',
+                                                overflow: 'hidden'
                                             }}
                                         >
+                                            {isLocked && (
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: 0, left: 0, right: 0, bottom: 0,
+                                                    zIndex: 10,
+                                                    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                                                    backdropFilter: 'blur(2px)',
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    padding: '12px',
+                                                    textAlign: 'center'
+                                                }}>
+                                                    <Badge tone="attention">🔒 PRO Plan</Badge>
+                                                    <div style={{ marginTop: '8px' }}>
+                                                        <Text variant="bodyXs" weight="semibold" tone="subdued">
+                                                            Click to Upgrade
+                                                        </Text>
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             <div>
                                                 <InlineStack align="space-between" blockAlign="center">
-                                                    <Text variant="headingSm" as="h3">{preset.name}</Text>
+                                                    <InlineStack gap="200" blockAlign="center">
+                                                        <Text variant="headingSm" as="h3">{preset.name}</Text>
+                                                        {preset.proOnly && <Badge tone="info">PRO</Badge>}
+                                                    </InlineStack>
                                                     <input
                                                         type="radio"
                                                         name="popup_theme_preset"
-                                                        checked={isSelected}
+                                                        checked={isSelected && !isLocked}
+                                                        disabled={isLocked}
                                                         onChange={() => handleThemeSelect(preset)}
-                                                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                                        style={{ width: '18px', height: '18px', cursor: isLocked ? 'not-allowed' : 'pointer' }}
                                                     />
                                                 </InlineStack>
 

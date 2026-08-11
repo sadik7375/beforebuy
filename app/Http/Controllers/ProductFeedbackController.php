@@ -334,6 +334,7 @@ class ProductFeedbackController extends Controller
     {
         $shopDomain = $this->getShopDomain($request);
         $config = $this->getAppSettings($shopDomain);
+        $planDetails = $this->getShopPlan($shopDomain);
 
         return Inertia::render('Settings', [
             'reasons' => $config['reasons'] ?? [],
@@ -341,6 +342,8 @@ class ProductFeedbackController extends Controller
             'require_email' => (bool)($config['require_email'] ?? false),
             'popup_theme' => $config['popup_theme'] ?? 'modern',
             'shopDomain' => $shopDomain,
+            'currentPlan' => $planDetails['plan'],
+            'plan' => $planDetails['plan'],
         ]);
     }
 
@@ -358,12 +361,18 @@ class ProductFeedbackController extends Controller
         ]);
 
         $shopDomain = $this->getShopDomain($request);
+        $planDetails = $this->getShopPlan($shopDomain);
+
+        $selectedTheme = $validated['popup_theme'];
+        if (in_array($selectedTheme, ['badge_list', 'chips_grid', 'dark']) && $planDetails['plan'] !== 'pro') {
+            $selectedTheme = 'modern';
+        }
 
         $config = [
             'reasons' => array_values(array_filter($validated['reasons'])),
             'enable_email' => $validated['enable_email'],
             'require_email' => $validated['require_email'],
-            'popup_theme' => $validated['popup_theme'],
+            'popup_theme' => $selectedTheme,
         ];
 
         try {
