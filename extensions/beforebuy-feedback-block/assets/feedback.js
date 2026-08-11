@@ -93,32 +93,66 @@ if (!window.beforebuyFeedbackInitialized) {
             }
 
             reasonsContainer.innerHTML = '';
-            reasonsList.forEach((reasonText, idx) => {
-              const isChecked = idx === 0;
-              if (isChecked) selectedReason = reasonText;
 
-              const letterBadge = String.fromCharCode(65 + (idx % 26));
-              const label = document.createElement('label');
-              label.className = `beforebuy-reason-item ${isChecked ? 'beforebuy-selected' : ''}`;
-              label.dataset.reason = reasonText;
+            const isDropdownTheme = data.popup_theme === 'dropdown' || data.popup_theme === 'badge_list';
 
-              label.innerHTML = `
-                <span class="beforebuy-badge-letter">${letterBadge}</span>
-                <input type="radio" name="beforebuy_reason" value="${escapeHtml(reasonText)}" class="beforebuy-reason-radio" ${isChecked ? 'checked' : ''}>
-                <span>${escapeHtml(reasonText)}</span>
-              `;
+            if (isDropdownTheme) {
+              const selectWrapper = document.createElement('div');
+              selectWrapper.className = 'beforebuy-dropdown-wrapper';
 
-              label.addEventListener('click', function (e) {
-                e.stopPropagation();
-                document.querySelectorAll('.beforebuy-reason-item').forEach(el => el.classList.remove('beforebuy-selected'));
-                this.classList.add('beforebuy-selected');
-                const radio = this.querySelector('input[type="radio"]');
-                if (radio) radio.checked = true;
-                selectedReason = this.dataset.reason || (radio ? radio.value : reasonText);
+              const selectLabel = document.createElement('label');
+              selectLabel.className = 'beforebuy-dropdown-label';
+              selectLabel.innerText = 'Select Reason:';
+              selectWrapper.appendChild(selectLabel);
+
+              const selectEl = document.createElement('select');
+              selectEl.className = 'beforebuy-dropdown-select';
+
+              reasonsList.forEach((reasonText, idx) => {
+                const opt = document.createElement('option');
+                opt.value = reasonText;
+                opt.innerText = reasonText;
+                if (idx === 0) {
+                  opt.selected = true;
+                  selectedReason = reasonText;
+                }
+                selectEl.appendChild(opt);
               });
 
-              reasonsContainer.appendChild(label);
-            });
+              selectEl.addEventListener('change', function () {
+                selectedReason = this.value;
+              });
+
+              selectWrapper.appendChild(selectEl);
+              reasonsContainer.appendChild(selectWrapper);
+            } else {
+              reasonsList.forEach((reasonText, idx) => {
+                const isChecked = idx === 0;
+                if (isChecked) selectedReason = reasonText;
+
+                const letterBadge = String.fromCharCode(65 + (idx % 26));
+                const label = document.createElement('label');
+                label.className = `beforebuy-reason-item ${isChecked ? 'beforebuy-selected' : ''}`;
+                label.dataset.reason = reasonText;
+
+                label.innerHTML = `
+                  <span class="beforebuy-badge-letter">${letterBadge}</span>
+                  <input type="radio" name="beforebuy_reason" value="${escapeHtml(reasonText)}" class="beforebuy-reason-radio" ${isChecked ? 'checked' : ''}>
+                  <span>${escapeHtml(reasonText)}</span>
+                `;
+
+                label.addEventListener('click', function (e) {
+                  e.stopPropagation();
+                  document.querySelectorAll('.beforebuy-reason-item').forEach(el => el.classList.remove('beforebuy-selected'));
+                  this.classList.add('beforebuy-selected');
+                  const radio = this.querySelector('input[type="radio"]');
+                  if (radio) radio.checked = true;
+                  selectedReason = this.dataset.reason || (radio ? radio.value : reasonText);
+                });
+
+                reasonsContainer.appendChild(label);
+              });
+            }
           }
         })
         .catch(err => console.log('Using default settings:', err));

@@ -284,46 +284,47 @@
 }
 
 /* ---------------------------------------------------- */
-/* PRESET 1: Pop Quiz Pill Badges (.beforebuy-preset-badge_list) */
+/* PRESET 1: Dropdown Selection Menu (.beforebuy-preset-dropdown) */
 /* ---------------------------------------------------- */
-.beforebuy-modal-overlay.beforebuy-preset-badge_list .beforebuy-reason-item {
-  border-radius: 28px;
-  border: 1.5px solid #0f172a;
-  padding: 6px 14px;
+.beforebuy-dropdown-wrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: 14px;
+}
+
+.beforebuy-dropdown-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.beforebuy-dropdown-select {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1.5px solid #6366f1;
   background-color: #ffffff;
   color: #0f172a;
+  font-size: 13px;
   font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  box-shadow: 0 2px 5px rgba(99, 102, 241, 0.1);
+  box-sizing: border-box;
 }
 
-.beforebuy-modal-overlay.beforebuy-preset-badge_list .beforebuy-reason-radio {
-  display: none;
-}
-
-.beforebuy-modal-overlay.beforebuy-preset-badge_list .beforebuy-badge-letter {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: #fef08a;
-  border: 1.5px solid #eab308;
-  color: #854d0e;
-  font-weight: 800;
-  font-size: 12px;
-  margin-right: 10px;
-  flex-shrink: 0;
-}
-
-.beforebuy-modal-overlay.beforebuy-preset-badge_list .beforebuy-reason-item.beforebuy-selected {
-  background-color: #22c55e;
-  border-color: #16a34a;
-  color: #000000;
-  font-weight: 700;
-}
-
-.beforebuy-modal-overlay.beforebuy-preset-badge_list .beforebuy-submit-btn {
-  border-radius: 28px;
+.beforebuy-dropdown-select:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
 /* ---------------------------------------------------- */
