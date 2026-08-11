@@ -579,6 +579,7 @@ class ProductFeedbackController extends Controller
                     'client_id' => $apiKey,
                     'client_secret' => $apiSecret,
                     'code' => $code,
+                    'grant_options' => ['value'],
                     'expiring' => 1,
                 ]);
 
@@ -716,12 +717,13 @@ class ProductFeedbackController extends Controller
             return response()->json(['success' => false, 'message' => 'Shop domain missing'], 400);
         }
 
+        $apiKey = env('SHOPIFY_API_KEY');
+        $baseUrl = config('app.url', 'https://beforebuy.cannyapps.com');
+        $authUrl = "https://{$shopDomain}/admin/oauth/authorize?client_id={$apiKey}&scope=read_products&redirect_uri=" . urlencode("{$baseUrl}/auth/callback") . "&grant_options[]=value";
+
         $token = TokenService::getValidToken($shopDomain);
         if (!$token) {
-            $apiKey = env('SHOPIFY_API_KEY');
-            $baseUrl = config('app.url', 'https://beforebuy.cannyapps.com');
             if ($apiKey && $shopDomain) {
-                $authUrl = "https://{$shopDomain}/admin/oauth/authorize?client_id={$apiKey}&scope=read_products&redirect_uri=" . urlencode("{$baseUrl}/auth/callback");
                 return response()->json([
                     'success' => true,
                     'confirmationUrl' => $authUrl,
@@ -731,7 +733,6 @@ class ProductFeedbackController extends Controller
         }
 
         $host = $request->get('host');
-        $baseUrl = config('app.url', 'https://beforebuy.cannyapps.com');
         $returnUrl = "{$baseUrl}/plans/callback?shop=" . urlencode($shopDomain) . ($host ? "&host=" . urlencode($host) : '');
         $isTest = env('SHOPIFY_BILLING_TEST', true);
 
@@ -770,16 +771,37 @@ GRAPHQL;
         ];
 
         try {
+            $apiVersion = env('SHOPIFY_API_VERSION', '2025-01');
             $response = \Illuminate\Support\Facades\Http::withHeaders([
                 'X-Shopify-Access-Token' => $token,
                 'Content-Type' => 'application/json',
-            ])->post("https://{$shopDomain}/admin/api/2026-07/graphql.json", [
+            ])->post("https://{$shopDomain}/admin/api/{$apiVersion}/graphql.json", [
                 'query' => $query,
                 'variables' => $variables,
             ]);
 
             if ($response->successful()) {
                 $result = $response->json();
+                $responseStr = json_encode($result);
+
+                // Handle Non-expiring token rejection error from Shopify
+                if (str_contains($responseStr, 'Non-expiring access tokens are no longer accepted')) {
+                    Log::warning("Non-expiring access token rejected for {$shopDomain}. Wiping token and initiating re-auth.");
+                    DB::table('app_settings')
+                        ->where(function ($q) use ($shopDomain) {
+                            $shortHandle = explode('.myshopify.com', $shopDomain)[0];
+                            $q->where('shop_domain', '=', $shopDomain)
+                              ->orWhere('shop_domain', '=', $shortHandle);
+                        })
+                        ->where('key', 'access_token')
+                        ->delete();
+
+                    return response()->json([
+                        'success' => true,
+                        'confirmationUrl' => $authUrl,
+                    ]);
+                }
+
                 $userErrors = $result['data']['appSubscriptionCreate']['userErrors'] ?? [];
                 if (!empty($userErrors)) {
                     $errorMsg = implode(', ', array_column($userErrors, 'message'));
@@ -794,7 +816,24 @@ GRAPHQL;
                     ]);
                 }
             } else {
-                Log::error("Shopify GraphQL Billing Error for {$shopDomain}: " . $response->body());
+                $body = $response->body();
+                Log::error("Shopify GraphQL Billing Error for {$shopDomain}: " . $body);
+                if (str_contains($body, 'Non-expiring access tokens are no longer accepted')) {
+                    Log::warning("Wiping dead token and initiating top-window OAuth re-authorization for {$shopDomain}");
+                    DB::table('app_settings')
+                        ->where(function ($q) use ($shopDomain) {
+                            $shortHandle = explode('.myshopify.com', $shopDomain)[0];
+                            $q->where('shop_domain', '=', $shopDomain)
+                              ->orWhere('shop_domain', '=', $shortHandle);
+                        })
+                        ->where('key', 'access_token')
+                        ->delete();
+
+                    return response()->json([
+                        'success' => true,
+                        'confirmationUrl' => $authUrl,
+                    ]);
+                }
             }
         } catch (\Throwable $e) {
             Log::error("Subscribe Pro Exception: " . $e->getMessage());
@@ -862,11 +901,13 @@ mutation appSubscriptionCancel($id: ID!) {
   }
 }
 GRAPHQL;
+
                 try {
+                    $apiVersion = env('SHOPIFY_API_VERSION', '2025-01');
                     \Illuminate\Support\Facades\Http::withHeaders([
                         'X-Shopify-Access-Token' => $token,
                         'Content-Type' => 'application/json',
-                    ])->post("https://{$shopDomain}/admin/api/2026-07/graphql.json", [
+                    ])->post("https://{$shopDomain}/admin/api/{$apiVersion}/graphql.json", [
                         'query' => $query,
                         'variables' => ['id' => $chargeId],
                     ]);
