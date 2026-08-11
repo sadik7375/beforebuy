@@ -32,7 +32,13 @@ class VerifyShopifyRequest
             $request->attributes->set('shop_domain', $shopClean);
         }
 
-        return $next($request);
+        $response = $next($request);
+
+        if ($response instanceof Response) {
+            $response->headers->set('Content-Security-Policy', "frame-ancestors https://admin.shopify.com https://*.myshopify.com;");
+        }
+
+        return $response;
     }
 
     /**
