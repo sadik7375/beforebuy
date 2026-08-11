@@ -35,8 +35,8 @@ export default function Settings({ reasons = [], enable_email = true, require_em
         },
         {
             id: 'badge_list',
-            name: 'Quiz Selection Badges',
-            description: 'Interactive pill items with circular A, B badges and radio selection highlights.',
+            name: 'Badge Selection Pills',
+            description: 'Clean pill items with circular A, B badges and radio selection highlights.',
             type: 'badge',
             proOnly: false,
         },
