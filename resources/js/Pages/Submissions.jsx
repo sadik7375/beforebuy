@@ -153,144 +153,84 @@ export default function Submissions({ feedbacks = [], reasons = [], plan = 'free
                 title="Customer Feedback Submissions"
                 subtitle="Review why visitors are abandoning product pages on your store."
             >
-                <div style={{ position: 'relative' }}>
-                    {!isPro && (
+                <Card>
+                    <BlockStack gap="400">
+                        <Text variant="headingMd" as="h2">All Submissions Log</Text>
+
+                        {/* Search, Reason, and Date Filter Bar */}
                         <div style={{
-                            position: 'absolute',
-                            top: '50px',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            zIndex: 20,
-                            width: '90%',
-                            maxWidth: '520px',
-                            boxShadow: '0 12px 36px rgba(0, 0, 0, 0.18)',
-                            borderRadius: '12px',
+                            border: '1px solid #e1e3e5',
+                            borderRadius: '8px',
+                            padding: '8px 12px',
+                            backgroundColor: '#f9fafb'
                         }}>
-                            <Card padding="600">
-                                <BlockStack gap="400" inlineAlign="center">
-                                    <div style={{
-                                        backgroundColor: '#f0fdf4',
-                                        width: '64px',
-                                        height: '64px',
-                                        borderRadius: '50%',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: '32px',
-                                        border: '2px solid #008060'
-                                    }}>
-                                        🔒
-                                    </div>
-                                    <BlockStack gap="100" inlineAlign="center">
-                                        <Text variant="headingLg" as="h2" alignment="center">
-                                            Feedback Log Locked
-                                        </Text>
-                                        <Text variant="bodyMd" tone="subdued" alignment="center">
-                                            You are currently on the <strong>Free Plan</strong>. Upgrade to <strong>Pro ($5/month)</strong> to view full customer feedback logs and objection notes.
-                                        </Text>
-                                    </BlockStack>
-
-                                    <div style={{ marginTop: '8px', width: '100%', maxWidth: '280px' }}>
-                                        <Button
-                                            variant="primary"
-                                            size="large"
-                                            fullWidth
-                                            onClick={handleUpgradeRedirect}
-                                        >
-                                            Upgrade to Pro ($5/mo)
-                                        </Button>
-                                    </div>
-                                </BlockStack>
-                            </Card>
-                        </div>
-                    )}
-
-                    <div style={!isPro ? {
-                        filter: 'blur(10px)',
-                        opacity: 0.45,
-                        pointerEvents: 'none',
-                        userSelect: 'none',
-                    } : {}}>
-                        <Card>
-                            <BlockStack gap="400">
-                                <Text variant="headingMd" as="h2">All Submissions Log</Text>
-
-                                {/* Search, Reason, and Date Filter Bar */}
-                                <div style={{
-                                    border: '1px solid #e1e3e5',
-                                    borderRadius: '8px',
-                                    padding: '8px 12px',
-                                    backgroundColor: '#f9fafb'
-                                }}>
-                                    <InlineStack gap="300" align="space-between" blockAlign="center">
-                                        <div style={{ flexGrow: 1, maxWidth: '400px' }}>
-                                            <TextField
-                                                label="Search feedback"
-                                                labelHidden
-                                                prefix={<Icon source={SearchIcon} tone="subdued" />}
-                                                placeholder="Search by product, reason, email or note..."
-                                                value={searchQuery}
-                                                onChange={(val) => setSearchQuery(val)}
-                                                clearButton
-                                                onClearButtonClick={() => setSearchQuery('')}
-                                                autoComplete="off"
-                                            />
-                                        </div>
-
-                                        <InlineStack gap="200" blockAlign="center">
-                                            <Select
-                                                label="Filter by date"
-                                                labelHidden
-                                                prefix={<Icon source={CalendarIcon} tone="subdued" />}
-                                                options={dateOptions}
-                                                value={selectedDateFilter}
-                                                onChange={(val) => setSelectedDateFilter(val)}
-                                            />
-
-                                            <Select
-                                                label="Filter by reason"
-                                                labelHidden
-                                                options={reasonOptions}
-                                                value={selectedReasonFilter}
-                                                onChange={(val) => setSelectedReasonFilter(val)}
-                                            />
-
-                                            {isFiltered && (
-                                                <Button
-                                                    variant="tertiary"
-                                                    icon={XIcon}
-                                                    onClick={handleClearFilters}
-                                                >
-                                                    Clear Filters
-                                                </Button>
-                                            )}
-                                        </InlineStack>
-                                    </InlineStack>
+                            <InlineStack gap="300" align="space-between" blockAlign="center">
+                                <div style={{ flexGrow: 1, maxWidth: '400px' }}>
+                                    <TextField
+                                        label="Search feedback"
+                                        labelHidden
+                                        prefix={<Icon source={SearchIcon} tone="subdued" />}
+                                        placeholder="Search by product, reason, email or note..."
+                                        value={searchQuery}
+                                        onChange={(val) => setSearchQuery(val)}
+                                        clearButton
+                                        onClearButtonClick={() => setSearchQuery('')}
+                                        autoComplete="off"
+                                    />
                                 </div>
 
-                                {/* Data Table or Empty Filter State */}
-                                {filteredList.length === 0 ? (
-                                    <div style={{ padding: '32px 16px', textAlign: 'center' }}>
-                                        <Text tone="subdued" alignment="center">
-                                            {isFiltered ? 'No submissions match your search and date filters.' : 'No feedback submissions recorded yet.'}
-                                        </Text>
-                                        {isFiltered && (
-                                            <div style={{ marginTop: '12px' }}>
-                                                <Button onClick={handleClearFilters}>Reset Search & Filters</Button>
-                                            </div>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <DataTable
-                                        columnContentTypes={['text', 'text', 'text', 'text', 'text']}
-                                        headings={['Date', 'Product', 'Objection Reason', 'Customer Note', 'Customer Email']}
-                                        rows={tableRows}
+                                <InlineStack gap="200" blockAlign="center">
+                                    <Select
+                                        label="Filter by date"
+                                        labelHidden
+                                        prefix={<Icon source={CalendarIcon} tone="subdued" />}
+                                        options={dateOptions}
+                                        value={selectedDateFilter}
+                                        onChange={(val) => setSelectedDateFilter(val)}
                                     />
+
+                                    <Select
+                                        label="Filter by reason"
+                                        labelHidden
+                                        options={reasonOptions}
+                                        value={selectedReasonFilter}
+                                        onChange={(val) => setSelectedReasonFilter(val)}
+                                    />
+
+                                    {isFiltered && (
+                                        <Button
+                                            variant="tertiary"
+                                            icon={XIcon}
+                                            onClick={handleClearFilters}
+                                        >
+                                            Clear Filters
+                                        </Button>
+                                    )}
+                                </InlineStack>
+                            </InlineStack>
+                        </div>
+
+                        {/* Data Table or Empty Filter State */}
+                        {filteredList.length === 0 ? (
+                            <div style={{ padding: '32px 16px', textAlign: 'center' }}>
+                                <Text tone="subdued" alignment="center">
+                                    {isFiltered ? 'No submissions match your search and date filters.' : 'No feedback submissions recorded yet.'}
+                                </Text>
+                                {isFiltered && (
+                                    <div style={{ marginTop: '12px' }}>
+                                        <Button onClick={handleClearFilters}>Reset Search & Filters</Button>
+                                    </div>
                                 )}
-                            </BlockStack>
-                        </Card>
-                    </div>
-                </div>
+                            </div>
+                        ) : (
+                            <DataTable
+                                columnContentTypes={['text', 'text', 'text', 'text', 'text']}
+                                headings={['Date', 'Product', 'Objection Reason', 'Customer Note', 'Customer Email']}
+                                rows={tableRows}
+                            />
+                        )}
+                    </BlockStack>
+                </Card>
 
                 {/* Polaris Modal for Viewing Full Customer Note */}
                 <Modal
