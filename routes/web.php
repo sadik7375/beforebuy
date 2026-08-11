@@ -27,6 +27,15 @@ Route::get('/auth/callback', [ProductFeedbackController::class, 'authCallback'])
 Route::post('/webhooks/app-uninstalled', [ProductFeedbackController::class, 'handleAppUninstalled']);
 Route::post('/webhooks/app/uninstalled', [ProductFeedbackController::class, 'handleAppUninstalled']);
 
+// Privacy Policy Public Route (Required for Shopify App Store Listing)
+Route::get('/privacy', function () {
+    return view('privacy');
+})->name('privacy');
+
+Route::get('/privacy-policy', function () {
+    return view('privacy');
+});
+
 // API Endpoints for Storefront Popup
 Route::post('/api/feedback', [ProductFeedbackController::class, 'store']);
 Route::get('/api/settings', [ProductFeedbackController::class, 'getApiSettings'])->name('api.settings');
