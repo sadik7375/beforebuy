@@ -636,7 +636,8 @@ class ProductFeedbackController extends Controller
 
                         Log::info("Automatic OAuth token saved and plan reset to free for shop: {$shop}");
 
-                        if ($request->get('auto_subscribe') == '1') {
+                        $stateParam = (string)$request->get('state');
+                        if ($stateParam === 'auto_subscribe' || str_contains($stateParam, 'auto_subscribe')) {
                             $baseUrl = config('app.url', 'https://beforebuy.cannyapps.com');
                             $host = $request->get('host');
                             $returnUrl = "{$baseUrl}/plans/callback?shop=" . urlencode($shop) . ($host ? "&host=" . urlencode($host) : '');
@@ -925,7 +926,8 @@ GRAPHQL;
         $apiKey = env('SHOPIFY_API_KEY');
         $baseUrl = config('app.url', 'https://beforebuy.cannyapps.com');
         $host = $request->get('host');
-        $authUrl = "https://{$shopDomain}/admin/oauth/authorize?client_id={$apiKey}&scope=read_products&redirect_uri=" . urlencode("{$baseUrl}/auth/callback?auto_subscribe=1" . ($host ? "&host=" . urlencode($host) : '')) . "&grant_options[]=value";
+        $cleanRedirectUri = urlencode("{$baseUrl}/auth/callback");
+        $authUrl = "https://{$shopDomain}/admin/oauth/authorize?client_id={$apiKey}&scope=read_products&redirect_uri={$cleanRedirectUri}&state=auto_subscribe&grant_options[]=value";
 
         $token = TokenService::getValidToken($shopDomain);
         if (!$token) {
