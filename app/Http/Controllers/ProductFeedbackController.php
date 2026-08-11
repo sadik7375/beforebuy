@@ -922,6 +922,8 @@ GRAPHQL;
             return response()->json(['success' => false, 'message' => 'Shop domain missing. Please refresh the page.'], 400);
         }
 
+        $apiKey = env('SHOPIFY_API_KEY');
+        $baseUrl = config('app.url', 'https://beforebuy.cannyapps.com');
         $host = $request->get('host');
         $authUrl = "https://{$shopDomain}/admin/oauth/authorize?client_id={$apiKey}&scope=read_products&redirect_uri=" . urlencode("{$baseUrl}/auth/callback?auto_subscribe=1" . ($host ? "&host=" . urlencode($host) : '')) . "&grant_options[]=value";
 
