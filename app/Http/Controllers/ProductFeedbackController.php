@@ -593,6 +593,7 @@ class ProductFeedbackController extends Controller
 
         $shopDomain = $this->getShopDomain($request);
 
+        // 1. Save to database if table exists
         try {
             DB::table('merchant_supports')->insert([
                 'shop_domain' => $shopDomain ?: 'unknown',
@@ -604,30 +605,30 @@ class ProductFeedbackController extends Controller
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
-
-            // Email Notification to App Owner / Support Admin Email
-            $adminEmail = env('ADMIN_NOTIFICATION_EMAIL', 'wahidsadik38@gmail.com');
-            if ($adminEmail) {
-                try {
-                    \Illuminate\Support\Facades\Mail::raw(
-                        "New Merchant Support / Complaint Received!\n\n" .
-                        "Shop Domain: " . ($shopDomain ?: 'Unknown Shop') . "\n" .
-                        "Feedback Type: " . $validated['feedback_type'] . "\n" .
-                        "Contact Email: " . $validated['contact_email'] . "\n" .
-                        "Subject: " . ($validated['subject'] ?? 'N/A') . "\n\n" .
-                        "Message:\n" . $validated['message'],
-                        function ($mail) use ($adminEmail, $validated, $shopDomain) {
-                            $mail->to($adminEmail)
-                                 ->replyTo($validated['contact_email'])
-                                 ->subject("[BeforeBuy Support] " . $validated['feedback_type'] . " from " . ($shopDomain ?: $validated['contact_email']));
-                        }
-                    );
-                } catch (\Throwable $mailError) {
-                    Log::warning('Support email notification error: ' . $mailError->getMessage());
-                }
-            }
         } catch (\Throwable $e) {
-            Log::error('Merchant Support store error: ' . $e->getMessage());
+            Log::error('Merchant Support DB store error: ' . $e->getMessage());
+        }
+
+        // 2. Send Email Notification to Support Admin Email
+        $adminEmail = env('ADMIN_NOTIFICATION_EMAIL', 'contact@cannyapps.com');
+        if ($adminEmail) {
+            try {
+                \Illuminate\Support\Facades\Mail::raw(
+                    "New Merchant Support / Complaint Received!\n\n" .
+                    "Shop Domain: " . ($shopDomain ?: 'Unknown Shop') . "\n" .
+                    "Feedback Type: " . $validated['feedback_type'] . "\n" .
+                    "Contact Email: " . $validated['contact_email'] . "\n" .
+                    "Subject: " . ($validated['subject'] ?? 'N/A') . "\n\n" .
+                    "Message:\n" . $validated['message'],
+                    function ($mail) use ($adminEmail, $validated, $shopDomain) {
+                        $mail->to($adminEmail)
+                             ->replyTo($validated['contact_email'])
+                             ->subject("[BeforeBuy Support] " . $validated['feedback_type'] . " from " . ($shopDomain ?: $validated['contact_email']));
+                    }
+                );
+            } catch (\Throwable $mailError) {
+                Log::warning('Support email notification error: ' . $mailError->getMessage());
+            }
         }
 
         if ($request->wantsJson()) {
