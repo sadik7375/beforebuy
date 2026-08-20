@@ -78,7 +78,7 @@ function ProductSearchSelector({ label, helpText, selectedItems, onUpdateItems }
                 <InlineStack gap="200" align="space-between">
                     <div style={{ flexGrow: 1 }}>
                         <TextField
-                            placeholder="Search products by typing name (e.g. 'the', 'shirt'), handle or ID..."
+                            placeholder="Search product name, handle, or ID..."
                             value={searchQuery}
                             onChange={(val) => {
                                 setSearchQuery(val);

@@ -569,7 +569,7 @@ class ProductFeedbackController extends Controller
     }
 
     /**
-     * Search Shopify Products via GraphQL / REST API + PHP substring match for superior partial matching
+     * Search Shopify Products by fetching store products and running case-insensitive substring matching (stripos)
      */
     public function searchProducts(Request $request)
     {
@@ -584,94 +584,89 @@ class ProductFeedbackController extends Controller
         $products = [];
 
         if ($token) {
-            // 1. Try Shopify Admin GraphQL API first for wildcard substring search
+            // 1. Fetch products from Shopify Admin REST API (up to 250 items)
             try {
-                $gqlEndpoint = "https://{$shopDomain}/admin/api/2024-01/graphql.json";
-                $gqlQuery = '
-                    query searchProducts($searchQuery: String) {
-                        products(first: 30, query: $searchQuery) {
-                            nodes {
-                                id
-                                title
-                                handle
-                                featuredImage {
-                                    url
-                                }
-                            }
-                        }
-                    }
-                ';
-
-                // Format query for wildcard substring search (e.g. "the" -> "title:*the* OR handle:*the*")
-                $searchQueryParam = null;
-                if (!empty($query)) {
-                    $cleanQ = addslashes($query);
-                    $searchQueryParam = "title:*{$cleanQ}* OR handle:*{$cleanQ}*";
-                }
-
-                $gqlResponse = \Illuminate\Support\Facades\Http::withHeaders([
+                $endpoint = "https://{$shopDomain}/admin/api/2024-01/products.json";
+                $response = \Illuminate\Support\Facades\Http::withHeaders([
                     'X-Shopify-Access-Token' => $token,
                     'Content-Type' => 'application/json',
-                ])->post($gqlEndpoint, [
-                    'query' => $gqlQuery,
-                    'variables' => ['searchQuery' => $searchQueryParam],
-                ]);
+                ])->get($endpoint, ['limit' => 250, 'fields' => 'id,title,handle,image']);
 
-                if ($gqlResponse->successful()) {
-                    $nodes = $gqlResponse->json('data.products.nodes') ?? [];
-                    foreach ($nodes as $node) {
-                        $idNumeric = str_replace('gid://shopify/Product/', '', $node['id'] ?? '');
-                        $products[] = [
-                            'id' => $idNumeric ?: ($node['handle'] ?? ''),
-                            'title' => $node['title'] ?? '',
-                            'handle' => $node['handle'] ?? '',
-                            'image' => $node['featuredImage']['url'] ?? null,
-                        ];
+                if ($response->successful()) {
+                    $rawProducts = $response->json('products') ?? [];
+                    foreach ($rawProducts as $p) {
+                        $pTitle = $p['title'] ?? '';
+                        $pHandle = $p['handle'] ?? '';
+                        $pId = (string)($p['id'] ?? '');
+
+                        // Match any occurrence of typed characters anywhere in title, handle, or ID
+                        if (empty($query) || 
+                            stripos($pTitle, $query) !== false || 
+                            stripos($pHandle, $query) !== false || 
+                            stripos($pId, $query) !== false) {
+                            
+                            $products[] = [
+                                'id' => $pId,
+                                'title' => $pTitle,
+                                'handle' => $pHandle,
+                                'image' => $p['image']['src'] ?? null,
+                            ];
+
+                            if (count($products) >= 30) break;
+                        }
                     }
                 }
             } catch (\Throwable $e) {
-                Log::warning('Shopify GraphQL search error: ' . $e->getMessage());
+                Log::warning('Shopify REST product search error: ' . $e->getMessage());
             }
 
-            // 2. If GraphQL returns no items (or fallback), try REST API with PHP substring filtering
-            if (empty($products)) {
+            // 2. Fallback to GraphQL if REST returns no products
+            if (empty($products) && !empty($query)) {
                 try {
-                    $endpoint = "https://{$shopDomain}/admin/api/2024-01/products.json";
-                    $response = \Illuminate\Support\Facades\Http::withHeaders([
+                    $gqlEndpoint = "https://{$shopDomain}/admin/api/2024-01/graphql.json";
+                    $gqlQuery = '
+                        query searchProducts($searchQuery: String) {
+                            products(first: 30, query: $searchQuery) {
+                                nodes {
+                                    id
+                                    title
+                                    handle
+                                    featuredImage {
+                                        url
+                                    }
+                                }
+                            }
+                        }
+                    ';
+
+                    $cleanQ = str_replace(['"', "'", '\\'], '', $query);
+                    $gqlResponse = \Illuminate\Support\Facades\Http::withHeaders([
                         'X-Shopify-Access-Token' => $token,
                         'Content-Type' => 'application/json',
-                    ])->get($endpoint, ['limit' => 100, 'fields' => 'id,title,handle,image']);
+                    ])->post($gqlEndpoint, [
+                        'query' => $gqlQuery,
+                        'variables' => ['searchQuery' => "{$cleanQ}*"],
+                    ]);
 
-                    if ($response->successful()) {
-                        $rawProducts = $response->json('products') ?? [];
-                        foreach ($rawProducts as $p) {
-                            $pTitle = $p['title'] ?? '';
-                            $pHandle = $p['handle'] ?? '';
-                            $pId = (string)($p['id'] ?? '');
-
-                            if (empty($query) || 
-                                stripos($pTitle, $query) !== false || 
-                                stripos($pHandle, $query) !== false || 
-                                stripos($pId, $query) !== false) {
-                                
-                                $products[] = [
-                                    'id' => $pId,
-                                    'title' => $pTitle,
-                                    'handle' => $pHandle,
-                                    'image' => $p['image']['src'] ?? null,
-                                ];
-
-                                if (count($products) >= 25) break;
-                            }
+                    if ($gqlResponse->successful()) {
+                        $nodes = $gqlResponse->json('data.products.nodes') ?? [];
+                        foreach ($nodes as $node) {
+                            $idNumeric = str_replace('gid://shopify/Product/', '', $node['id'] ?? '');
+                            $products[] = [
+                                'id' => $idNumeric ?: ($node['handle'] ?? ''),
+                                'title' => $node['title'] ?? '',
+                                'handle' => $node['handle'] ?? '',
+                                'image' => $node['featuredImage']['url'] ?? null,
+                            ];
                         }
                     }
                 } catch (\Throwable $e) {
-                    Log::warning('Shopify REST search error: ' . $e->getMessage());
+                    Log::warning('Shopify GraphQL fallback error: ' . $e->getMessage());
                 }
             }
         }
 
-        // 3. Fallback: Query DB submissions table if still empty
+        // 3. Fallback: Query DB submissions table if store has no active token or API error
         if (empty($products)) {
             try {
                 $dbQuery = DB::table('product_feedbacks')
