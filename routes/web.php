@@ -39,9 +39,10 @@ Route::get('/privacy-policy', function () {
     return view('privacy');
 });
 
-// API Endpoints for Storefront Popup
+// API Endpoints for Storefront Popup & Settings
 Route::post('/api/feedback', [ProductFeedbackController::class, 'store']);
 Route::get('/api/settings', [ProductFeedbackController::class, 'getApiSettings'])->name('api.settings');
+Route::get('/api/products/search', [ProductFeedbackController::class, 'searchProducts'])->name('products.search');
 
 // Utilities
 Route::get('/run-migrate', function () {

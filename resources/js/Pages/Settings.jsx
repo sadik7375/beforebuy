@@ -1,8 +1,232 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Page, BlockStack, Card, Text, TextField, Button, Banner, InlineStack, Checkbox, Divider, Box, Badge, RadioButton } from '@shopify/polaris';
-import { DeleteIcon, PlusIcon } from '@shopify/polaris-icons';
+import { DeleteIcon, PlusIcon, SearchIcon } from '@shopify/polaris-icons';
 import { router } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
+
+function ProductSearchSelector({ label, helpText, selectedItems, onUpdateItems }) {
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+    const [searching, setSearching] = useState(false);
+    const [showDropdown, setShowDropdown] = useState(false);
+
+    useEffect(() => {
+        if (!searchQuery.trim()) {
+            setSearchResults([]);
+            setSearching(false);
+            return;
+        }
+
+        setSearching(true);
+        const timer = setTimeout(() => {
+            fetch(`/api/products/search?q=${encodeURIComponent(searchQuery)}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.products) {
+                        setSearchResults(data.products);
+                        setShowDropdown(true);
+                    }
+                })
+                .catch(err => console.error('Product search error:', err))
+                .finally(() => setSearching(false));
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    const handleAddProduct = (product) => {
+        const handle = typeof product === 'string' ? product.trim() : (product.handle || product.id);
+        if (!handle) return;
+
+        const exists = selectedItems.some(item => {
+            const h = typeof item === 'string' ? item : (item.handle || item.id);
+            return h.toLowerCase() === handle.toLowerCase();
+        });
+
+        if (!exists) {
+            onUpdateItems([...selectedItems, product]);
+        }
+        setSearchQuery('');
+        setShowDropdown(false);
+    };
+
+    const handleRemoveProduct = (indexToRemove) => {
+        onUpdateItems(selectedItems.filter((_, idx) => idx !== indexToRemove));
+    };
+
+    const handleManualAdd = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (searchQuery.trim()) {
+                handleAddProduct(searchQuery.trim());
+            }
+        }
+    };
+
+    return (
+        <BlockStack gap="200">
+            <Text variant="bodyMd" fontWeight="semibold">{label}</Text>
+            
+            <div style={{ position: 'relative' }}>
+                <InlineStack gap="200" align="space-between">
+                    <div style={{ flexGrow: 1 }}>
+                        <TextField
+                            placeholder="Type product name, handle, or ID to search..."
+                            value={searchQuery}
+                            onChange={(val) => {
+                                setSearchQuery(val);
+                                if (!val) setShowDropdown(false);
+                            }}
+                            onKeyDown={handleManualAdd}
+                            autoComplete="off"
+                            helpText={helpText}
+                        />
+                    </div>
+                    {searchQuery.trim() && (
+                        <Button onClick={() => handleAddProduct(searchQuery.trim())}>
+                            + Add Custom
+                        </Button>
+                    )}
+                </InlineStack>
+
+                {showDropdown && searchResults.length > 0 && (
+                    <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        zIndex: 1000,
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #c9cccf',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                        maxHeight: '260px',
+                        overflowY: 'auto',
+                        marginTop: '4px',
+                        padding: '6px 0',
+                    }}>
+                        {searchResults.map((prod) => {
+                            const isSelected = selectedItems.some(item => {
+                                const h = typeof item === 'string' ? item : (item.handle || item.id);
+                                return h.toLowerCase() === prod.handle.toLowerCase() || h === prod.id;
+                            });
+
+                            return (
+                                <div
+                                    key={prod.id || prod.handle}
+                                    onClick={() => !isSelected && handleAddProduct(prod)}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '12px',
+                                        padding: '8px 12px',
+                                        cursor: isSelected ? 'default' : 'pointer',
+                                        backgroundColor: isSelected ? '#f1f5f9' : '#ffffff',
+                                        opacity: isSelected ? 0.6 : 1,
+                                        borderBottom: '1px solid #f8fafc',
+                                    }}
+                                    onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = '#f0f7ff'; }}
+                                    onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = '#ffffff'; }}
+                                >
+                                    {prod.image ? (
+                                        <img src={prod.image} alt={prod.title} style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #e2e8f0' }} />
+                                    ) : (
+                                        <div style={{ width: '36px', height: '36px', borderRadius: '4px', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>📦</div>
+                                    )}
+
+                                    <div style={{ flexGrow: 1, overflow: 'hidden' }}>
+                                        <div style={{ fontWeight: '600', fontSize: '13px', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {prod.title}
+                                        </div>
+                                        <div style={{ fontSize: '11px', color: '#64748b' }}>
+                                            Handle: {prod.handle} {prod.id ? `| ID: ${prod.id}` : ''}
+                                        </div>
+                                    </div>
+
+                                    <Button size="micro" variant={isSelected ? 'tertiary' : 'primary'} disabled={isSelected}>
+                                        {isSelected ? 'Added' : '+ Add'}
+                                    </Button>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+
+            <div style={{ marginTop: '8px' }}>
+                <Text tone="subdued" variant="bodySm">
+                    Selected Products ({selectedItems.length}):
+                </Text>
+                
+                {selectedItems.length === 0 ? (
+                    <div style={{ padding: '12px', background: '#f8fafc', borderRadius: '6px', border: '1px dashed #cbd5e1', marginTop: '6px', fontSize: '12px', color: '#94a3b8', textAlign: 'center' }}>
+                        No products added yet. Use the search bar above to search and select products.
+                    </div>
+                ) : (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
+                        {selectedItems.map((item, index) => {
+                            const title = typeof item === 'string' ? item : (item.title || item.handle || item.id);
+                            const handle = typeof item === 'string' ? item : (item.handle || item.id);
+                            const img = typeof item === 'object' ? item.image : null;
+
+                            return (
+                                <div
+                                    key={index}
+                                    style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        padding: '6px 12px',
+                                        backgroundColor: '#eff6ff',
+                                        border: '1px solid #bfdbfe',
+                                        borderRadius: '20px',
+                                        fontSize: '12.5px',
+                                        color: '#1e40af',
+                                        boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                                    }}
+                                >
+                                    {img ? (
+                                        <img src={img} alt={title} style={{ width: '20px', height: '20px', borderRadius: '50%', objectFit: 'cover' }} />
+                                    ) : (
+                                        <span style={{ fontSize: '12px' }}>🏷️</span>
+                                    )}
+
+                                    <span style={{ fontWeight: '600' }}>{title}</span>
+                                    {handle && handle !== title && (
+                                        <span style={{ fontSize: '11px', opacity: 0.75 }}>({handle})</span>
+                                    )}
+
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRemoveProduct(index)}
+                                        style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            color: '#ef4444',
+                                            fontWeight: 'bold',
+                                            fontSize: '15px',
+                                            cursor: 'pointer',
+                                            lineHeight: 1,
+                                            padding: '0 2px',
+                                            marginLeft: '2px',
+                                            borderRadius: '50%',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                        }}
+                                        title="Remove product"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+        </BlockStack>
+    );
+}
 
 export default function Settings({ reasons = [], enable_email = true, require_email = false, popup_theme = 'modern', product_targeting_mode = 'all', excluded_products = [], included_products = [], plan = 'free', currentPlan = 'free', shopDomain = '' }) {
     const isPro = (currentPlan === 'pro' || plan === 'pro');
@@ -22,8 +246,8 @@ export default function Settings({ reasons = [], enable_email = true, require_em
 
     // Product Targeting / Display Rules state
     const [targetingMode, setTargetingMode] = useState(product_targeting_mode || 'all');
-    const [excludedText, setExcludedText] = useState((excluded_products || []).join(', '));
-    const [includedText, setIncludedText] = useState((included_products || []).join(', '));
+    const [excludedItems, setExcludedItems] = useState(excluded_products || []);
+    const [includedItems, setIncludedItems] = useState(included_products || []);
 
     const [saved, setSaved] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -83,9 +307,11 @@ export default function Settings({ reasons = [], enable_email = true, require_em
         setSelectedTheme(preset.id);
     };
 
-    const parseProductList = (text) => {
-        if (!text) return [];
-        return text.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+    const extractHandles = (items) => {
+        return (items || []).map(item => {
+            if (typeof item === 'string') return item.trim();
+            return item.handle || item.id || item.title;
+        }).filter(Boolean);
     };
 
     const handleSave = () => {
@@ -98,8 +324,8 @@ export default function Settings({ reasons = [], enable_email = true, require_em
             require_email: isEmailRequired,
             popup_theme: selectedTheme,
             product_targeting_mode: targetingMode,
-            excluded_products: parseProductList(excludedText),
-            included_products: parseProductList(includedText),
+            excluded_products: extractHandles(excludedItems),
+            included_products: extractHandles(includedItems),
         }, {
             preserveState: true,
             preserveScroll: true,
@@ -233,14 +459,11 @@ export default function Settings({ reasons = [], enable_email = true, require_em
 
                                 {targetingMode === 'exclude' && (
                                     <div style={{ paddingLeft: '28px', marginTop: '4px' }}>
-                                        <TextField
-                                            label="Excluded Product Handles or IDs"
-                                            value={excludedText}
-                                            onChange={(val) => setExcludedText(val)}
-                                            multiline={3}
-                                            placeholder="e.g. blue-t-shirt, 8192038472, summer-jacket"
-                                            helpText="Enter product handles (slugs) or numeric product IDs separated by commas or line breaks."
-                                            autoComplete="off"
+                                        <ProductSearchSelector
+                                            label="Select Excluded Products (Hide Feedback Button)"
+                                            helpText="Search and select products to hide feedback button on, or type custom handle and press Enter."
+                                            selectedItems={excludedItems}
+                                            onUpdateItems={setExcludedItems}
                                         />
                                     </div>
                                 )}
@@ -256,14 +479,11 @@ export default function Settings({ reasons = [], enable_email = true, require_em
 
                                 {targetingMode === 'include' && (
                                     <div style={{ paddingLeft: '28px', marginTop: '4px' }}>
-                                        <TextField
-                                            label="Included Product Handles or IDs"
-                                            value={includedText}
-                                            onChange={(val) => setIncludedText(val)}
-                                            multiline={3}
-                                            placeholder="e.g. cotton-t-shirt, 987654321, red-shoes"
-                                            helpText="Enter product handles (slugs) or numeric product IDs separated by commas or line breaks."
-                                            autoComplete="off"
+                                        <ProductSearchSelector
+                                            label="Select Included Products (Show Feedback Button Only Here)"
+                                            helpText="Search and select products to show feedback button on, or type custom handle and press Enter."
+                                            selectedItems={includedItems}
+                                            onUpdateItems={setIncludedItems}
                                         />
                                     </div>
                                 )}

@@ -569,6 +569,92 @@ class ProductFeedbackController extends Controller
     }
 
     /**
+     * Search Shopify Products via Admin REST API / DB fallback for merchant settings UI
+     */
+    public function searchProducts(Request $request)
+    {
+        $shopDomain = $this->getShopDomain($request);
+        $query = trim($request->get('q', ''));
+
+        if (!$shopDomain) {
+            return response()->json(['success' => false, 'products' => []]);
+        }
+
+        $token = TokenService::getValidToken($shopDomain);
+
+        $products = [];
+
+        if ($token) {
+            try {
+                $endpoint = "https://{$shopDomain}/admin/api/2024-01/products.json";
+                $params = ['limit' => 15, 'fields' => 'id,title,handle,image'];
+                if (!empty($query)) {
+                    $params['title'] = $query;
+                }
+
+                $response = \Illuminate\Support\Facades\Http::withHeaders([
+                    'X-Shopify-Access-Token' => $token,
+                    'Content-Type' => 'application/json',
+                ])->get($endpoint, $params);
+
+                if ($response->successful()) {
+                    $rawProducts = $response->json('products') ?? [];
+                    foreach ($rawProducts as $p) {
+                        $products[] = [
+                            'id' => (string)$p['id'],
+                            'title' => $p['title'],
+                            'handle' => $p['handle'],
+                            'image' => $p['image']['src'] ?? null,
+                        ];
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Shopify Product Search API error: ' . $e->getMessage());
+            }
+        }
+
+        // Fallback: If no products found via Shopify API (or token issue), query DB submissions table
+        if (empty($products)) {
+            try {
+                $dbQuery = DB::table('product_feedbacks')
+                    ->select('product_id', 'product_title', 'product_handle')
+                    ->whereNotNull('product_title')
+                    ->where('product_title', '!=', '');
+                
+                $this->applyShopFilter($dbQuery, $shopDomain);
+
+                if (!empty($query)) {
+                    $dbQuery->where(function ($q) use ($query) {
+                        $q->where('product_title', 'LIKE', "%{$query}%")
+                          ->orWhere('product_handle', 'LIKE', "%{$query}%")
+                          ->orWhere('product_id', 'LIKE', "%{$query}%");
+                    });
+                }
+
+                $dbProducts = $dbQuery->groupBy('product_id', 'product_title', 'product_handle')
+                    ->limit(10)
+                    ->get();
+
+                foreach ($dbProducts as $dp) {
+                    $products[] = [
+                        'id' => (string)($dp->product_id ?: $dp->product_handle),
+                        'title' => $dp->product_title ?: $dp->product_handle,
+                        'handle' => $dp->product_handle ?: (string)$dp->product_id,
+                        'image' => null,
+                    ];
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Database product search fallback error: ' . $e->getMessage());
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'products' => $products,
+        ]);
+    }
+
+    /**
      * Submenu: Setup
      */
     public function setup(Request $request)
