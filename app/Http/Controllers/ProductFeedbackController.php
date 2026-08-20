@@ -569,7 +569,7 @@ class ProductFeedbackController extends Controller
     }
 
     /**
-     * Search Shopify Products via Admin REST API / DB fallback for merchant settings UI
+     * Search Shopify Products via GraphQL / REST API + PHP substring match for superior partial matching
      */
     public function searchProducts(Request $request)
     {
@@ -581,39 +581,97 @@ class ProductFeedbackController extends Controller
         }
 
         $token = TokenService::getValidToken($shopDomain);
-
         $products = [];
 
         if ($token) {
+            // 1. Try Shopify Admin GraphQL API first for wildcard substring search
             try {
-                $endpoint = "https://{$shopDomain}/admin/api/2024-01/products.json";
-                $params = ['limit' => 15, 'fields' => 'id,title,handle,image'];
+                $gqlEndpoint = "https://{$shopDomain}/admin/api/2024-01/graphql.json";
+                $gqlQuery = '
+                    query searchProducts($searchQuery: String) {
+                        products(first: 30, query: $searchQuery) {
+                            nodes {
+                                id
+                                title
+                                handle
+                                featuredImage {
+                                    url
+                                }
+                            }
+                        }
+                    }
+                ';
+
+                // Format query for wildcard substring search (e.g. "the" -> "title:*the* OR handle:*the*")
+                $searchQueryParam = null;
                 if (!empty($query)) {
-                    $params['title'] = $query;
+                    $cleanQ = addslashes($query);
+                    $searchQueryParam = "title:*{$cleanQ}* OR handle:*{$cleanQ}*";
                 }
 
-                $response = \Illuminate\Support\Facades\Http::withHeaders([
+                $gqlResponse = \Illuminate\Support\Facades\Http::withHeaders([
                     'X-Shopify-Access-Token' => $token,
                     'Content-Type' => 'application/json',
-                ])->get($endpoint, $params);
+                ])->post($gqlEndpoint, [
+                    'query' => $gqlQuery,
+                    'variables' => ['searchQuery' => $searchQueryParam],
+                ]);
 
-                if ($response->successful()) {
-                    $rawProducts = $response->json('products') ?? [];
-                    foreach ($rawProducts as $p) {
+                if ($gqlResponse->successful()) {
+                    $nodes = $gqlResponse->json('data.products.nodes') ?? [];
+                    foreach ($nodes as $node) {
+                        $idNumeric = str_replace('gid://shopify/Product/', '', $node['id'] ?? '');
                         $products[] = [
-                            'id' => (string)$p['id'],
-                            'title' => $p['title'],
-                            'handle' => $p['handle'],
-                            'image' => $p['image']['src'] ?? null,
+                            'id' => $idNumeric ?: ($node['handle'] ?? ''),
+                            'title' => $node['title'] ?? '',
+                            'handle' => $node['handle'] ?? '',
+                            'image' => $node['featuredImage']['url'] ?? null,
                         ];
                     }
                 }
             } catch (\Throwable $e) {
-                Log::warning('Shopify Product Search API error: ' . $e->getMessage());
+                Log::warning('Shopify GraphQL search error: ' . $e->getMessage());
+            }
+
+            // 2. If GraphQL returns no items (or fallback), try REST API with PHP substring filtering
+            if (empty($products)) {
+                try {
+                    $endpoint = "https://{$shopDomain}/admin/api/2024-01/products.json";
+                    $response = \Illuminate\Support\Facades\Http::withHeaders([
+                        'X-Shopify-Access-Token' => $token,
+                        'Content-Type' => 'application/json',
+                    ])->get($endpoint, ['limit' => 100, 'fields' => 'id,title,handle,image']);
+
+                    if ($response->successful()) {
+                        $rawProducts = $response->json('products') ?? [];
+                        foreach ($rawProducts as $p) {
+                            $pTitle = $p['title'] ?? '';
+                            $pHandle = $p['handle'] ?? '';
+                            $pId = (string)($p['id'] ?? '');
+
+                            if (empty($query) || 
+                                stripos($pTitle, $query) !== false || 
+                                stripos($pHandle, $query) !== false || 
+                                stripos($pId, $query) !== false) {
+                                
+                                $products[] = [
+                                    'id' => $pId,
+                                    'title' => $pTitle,
+                                    'handle' => $pHandle,
+                                    'image' => $p['image']['src'] ?? null,
+                                ];
+
+                                if (count($products) >= 25) break;
+                            }
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning('Shopify REST search error: ' . $e->getMessage());
+                }
             }
         }
 
-        // Fallback: If no products found via Shopify API (or token issue), query DB submissions table
+        // 3. Fallback: Query DB submissions table if still empty
         if (empty($products)) {
             try {
                 $dbQuery = DB::table('product_feedbacks')
@@ -632,7 +690,7 @@ class ProductFeedbackController extends Controller
                 }
 
                 $dbProducts = $dbQuery->groupBy('product_id', 'product_title', 'product_handle')
-                    ->limit(10)
+                    ->limit(20)
                     ->get();
 
                 foreach ($dbProducts as $dp) {

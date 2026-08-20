@@ -10,29 +10,36 @@ function ProductSearchSelector({ label, helpText, selectedItems, onUpdateItems }
     const [searching, setSearching] = useState(false);
     const [showDropdown, setShowDropdown] = useState(false);
 
-    useEffect(() => {
-        if (!searchQuery.trim()) {
-            setSearchResults([]);
-            setSearching(false);
-            return;
-        }
-
+    const performSearch = (queryVal) => {
         setSearching(true);
+        fetch(`/api/products/search?q=${encodeURIComponent(queryVal)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.products) {
+                    setSearchResults(data.products);
+                    setShowDropdown(true);
+                }
+            })
+            .catch(err => console.error('Product search error:', err))
+            .finally(() => setSearching(false));
+    };
+
+    useEffect(() => {
         const timer = setTimeout(() => {
-            fetch(`/api/products/search?q=${encodeURIComponent(searchQuery)}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data && data.products) {
-                        setSearchResults(data.products);
-                        setShowDropdown(true);
-                    }
-                })
-                .catch(err => console.error('Product search error:', err))
-                .finally(() => setSearching(false));
-        }, 300);
+            if (showDropdown || searchQuery.trim().length > 0) {
+                performSearch(searchQuery);
+            }
+        }, 200);
 
         return () => clearTimeout(timer);
     }, [searchQuery]);
+
+    const handleFocus = () => {
+        setShowDropdown(true);
+        if (searchResults.length === 0) {
+            performSearch(searchQuery);
+        }
+    };
 
     const handleAddProduct = (product) => {
         const handle = typeof product === 'string' ? product.trim() : (product.handle || product.id);
@@ -71,12 +78,13 @@ function ProductSearchSelector({ label, helpText, selectedItems, onUpdateItems }
                 <InlineStack gap="200" align="space-between">
                     <div style={{ flexGrow: 1 }}>
                         <TextField
-                            placeholder="Type product name, handle, or ID to search..."
+                            placeholder="Search products by typing name (e.g. 'the', 'shirt'), handle or ID..."
                             value={searchQuery}
                             onChange={(val) => {
                                 setSearchQuery(val);
-                                if (!val) setShowDropdown(false);
+                                setShowDropdown(true);
                             }}
+                            onFocus={handleFocus}
                             onKeyDown={handleManualAdd}
                             autoComplete="off"
                             helpText={helpText}
@@ -89,7 +97,7 @@ function ProductSearchSelector({ label, helpText, selectedItems, onUpdateItems }
                     )}
                 </InlineStack>
 
-                {showDropdown && searchResults.length > 0 && (
+                {showDropdown && (
                     <div style={{
                         position: 'absolute',
                         top: '100%',
@@ -100,12 +108,24 @@ function ProductSearchSelector({ label, helpText, selectedItems, onUpdateItems }
                         border: '1px solid #c9cccf',
                         borderRadius: '8px',
                         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                        maxHeight: '260px',
+                        maxHeight: '280px',
                         overflowY: 'auto',
                         marginTop: '4px',
                         padding: '6px 0',
                     }}>
-                        {searchResults.map((prod) => {
+                        {searching && (
+                            <div style={{ padding: '12px', textAlign: 'center', fontSize: '13px', color: '#64748b' }}>
+                                🔍 Searching store products...
+                            </div>
+                        )}
+
+                        {!searching && searchResults.length === 0 && (
+                            <div style={{ padding: '12px', textAlign: 'center', fontSize: '13px', color: '#94a3b8' }}>
+                                No products found. Type product handle directly or press "+ Add Custom".
+                            </div>
+                        )}
+
+                        {!searching && searchResults.map((prod) => {
                             const isSelected = selectedItems.some(item => {
                                 const h = typeof item === 'string' ? item : (item.handle || item.id);
                                 return h.toLowerCase() === prod.handle.toLowerCase() || h === prod.id;
@@ -119,7 +139,7 @@ function ProductSearchSelector({ label, helpText, selectedItems, onUpdateItems }
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: '12px',
-                                        padding: '8px 12px',
+                                        padding: '10px 14px',
                                         cursor: isSelected ? 'default' : 'pointer',
                                         backgroundColor: isSelected ? '#f1f5f9' : '#ffffff',
                                         opacity: isSelected ? 0.6 : 1,
@@ -129,17 +149,17 @@ function ProductSearchSelector({ label, helpText, selectedItems, onUpdateItems }
                                     onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = '#ffffff'; }}
                                 >
                                     {prod.image ? (
-                                        <img src={prod.image} alt={prod.title} style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #e2e8f0' }} />
+                                        <img src={prod.image} alt={prod.title} style={{ width: '38px', height: '38px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #e2e8f0' }} />
                                     ) : (
-                                        <div style={{ width: '36px', height: '36px', borderRadius: '4px', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>📦</div>
+                                        <div style={{ width: '38px', height: '38px', borderRadius: '4px', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>📦</div>
                                     )}
 
                                     <div style={{ flexGrow: 1, overflow: 'hidden' }}>
-                                        <div style={{ fontWeight: '600', fontSize: '13px', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        <div style={{ fontWeight: '600', fontSize: '13.5px', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                             {prod.title}
                                         </div>
-                                        <div style={{ fontSize: '11px', color: '#64748b' }}>
-                                            Handle: {prod.handle} {prod.id ? `| ID: ${prod.id}` : ''}
+                                        <div style={{ fontSize: '11.5px', color: '#64748b' }}>
+                                            Handle: <span style={{ fontFamily: 'monospace', background: '#f1f5f9', padding: '1px 4px', borderRadius: '3px' }}>{prod.handle}</span> {prod.id ? `| ID: ${prod.id}` : ''}
                                         </div>
                                     </div>
 
