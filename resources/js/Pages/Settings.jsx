@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Page, BlockStack, Card, Text, TextField, Button, Banner, InlineStack, Checkbox, Divider, Box, Badge } from '@shopify/polaris';
+import { Page, BlockStack, Card, Text, TextField, Button, Banner, InlineStack, Checkbox, Divider, Box, Badge, RadioButton } from '@shopify/polaris';
 import { DeleteIcon, PlusIcon } from '@shopify/polaris-icons';
 import { router } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 
-export default function Settings({ reasons = [], enable_email = true, require_email = false, popup_theme = 'modern', plan = 'free', currentPlan = 'free', shopDomain = '' }) {
+export default function Settings({ reasons = [], enable_email = true, require_email = false, popup_theme = 'modern', product_targeting_mode = 'all', excluded_products = [], included_products = [], plan = 'free', currentPlan = 'free', shopDomain = '' }) {
     const isPro = (currentPlan === 'pro' || plan === 'pro');
 
     const defaultReasons = [
@@ -19,6 +19,11 @@ export default function Settings({ reasons = [], enable_email = true, require_em
     const [collectEmail, setCollectEmail] = useState(enable_email);
     const [isEmailRequired, setIsEmailRequired] = useState(require_email);
     const [selectedTheme, setSelectedTheme] = useState(popup_theme || 'modern');
+
+    // Product Targeting / Display Rules state
+    const [targetingMode, setTargetingMode] = useState(product_targeting_mode || 'all');
+    const [excludedText, setExcludedText] = useState((excluded_products || []).join(', '));
+    const [includedText, setIncludedText] = useState((included_products || []).join(', '));
 
     const [saved, setSaved] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -78,6 +83,11 @@ export default function Settings({ reasons = [], enable_email = true, require_em
         setSelectedTheme(preset.id);
     };
 
+    const parseProductList = (text) => {
+        if (!text) return [];
+        return text.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+    };
+
     const handleSave = () => {
         setSaving(true);
         const filteredReasons = reasonList.filter(r => r.trim() !== '');
@@ -87,6 +97,9 @@ export default function Settings({ reasons = [], enable_email = true, require_em
             enable_email: collectEmail,
             require_email: isEmailRequired,
             popup_theme: selectedTheme,
+            product_targeting_mode: targetingMode,
+            excluded_products: parseProductList(excludedText),
+            included_products: parseProductList(includedText),
         }, {
             preserveState: true,
             preserveScroll: true,
@@ -191,7 +204,74 @@ export default function Settings({ reasons = [], enable_email = true, require_em
                         </BlockStack>
                     </Card>
 
-                    {/* 3. Popup Design Presets Card */}
+                    {/* 3. Product Targeting & Display Rules Card */}
+                    <Card>
+                        <BlockStack gap="400">
+                            <Text variant="headingMd" as="h2">Product Targeting & Visibility Rules</Text>
+                            <Text tone="subdued" variant="bodySm">
+                                Control which product pages display the feedback button. Choose to show on all products, or target/exclude specific products.
+                            </Text>
+
+                            <BlockStack gap="300">
+                                <RadioButton
+                                    label="Show on ALL Products"
+                                    helpText="Default option. The feedback button will appear on all product pages."
+                                    checked={targetingMode === 'all'}
+                                    id="targeting_all"
+                                    name="targeting_mode"
+                                    onChange={() => setTargetingMode('all')}
+                                />
+
+                                <RadioButton
+                                    label="Show on ALL Products EXCEPT Specific Products (Exclude Mode)"
+                                    helpText="Hide the feedback button on selected products (e.g. out of 10 products, hide on 4 specific products)."
+                                    checked={targetingMode === 'exclude'}
+                                    id="targeting_exclude"
+                                    name="targeting_mode"
+                                    onChange={() => setTargetingMode('exclude')}
+                                />
+
+                                {targetingMode === 'exclude' && (
+                                    <div style={{ paddingLeft: '28px', marginTop: '4px' }}>
+                                        <TextField
+                                            label="Excluded Product Handles or IDs"
+                                            value={excludedText}
+                                            onChange={(val) => setExcludedText(val)}
+                                            multiline={3}
+                                            placeholder="e.g. blue-t-shirt, 8192038472, summer-jacket"
+                                            helpText="Enter product handles (slugs) or numeric product IDs separated by commas or line breaks."
+                                            autoComplete="off"
+                                        />
+                                    </div>
+                                )}
+
+                                <RadioButton
+                                    label="Show ONLY on Specific Products (Include Mode)"
+                                    helpText="Display the feedback button only on selected product pages."
+                                    checked={targetingMode === 'include'}
+                                    id="targeting_include"
+                                    name="targeting_mode"
+                                    onChange={() => setTargetingMode('include')}
+                                />
+
+                                {targetingMode === 'include' && (
+                                    <div style={{ paddingLeft: '28px', marginTop: '4px' }}>
+                                        <TextField
+                                            label="Included Product Handles or IDs"
+                                            value={includedText}
+                                            onChange={(val) => setIncludedText(val)}
+                                            multiline={3}
+                                            placeholder="e.g. cotton-t-shirt, 987654321, red-shoes"
+                                            helpText="Enter product handles (slugs) or numeric product IDs separated by commas or line breaks."
+                                            autoComplete="off"
+                                        />
+                                    </div>
+                                )}
+                            </BlockStack>
+                        </BlockStack>
+                    </Card>
+
+                    {/* 4. Popup Design Presets Card */}
                     <Card>
                         <BlockStack gap="400">
                             <Text variant="headingMd" as="h2">Storefront Popup Option Design Layouts</Text>

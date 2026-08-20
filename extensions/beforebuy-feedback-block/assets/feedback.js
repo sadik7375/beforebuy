@@ -56,6 +56,39 @@ if (!window.beforebuyFeedbackInitialized) {
         .then(data => {
           if (!data) return;
 
+          // Product Targeting & Visibility Check
+          const targetingMode = data.product_targeting_mode || 'all';
+          const excludedList = (data.excluded_products || []).map(item => String(item).toLowerCase().trim());
+          const includedList = (data.included_products || []).map(item => String(item).toLowerCase().trim());
+
+          const currentProductId = String(triggerBtn.dataset.productId || '').toLowerCase().trim();
+          const currentProductHandle = String(triggerBtn.dataset.productHandle || '').toLowerCase().trim();
+
+          function isProductMatch(list) {
+            if (!list || list.length === 0) return false;
+            return list.some(item => item && (item === currentProductId || item === currentProductHandle));
+          }
+
+          let isVisible = true;
+          if (targetingMode === 'exclude') {
+            if (isProductMatch(excludedList)) {
+              isVisible = false;
+            }
+          } else if (targetingMode === 'include') {
+            if (!isProductMatch(includedList)) {
+              isVisible = false;
+            }
+          }
+
+          if (!isVisible) {
+            if (wrapper) wrapper.style.display = 'none';
+            triggerBtn.style.display = 'none';
+            return;
+          } else {
+            if (wrapper) wrapper.style.display = 'flex';
+            triggerBtn.style.display = '';
+          }
+
           // Email settings
           if (typeof data.enable_email !== 'undefined') isEmailEnabled = Boolean(data.enable_email);
           if (typeof data.require_email !== 'undefined') isEmailRequired = Boolean(data.require_email);

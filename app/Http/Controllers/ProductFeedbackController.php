@@ -163,6 +163,9 @@ class ProductFeedbackController extends Controller
             'enable_email' => true,
             'require_email' => false,
             'popup_theme' => 'modern',
+            'product_targeting_mode' => 'all',
+            'excluded_products' => [],
+            'included_products' => [],
         ];
 
         try {
@@ -444,6 +447,9 @@ class ProductFeedbackController extends Controller
             'enable_email' => (bool)($config['enable_email'] ?? true),
             'require_email' => (bool)($config['require_email'] ?? false),
             'popup_theme' => $config['popup_theme'] ?? 'modern',
+            'product_targeting_mode' => $config['product_targeting_mode'] ?? 'all',
+            'excluded_products' => $config['excluded_products'] ?? [],
+            'included_products' => $config['included_products'] ?? [],
             'shopDomain' => $shopDomain,
             'currentPlan' => $planDetails['plan'],
             'plan' => $planDetails['plan'],
@@ -461,6 +467,11 @@ class ProductFeedbackController extends Controller
             'enable_email' => 'required|boolean',
             'require_email' => 'required|boolean',
             'popup_theme' => 'required|string',
+            'product_targeting_mode' => 'nullable|string|in:all,exclude,include',
+            'excluded_products' => 'nullable|array',
+            'excluded_products.*' => 'nullable|string',
+            'included_products' => 'nullable|array',
+            'included_products.*' => 'nullable|string',
         ]);
 
         $shopDomain = $this->getShopDomain($request);
@@ -481,6 +492,9 @@ class ProductFeedbackController extends Controller
             'enable_email' => $validated['enable_email'],
             'require_email' => $validated['require_email'],
             'popup_theme' => $validated['popup_theme'],
+            'product_targeting_mode' => $validated['product_targeting_mode'] ?? 'all',
+            'excluded_products' => array_values(array_filter($validated['excluded_products'] ?? [])),
+            'included_products' => array_values(array_filter($validated['included_products'] ?? [])),
         ];
 
         try {
@@ -545,6 +559,9 @@ class ProductFeedbackController extends Controller
             'enable_email' => $config['enable_email'],
             'require_email' => $config['require_email'],
             'popup_theme' => $config['popup_theme'] ?? 'modern',
+            'product_targeting_mode' => $config['product_targeting_mode'] ?? 'all',
+            'excluded_products' => $config['excluded_products'] ?? [],
+            'included_products' => $config['included_products'] ?? [],
         ])
         ->header('Access-Control-Allow-Origin', '*')
         ->header('Access-Control-Allow-Methods', 'GET, OPTIONS')
