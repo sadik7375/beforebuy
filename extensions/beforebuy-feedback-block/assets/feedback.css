@@ -163,13 +163,15 @@
   accent-color: #2563eb;
 }
 
-/* Email Input Group */
-.beforebuy-email-group {
+/* Email & Phone Input Group */
+.beforebuy-email-group,
+.beforebuy-phone-group {
   margin-top: 10px;
   margin-bottom: 12px;
 }
 
-.beforebuy-email-group label {
+.beforebuy-email-group label,
+.beforebuy-phone-group label {
   display: block;
   font-size: 12px;
   font-weight: 600;
@@ -434,6 +436,7 @@
 
 .beforebuy-modal-overlay.beforebuy-preset-dark .beforebuy-subtitle,
 .beforebuy-modal-overlay.beforebuy-preset-dark .beforebuy-email-group label,
+.beforebuy-modal-overlay.beforebuy-preset-dark .beforebuy-phone-group label,
 .beforebuy-modal-overlay.beforebuy-preset-dark .beforebuy-comment-group label {
   color: #94a3b8;
 }
