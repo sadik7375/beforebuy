@@ -199,13 +199,6 @@ export default function Submissions({ feedbacks = [], reasons = [], plan = 'free
             titleText
         );
 
-        const contactDisplay = (item.customer_email || item.customer_phone) ? (
-            <div key={`contact-${item.id}`} style={{ fontSize: '13px', lineHeight: '1.4' }}>
-                {item.customer_email && <div>{item.customer_email}</div>}
-                {item.customer_phone && <div style={{ color: '#6d7175' }}>{item.customer_phone}</div>}
-            </div>
-        ) : 'Anonymous Visitor';
-
         return [
             item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Today',
             productCell,
@@ -220,7 +213,8 @@ export default function Submissions({ feedbacks = [], reasons = [], plan = 'free
             ) : (
                 comment
             ),
-            contactDisplay
+            item.customer_email || 'N/A',
+            item.customer_phone || 'N/A'
         ];
     });
 
@@ -239,7 +233,7 @@ export default function Submissions({ feedbacks = [], reasons = [], plan = 'free
                             <Text variant="headingMd" as="h2">All Submissions Log</Text>
                             <InlineStack gap="200" blockAlign="center">
                                 <Button icon={EmailIcon} onClick={handleExportEmails}>
-                                    Collect Email
+                                    Collect Email & Phone
                                 </Button>
                                 <Button icon={ExportIcon} onClick={handleExportAllData}>
                                     Export Data
@@ -314,8 +308,8 @@ export default function Submissions({ feedbacks = [], reasons = [], plan = 'free
                             </div>
                         ) : (
                             <DataTable
-                                columnContentTypes={['text', 'text', 'text', 'text', 'text']}
-                                headings={['Date', 'Product', 'Objection Reason', 'Customer Note', 'Customer Contact']}
+                                columnContentTypes={['text', 'text', 'text', 'text', 'text', 'text']}
+                                headings={['Date', 'Product', 'Objection Reason', 'Customer Note', 'Customer Email', 'Customer Phone']}
                                 rows={tableRows}
                             />
                         )}
