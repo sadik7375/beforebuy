@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Page, BlockStack, Card, Text, Badge, DataTable, InlineStack, TextField, Select, Button, Icon, Modal } from '@shopify/polaris';
-import { SearchIcon, XIcon, CalendarIcon } from '@shopify/polaris-icons';
+import { SearchIcon, XIcon, CalendarIcon, ExportIcon, EmailIcon } from '@shopify/polaris-icons';
 import { router } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 
@@ -15,6 +15,75 @@ export default function Submissions({ feedbacks = [], reasons = [], plan = 'free
     // Modal state for viewing full customer note
     const [selectedFeedback, setSelectedFeedback] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // CSV Download Helper
+    const downloadCSV = (filename, headers, rows) => {
+        const escapeCSVVal = (val) => {
+            if (val === null || val === undefined) return '';
+            let stringVal = String(val).replace(/"/g, '""');
+            if (stringVal.search(/("|,|\n)/g) >= 0) {
+                stringVal = `"${stringVal}"`;
+            }
+            return stringVal;
+        };
+        
+        const headerRow = headers.map(escapeCSVVal).join(",");
+        const csvContent = [headerRow, ...rows.map(row => row.map(escapeCSVVal).join(","))].join("\n");
+        
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    };
+
+    // Export Emails Only (Collect Email option)
+    const handleExportEmails = () => {
+        const itemsToExport = filteredList.length > 0 ? filteredList : list;
+        const emailRows = [];
+        const seenEmails = new Set();
+
+        itemsToExport.forEach(item => {
+            const email = (item.customer_email || '').trim();
+            if (email && email.toLowerCase() !== 'anonymous visitor' && !seenEmails.has(email.toLowerCase())) {
+                seenEmails.add(email.toLowerCase());
+                emailRows.push([email]);
+            }
+        });
+
+        if (emailRows.length === 0) {
+            alert("No customer emails found to export.");
+            return;
+        }
+
+        downloadCSV("collected_customer_emails.csv", ["Email"], emailRows);
+    };
+
+    // Export All Data (Expo Data option)
+    const handleExportAllData = () => {
+        const itemsToExport = filteredList.length > 0 ? filteredList : list;
+        if (itemsToExport.length === 0) {
+            alert("No submission data found to export.");
+            return;
+        }
+
+        const headers = ["Date", "Product", "Objection Reason", "Customer Note", "Customer Email"];
+        const rows = itemsToExport.map(item => [
+            item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Today',
+            item.product_title || 'General Product',
+            item.reason || '',
+            item.custom_comment || '',
+            item.customer_email || 'Anonymous Visitor'
+        ]);
+
+        downloadCSV("feedback_submissions_export.csv", headers, rows);
+    };
 
     const handleUpgradeRedirect = () => {
         const params = new URLSearchParams(window.location.search);
@@ -155,7 +224,17 @@ export default function Submissions({ feedbacks = [], reasons = [], plan = 'free
             >
                 <Card>
                     <BlockStack gap="400">
-                        <Text variant="headingMd" as="h2">All Submissions Log</Text>
+                        <InlineStack align="space-between" blockAlign="center">
+                            <Text variant="headingMd" as="h2">All Submissions Log</Text>
+                            <InlineStack gap="200" blockAlign="center">
+                                <Button icon={EmailIcon} onClick={handleExportEmails}>
+                                    Collect Email
+                                </Button>
+                                <Button icon={ExportIcon} onClick={handleExportAllData}>
+                                    Export Data
+                                </Button>
+                            </InlineStack>
+                        </InlineStack>
 
                         {/* Search, Reason, and Date Filter Bar */}
                         <div style={{
