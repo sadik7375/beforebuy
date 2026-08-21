@@ -179,6 +179,33 @@
   margin-bottom: 4px;
 }
 
+.beforebuy-phone-input-container {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+}
+
+.beforebuy-country-select {
+  width: 110px;
+  flex-shrink: 0;
+  padding: 8px 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 12px;
+  background-color: #ffffff;
+  color: #111827;
+  font-family: inherit;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.beforebuy-country-select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
 .beforebuy-input {
   width: 100%;
   padding: 8px 10px;

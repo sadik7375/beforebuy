@@ -13,6 +13,7 @@ if (!window.beforebuyFeedbackInitialized) {
     const emailError = document.getElementById('beforebuy-email-error');
 
     const phoneInput = document.getElementById('beforebuy-customer-phone');
+    const countryCodeSelect = document.getElementById('beforebuy-country-code');
     const phoneGroup = document.getElementById('beforebuy-phone-group');
     const phoneLabel = document.getElementById('beforebuy-phone-label');
     const phoneError = document.getElementById('beforebuy-phone-error');
@@ -320,6 +321,14 @@ if (!window.beforebuyFeedbackInitialized) {
         submitBtn.disabled = true;
         submitBtn.innerText = 'Sending...';
 
+        let formattedPhone = userPhone;
+        const countryCode = countryCodeSelect ? countryCodeSelect.value : '';
+        if (userPhone && countryCode) {
+          if (!userPhone.startsWith('+')) {
+            formattedPhone = `${countryCode} ${userPhone.replace(/^0+/, '')}`;
+          }
+        }
+
         const payload = {
           shop_domain: window.Shopify ? window.Shopify.shop : window.location.hostname,
           product_id: triggerBtn.dataset.productId || '',
@@ -328,7 +337,7 @@ if (!window.beforebuyFeedbackInitialized) {
           reason: selectedReason,
           custom_comment: commentInput ? commentInput.value : '',
           customer_email: userEmail,
-          customer_phone: userPhone
+          customer_phone: formattedPhone
         };
 
         fetch('https://beforebuy.cannyapps.com/api/feedback', {
