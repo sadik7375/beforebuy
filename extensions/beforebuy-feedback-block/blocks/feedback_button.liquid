@@ -85,6 +85,19 @@
         <p id="beforebuy-email-error" class="beforebuy-error-msg" style="display: none;">Please enter a valid email address.</p>
       </div>
 
+      <!-- Phone Group -->
+      <div id="beforebuy-phone-group" class="beforebuy-phone-group" style="margin-bottom: 16px; display: none;">
+        <label id="beforebuy-phone-label" for="beforebuy-customer-phone">Your Phone Number (Optional):</label>
+        <input
+          type="tel"
+          id="beforebuy-customer-phone"
+          class="beforebuy-input"
+          placeholder="+1 (555) 000-0000"
+          value="{% if customer %}{{ customer.phone }}{% endif %}"
+        >
+        <p id="beforebuy-phone-error" class="beforebuy-error-msg" style="display: none;">Please enter a valid phone number.</p>
+      </div>
+
       <!-- Reasons Grid Below Email Field -->
       <div class="beforebuy-reasons-grid">
         <label class="beforebuy-reason-item beforebuy-selected" data-reason="Price is higher than expected">

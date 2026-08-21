@@ -43,26 +43,28 @@ export default function Submissions({ feedbacks = [], reasons = [], plan = 'free
         }
     };
 
-    // Export Emails Only (Collect Email option)
+    // Export Contacts Only (Collect Contacts option)
     const handleExportEmails = () => {
         const itemsToExport = filteredList.length > 0 ? filteredList : list;
-        const emailRows = [];
-        const seenEmails = new Set();
+        const contactRows = [];
+        const seenContacts = new Set();
 
         itemsToExport.forEach(item => {
             const email = (item.customer_email || '').trim();
-            if (email && email.toLowerCase() !== 'anonymous visitor' && !seenEmails.has(email.toLowerCase())) {
-                seenEmails.add(email.toLowerCase());
-                emailRows.push([email]);
+            const phone = (item.customer_phone || '').trim();
+            const key = `${email.toLowerCase()}_${phone}`;
+            if ((email || phone) && !seenContacts.has(key)) {
+                seenContacts.add(key);
+                contactRows.push([email || 'N/A', phone || 'N/A']);
             }
         });
 
-        if (emailRows.length === 0) {
-            alert("No customer emails found to export.");
+        if (contactRows.length === 0) {
+            alert("No customer contacts found to export.");
             return;
         }
 
-        downloadCSV("collected_customer_emails.csv", ["Email"], emailRows);
+        downloadCSV("collected_customer_contacts.csv", ["Email Address", "Phone Number"], contactRows);
     };
 
     // Export All Data (Expo Data option)
@@ -73,13 +75,14 @@ export default function Submissions({ feedbacks = [], reasons = [], plan = 'free
             return;
         }
 
-        const headers = ["Date", "Product", "Objection Reason", "Customer Note", "Customer Email"];
+        const headers = ["Date", "Product", "Objection Reason", "Customer Note", "Customer Email", "Customer Phone"];
         const rows = itemsToExport.map(item => [
             item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Today',
             item.product_title || 'General Product',
             item.reason || '',
             item.custom_comment || '',
-            item.customer_email || 'Anonymous Visitor'
+            item.customer_email || 'N/A',
+            item.customer_phone || 'N/A'
         ]);
 
         downloadCSV("feedback_submissions_export.csv", headers, rows);
@@ -136,7 +139,8 @@ export default function Submissions({ feedbacks = [], reasons = [], plan = 'free
                 (item.product_title && item.product_title.toLowerCase().includes(query)) ||
                 (item.reason && item.reason.toLowerCase().includes(query)) ||
                 (item.custom_comment && item.custom_comment.toLowerCase().includes(query)) ||
-                (item.customer_email && item.customer_email.toLowerCase().includes(query))
+                (item.customer_email && item.customer_email.toLowerCase().includes(query)) ||
+                (item.customer_phone && item.customer_phone.toLowerCase().includes(query))
             );
 
             const matchesReason = selectedReasonFilter === 'all' ||
@@ -195,6 +199,13 @@ export default function Submissions({ feedbacks = [], reasons = [], plan = 'free
             titleText
         );
 
+        const contactDisplay = (item.customer_email || item.customer_phone) ? (
+            <div key={`contact-${item.id}`} style={{ fontSize: '13px', lineHeight: '1.4' }}>
+                {item.customer_email && <div>{item.customer_email}</div>}
+                {item.customer_phone && <div style={{ color: '#6d7175' }}>{item.customer_phone}</div>}
+            </div>
+        ) : 'Anonymous Visitor';
+
         return [
             item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Today',
             productCell,
@@ -209,7 +220,7 @@ export default function Submissions({ feedbacks = [], reasons = [], plan = 'free
             ) : (
                 comment
             ),
-            item.customer_email || 'Anonymous Visitor'
+            contactDisplay
         ];
     });
 
@@ -304,7 +315,7 @@ export default function Submissions({ feedbacks = [], reasons = [], plan = 'free
                         ) : (
                             <DataTable
                                 columnContentTypes={['text', 'text', 'text', 'text', 'text']}
-                                headings={['Date', 'Product', 'Objection Reason', 'Customer Note', 'Customer Email']}
+                                headings={['Date', 'Product', 'Objection Reason', 'Customer Note', 'Customer Contact']}
                                 rows={tableRows}
                             />
                         )}
@@ -346,8 +357,12 @@ export default function Submissions({ feedbacks = [], reasons = [], plan = 'free
                                 </div>
 
                                 <div>
-                                    <Text variant="headingSm" as="h4">Customer Email</Text>
-                                    <Text tone="subdued">{selectedFeedback.customer_email || 'Anonymous Visitor'}</Text>
+                                    <Text variant="headingSm" as="h4">Customer Contact Info</Text>
+                                    <Text tone="subdued">
+                                        Email: {selectedFeedback.customer_email || 'N/A'}
+                                        <br />
+                                        Phone: {selectedFeedback.customer_phone || 'N/A'}
+                                    </Text>
                                 </div>
 
                                 <div>

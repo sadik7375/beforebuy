@@ -248,7 +248,7 @@ function ProductSearchSelector({ label, helpText, selectedItems, onUpdateItems }
     );
 }
 
-export default function Settings({ reasons = [], enable_email = true, require_email = false, popup_theme = 'modern', product_targeting_mode = 'all', excluded_products = [], included_products = [], plan = 'free', currentPlan = 'free', shopDomain = '' }) {
+export default function Settings({ reasons = [], enable_email = true, require_email = false, enable_phone = false, require_phone = false, popup_theme = 'modern', product_targeting_mode = 'all', excluded_products = [], included_products = [], plan = 'free', currentPlan = 'free', shopDomain = '' }) {
     const isPro = (currentPlan === 'pro' || plan === 'pro');
 
     const defaultReasons = [
@@ -262,6 +262,8 @@ export default function Settings({ reasons = [], enable_email = true, require_em
     const [reasonList, setReasonList] = useState(reasons.length > 0 ? reasons : defaultReasons);
     const [collectEmail, setCollectEmail] = useState(enable_email);
     const [isEmailRequired, setIsEmailRequired] = useState(require_email);
+    const [collectPhone, setCollectPhone] = useState(enable_phone);
+    const [isPhoneRequired, setIsPhoneRequired] = useState(require_phone);
     const [selectedTheme, setSelectedTheme] = useState(popup_theme || 'modern');
 
     // Product Targeting / Display Rules state
@@ -342,6 +344,8 @@ export default function Settings({ reasons = [], enable_email = true, require_em
             reasons: filteredReasons,
             enable_email: collectEmail,
             require_email: isEmailRequired,
+            enable_phone: collectPhone,
+            require_phone: isPhoneRequired,
             popup_theme: selectedTheme,
             product_targeting_mode: targetingMode,
             excluded_products: extractHandles(excludedItems),
@@ -368,7 +372,7 @@ export default function Settings({ reasons = [], enable_email = true, require_em
         <AppLayout>
             <Page
                 title="App Settings & Reasons"
-                subtitle="Customize options, email collection rules, and storefront popup design presets."
+                subtitle="Customize options, email & phone collection rules, and storefront popup design presets."
             >
                 <BlockStack gap="500">
                     {saved && (
@@ -417,35 +421,64 @@ export default function Settings({ reasons = [], enable_email = true, require_em
                         </BlockStack>
                     </Card>
 
-                    {/* 2. Customer Email Collection Settings Card */}
+                    {/* 2. Customer Contact & Email / Phone Collection Settings Card */}
                     <Card>
                         <BlockStack gap="400">
-                            <Text variant="headingMd" as="h2">Customer Contact & Email Collection</Text>
+                            <Text variant="headingMd" as="h2">Customer Contact Collection (Email & Phone)</Text>
                             <Text tone="subdued" variant="bodySm">
-                                Control whether an email address field is displayed in the popup and if it is mandatory.
+                                Control whether email address and/or phone number fields are displayed in the feedback popup and if they are mandatory.
                             </Text>
 
-                            <BlockStack gap="300">
-                                <Checkbox
-                                    label="Collect customer email address in feedback popup"
-                                    checked={collectEmail}
-                                    onChange={(newVal) => {
-                                        setCollectEmail(newVal);
-                                        if (!newVal) setIsEmailRequired(false);
-                                    }}
-                                    helpText="Adds an email input field to the feedback popup so customers can leave their contact info."
-                                />
+                            <BlockStack gap="400">
+                                {/* Email Collection Settings */}
+                                <BlockStack gap="200">
+                                    <Checkbox
+                                        label="Collect customer email address in feedback popup"
+                                        checked={collectEmail}
+                                        onChange={(newVal) => {
+                                            setCollectEmail(newVal);
+                                            if (!newVal) setIsEmailRequired(false);
+                                        }}
+                                        helpText="Adds an email input field to the feedback popup so customers can leave their contact info."
+                                    />
 
-                                {collectEmail && (
-                                    <div style={{ paddingLeft: '24px' }}>
-                                        <Checkbox
-                                            label="Make Email Address Required / Mandatory"
-                                            checked={isEmailRequired}
-                                            onChange={(newVal) => setIsEmailRequired(newVal)}
-                                            helpText="If checked, customers must provide a valid email before submitting feedback."
-                                        />
-                                    </div>
-                                )}
+                                    {collectEmail && (
+                                        <div style={{ paddingLeft: '24px' }}>
+                                            <Checkbox
+                                                label="Make Email Address Required / Mandatory"
+                                                checked={isEmailRequired}
+                                                onChange={(newVal) => setIsEmailRequired(newVal)}
+                                                helpText="If checked, customers must provide a valid email before submitting feedback."
+                                            />
+                                        </div>
+                                    )}
+                                </BlockStack>
+
+                                <Divider />
+
+                                {/* Phone Collection Settings */}
+                                <BlockStack gap="200">
+                                    <Checkbox
+                                        label="Collect customer phone number in feedback popup"
+                                        checked={collectPhone}
+                                        onChange={(newVal) => {
+                                            setCollectPhone(newVal);
+                                            if (!newVal) setIsPhoneRequired(false);
+                                        }}
+                                        helpText="Adds a phone number input field to the feedback popup so customers can leave their phone number."
+                                    />
+
+                                    {collectPhone && (
+                                        <div style={{ paddingLeft: '24px' }}>
+                                            <Checkbox
+                                                label="Make Phone Number Required / Mandatory"
+                                                checked={isPhoneRequired}
+                                                onChange={(newVal) => setIsPhoneRequired(newVal)}
+                                                helpText="If checked, customers must provide a valid phone number before submitting feedback."
+                                            />
+                                        </div>
+                                    )}
+                                </BlockStack>
                             </BlockStack>
                         </BlockStack>
                     </Card>

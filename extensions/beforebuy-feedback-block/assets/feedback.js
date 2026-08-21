@@ -11,6 +11,12 @@ if (!window.beforebuyFeedbackInitialized) {
     const emailGroup = document.getElementById('beforebuy-email-group');
     const emailLabel = document.getElementById('beforebuy-email-label');
     const emailError = document.getElementById('beforebuy-email-error');
+
+    const phoneInput = document.getElementById('beforebuy-customer-phone');
+    const phoneGroup = document.getElementById('beforebuy-phone-group');
+    const phoneLabel = document.getElementById('beforebuy-phone-label');
+    const phoneError = document.getElementById('beforebuy-phone-error');
+
     const modalBody = document.getElementById('beforebuy-modal-body');
     const successBox = document.getElementById('beforebuy-success-box');
     const reasonsContainer = document.querySelector('.beforebuy-reasons-grid');
@@ -29,6 +35,8 @@ if (!window.beforebuyFeedbackInitialized) {
     let selectedReason = 'Price is higher than expected';
     let isEmailEnabled = true;
     let isEmailRequired = false;
+    let isPhoneEnabled = false;
+    let isPhoneRequired = false;
 
     function escapeHtml(text) {
       const div = document.createElement('div');
@@ -38,6 +46,11 @@ if (!window.beforebuyFeedbackInitialized) {
 
     function isValidEmail(email) {
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    function isValidPhone(phone) {
+      const clean = phone.replace(/[^0-9+]/g, '');
+      return clean.length >= 6;
     }
 
     function autoFillCustomerEmail() {
@@ -93,6 +106,10 @@ if (!window.beforebuyFeedbackInitialized) {
           if (typeof data.enable_email !== 'undefined') isEmailEnabled = Boolean(data.enable_email);
           if (typeof data.require_email !== 'undefined') isEmailRequired = Boolean(data.require_email);
 
+          // Phone settings
+          if (typeof data.enable_phone !== 'undefined') isPhoneEnabled = Boolean(data.enable_phone);
+          if (typeof data.require_phone !== 'undefined') isPhoneRequired = Boolean(data.require_phone);
+
           // Popup Theme Preset
           if (data.popup_theme && modalOverlay) {
             modalOverlay.classList.remove(
@@ -114,6 +131,19 @@ if (!window.beforebuyFeedbackInitialized) {
               }
             } else {
               emailGroup.style.display = 'none';
+            }
+          }
+
+          if (phoneGroup) {
+            if (isPhoneEnabled) {
+              phoneGroup.style.display = 'block';
+              if (phoneLabel) {
+                phoneLabel.innerText = isPhoneRequired
+                  ? 'Your Phone Number * (Required):'
+                  : 'Your Phone Number (Optional):';
+              }
+            } else {
+              phoneGroup.style.display = 'none';
             }
           }
 
@@ -218,6 +248,8 @@ if (!window.beforebuyFeedbackInitialized) {
       modalOverlay.classList.add('beforebuy-is-open');
       if (emailError) emailError.style.display = 'none';
       if (emailInput) emailInput.classList.remove('beforebuy-invalid');
+      if (phoneError) phoneError.style.display = 'none';
+      if (phoneInput) phoneInput.classList.remove('beforebuy-invalid');
       autoFillCustomerEmail();
       fetchSettings();
     });
@@ -240,8 +272,11 @@ if (!window.beforebuyFeedbackInitialized) {
 
         if (emailError) emailError.style.display = 'none';
         if (emailInput) emailInput.classList.remove('beforebuy-invalid');
+        if (phoneError) phoneError.style.display = 'none';
+        if (phoneInput) phoneInput.classList.remove('beforebuy-invalid');
 
         const userEmail = emailInput ? emailInput.value.trim() : '';
+        const userPhone = phoneInput ? phoneInput.value.trim() : '';
 
         // Validate email if enabled & required
         if (isEmailEnabled && isEmailRequired) {
@@ -262,6 +297,25 @@ if (!window.beforebuyFeedbackInitialized) {
           return;
         }
 
+        // Validate phone number if enabled & required
+        if (isPhoneEnabled && isPhoneRequired) {
+          if (!userPhone || !isValidPhone(userPhone)) {
+            if (phoneError) {
+              phoneError.innerText = 'Please enter a valid phone number.';
+              phoneError.style.display = 'block';
+            }
+            if (phoneInput) phoneInput.classList.add('beforebuy-invalid');
+            return;
+          }
+        } else if (isPhoneEnabled && userPhone && !isValidPhone(userPhone)) {
+          if (phoneError) {
+            phoneError.innerText = 'Please enter a valid phone number.';
+            phoneError.style.display = 'block';
+          }
+          if (phoneInput) phoneInput.classList.add('beforebuy-invalid');
+          return;
+        }
+
         submitBtn.dataset.submitting = 'true';
         submitBtn.disabled = true;
         submitBtn.innerText = 'Sending...';
@@ -273,7 +327,8 @@ if (!window.beforebuyFeedbackInitialized) {
           product_handle: triggerBtn.dataset.productHandle || '',
           reason: selectedReason,
           custom_comment: commentInput ? commentInput.value : '',
-          customer_email: userEmail
+          customer_email: userEmail,
+          customer_phone: userPhone
         };
 
         fetch('https://beforebuy.cannyapps.com/api/feedback', {
