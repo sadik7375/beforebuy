@@ -42,32 +42,50 @@ if (!window.beforebuyFeedbackInitialized) {
     }
   }
 
-  // GLOBAL CLICK DELEGATION: Works 100% regardless of dynamic DOM re-renders or timing
-  document.addEventListener('click', function (e) {
-    // 1. WhatsApp Button Click
-    const whatsappBtn = e.target.closest('#beforebuy-whatsapp-btn, .beforebuy-whatsapp-btn');
-    if (whatsappBtn) {
-      e.preventDefault();
-      e.stopPropagation();
-      let cleanNum = (whatsappNumberGlobal || '').replace(/[^0-9+]/g, '');
-      if (cleanNum.startsWith('+')) {
-        cleanNum = cleanNum.substring(1);
-      }
-      if (!cleanNum) return;
+  function switchTab(targetTab) {
+    const feedbackTabBtn = document.getElementById('beforebuy-tab-feedback');
+    const inquiryTabBtn = document.getElementById('beforebuy-tab-inquiry');
+    const feedbackView = document.getElementById('beforebuy-view-feedback');
+    const inquiryView = document.getElementById('beforebuy-view-inquiry');
 
-      const prodTitle = whatsappBtn.dataset.productTitle || '';
-      const prodUrl = whatsappBtn.dataset.productUrl || window.location.href;
+    if (targetTab === 'inquiry') {
+      if (feedbackTabBtn) feedbackTabBtn.classList.remove('beforebuy-tab-active');
+      if (inquiryTabBtn) inquiryTabBtn.classList.add('beforebuy-tab-active');
+      if (feedbackView) feedbackView.style.display = 'none';
+      if (inquiryView) inquiryView.style.display = 'block';
+    } else {
+      if (inquiryTabBtn) inquiryTabBtn.classList.remove('beforebuy-tab-active');
+      if (feedbackTabBtn) feedbackTabBtn.classList.add('beforebuy-tab-active');
+      if (inquiryView) inquiryView.style.display = 'none';
+      if (feedbackView) feedbackView.style.display = 'block';
+    }
+  }
 
-      let msg = whatsappTemplateGlobal
-        .replace('{product_title}', prodTitle)
-        .replace('{product_url}', prodUrl);
-
-      const waUrl = `https://wa.me/${cleanNum}?text=${encodeURIComponent(msg)}`;
-      window.open(waUrl, '_blank');
+  function triggerWhatsAppChat() {
+    let cleanNum = (whatsappNumberGlobal || '').replace(/[^0-9+]/g, '');
+    if (cleanNum.startsWith('+')) {
+      cleanNum = cleanNum.substring(1);
+    }
+    if (!cleanNum) {
+      alert('Merchant WhatsApp number is not configured yet.');
       return;
     }
 
-    // 2. Feedback Trigger Button Click -> Open Modal
+    const triggerBtn = document.getElementById('beforebuy-trigger-btn');
+    const prodTitle = triggerBtn ? (triggerBtn.dataset.productTitle || '') : '';
+    const prodUrl = triggerBtn ? (triggerBtn.dataset.productUrl || window.location.href) : window.location.href;
+
+    let msg = whatsappTemplateGlobal
+      .replace('{product_title}', prodTitle)
+      .replace('{product_url}', prodUrl);
+
+    const waUrl = `https://wa.me/${cleanNum}?text=${encodeURIComponent(msg)}`;
+    window.open(waUrl, '_blank');
+  }
+
+  // GLOBAL CLICK DELEGATION: Handles modal open, tab switching, close, and WhatsApp chat
+  document.addEventListener('click', function (e) {
+    // 1. Storefront Feedback Trigger Button Click -> Open Modal
     const triggerBtn = e.target.closest('#beforebuy-trigger-btn, .beforebuy-trigger-btn');
     if (triggerBtn) {
       e.preventDefault();
@@ -87,12 +105,39 @@ if (!window.beforebuyFeedbackInitialized) {
         if (phoneError) phoneError.style.display = 'none';
         if (phoneInput) phoneInput.classList.remove('beforebuy-invalid');
 
+        // Default to feedback tab when opened
+        switchTab('feedback');
+
         autoFillCustomerEmail();
+        fetchSettings();
       }
       return;
     }
 
-    // 3. Close Modal Button Click
+    // 2. Tab Switcher Buttons Inside Modal
+    const tabFeedbackBtn = e.target.closest('#beforebuy-tab-feedback');
+    if (tabFeedbackBtn) {
+      e.preventDefault();
+      switchTab('feedback');
+      return;
+    }
+
+    const tabInquiryBtn = e.target.closest('#beforebuy-tab-inquiry');
+    if (tabInquiryBtn) {
+      e.preventDefault();
+      switchTab('inquiry');
+      return;
+    }
+
+    // 3. WhatsApp Action Button Inside Inquiry Tab
+    const waInquiryBtn = e.target.closest('#beforebuy-inquiry-wa-btn');
+    if (waInquiryBtn) {
+      e.preventDefault();
+      triggerWhatsAppChat();
+      return;
+    }
+
+    // 4. Close Modal Button Click
     const closeBtn = e.target.closest('#beforebuy-close-btn');
     if (closeBtn) {
       e.preventDefault();
@@ -101,7 +146,7 @@ if (!window.beforebuyFeedbackInitialized) {
       return;
     }
 
-    // 4. Click outside modal card on overlay background
+    // 5. Click outside modal card on overlay background
     const modalOverlay = document.getElementById('beforebuy-modal-overlay');
     if (modalOverlay && e.target === modalOverlay) {
       modalOverlay.classList.remove('beforebuy-is-open');
@@ -115,8 +160,9 @@ if (!window.beforebuyFeedbackInitialized) {
     const emailLabel = document.getElementById('beforebuy-email-label');
     const phoneGroup = document.getElementById('beforebuy-phone-group');
     const phoneLabel = document.getElementById('beforebuy-phone-label');
-    const whatsappBtn = document.getElementById('beforebuy-whatsapp-btn');
-    const whatsappText = document.getElementById('beforebuy-whatsapp-text');
+    const modalTabs = document.getElementById('beforebuy-modal-tabs');
+    const waBtnLabel = document.getElementById('beforebuy-wa-btn-label');
+    const waMsgPreview = document.getElementById('beforebuy-inquiry-msg-preview');
     const reasonsContainer = document.querySelector('.beforebuy-reasons-grid');
     const wrapper = triggerBtn ? triggerBtn.closest('.beforebuy-feedback-wrapper') : null;
 
@@ -150,7 +196,6 @@ if (!window.beforebuyFeedbackInitialized) {
           if (!isVisible) {
             if (wrapper) wrapper.style.display = 'none';
             triggerBtn.style.display = 'none';
-            if (whatsappBtn) whatsappBtn.style.display = 'none';
             return;
           } else {
             if (wrapper) wrapper.style.display = 'flex';
@@ -206,17 +251,27 @@ if (!window.beforebuyFeedbackInitialized) {
         // WhatsApp Inquiry settings
         const isWhatsappEnabled = Boolean(data.enable_whatsapp);
         whatsappNumberGlobal = (data.whatsapp_number || '').trim();
-        const whatsappLabelText = (data.whatsapp_button_text || 'I have a question').trim();
+        const whatsappLabelText = (data.whatsapp_button_text || 'Chat on WhatsApp').trim();
         if (data.whatsapp_message_template) {
           whatsappTemplateGlobal = data.whatsapp_message_template;
         }
 
-        if (whatsappBtn) {
+        if (modalTabs) {
           if (isWhatsappEnabled && whatsappNumberGlobal) {
-            whatsappBtn.style.display = 'inline-flex';
-            if (whatsappText) whatsappText.innerText = whatsappLabelText;
+            modalTabs.style.display = 'flex';
+            if (waBtnLabel) waBtnLabel.innerText = whatsappLabelText;
+
+            if (waMsgPreview && triggerBtn) {
+              const prodTitle = triggerBtn.dataset.productTitle || '';
+              const prodUrl = triggerBtn.dataset.productUrl || window.location.href;
+              const formattedPreview = whatsappTemplateGlobal
+                .replace('{product_title}', prodTitle)
+                .replace('{product_url}', prodUrl);
+              waMsgPreview.innerText = formattedPreview;
+            }
           } else {
-            whatsappBtn.style.display = 'none';
+            modalTabs.style.display = 'none';
+            switchTab('feedback');
           }
         }
 

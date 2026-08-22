@@ -42,7 +42,7 @@
   }
 {% endstyle %}
 
-<div class="beforebuy-feedback-wrapper" style="text-align: {{ block.settings.alignment }}; display: flex; flex-direction: column; gap: 10px; align-items: {% if block.settings.alignment == 'left' %}flex-start{% elsif block.settings.alignment == 'right' %}flex-end{% else %}center{% endif %}; width: 100%;">
+<div class="beforebuy-feedback-wrapper" style="text-align: {{ block.settings.alignment }}; display: flex; justify-content: {% if block.settings.alignment == 'left' %}flex-start{% elsif block.settings.alignment == 'right' %}flex-end{% else %}center{% endif %}; width: 100%;">
   <button
     id="beforebuy-trigger-btn"
     class="beforebuy-trigger-btn beforebuy-trigger-btn-{{ block.id }}"
@@ -50,6 +50,7 @@
     data-product-id="{{ product.id }}"
     data-product-title="{{ product.title | escape }}"
     data-product-handle="{{ product.handle }}"
+    data-product-url="{{ shop.url }}{{ product.url }}"
     data-customer-email="{% if customer %}{{ customer.email }}{% endif %}"
   >
     <span style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
@@ -59,172 +60,201 @@
       <span>{{ btn_text }}</span>
     </span>
   </button>
-
-  <button
-    id="beforebuy-whatsapp-btn"
-    class="beforebuy-trigger-btn beforebuy-whatsapp-btn beforebuy-trigger-btn-{{ block.id }}"
-    type="button"
-    style="display: none;"
-    data-product-title="{{ product.title | escape }}"
-    data-product-url="{{ shop.url }}{{ product.url }}"
-  >
-    <span style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
-        <circle cx="12" cy="12" r="10"></circle>
-        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-        <line x1="12" y1="17" x2="12.01" y2="17"></line>
-      </svg>
-      <span id="beforebuy-whatsapp-text">I have a question</span>
-    </span>
-  </button>
 </div>
 
 <!-- BeforeBuy Feedback Modal Overlay -->
 <div id="beforebuy-modal-overlay" class="beforebuy-modal-overlay" data-customer-email="{% if customer %}{{ customer.email }}{% endif %}">
   <div class="beforebuy-modal-card">
     <div class="beforebuy-modal-header">
-      <h3>{{ block.settings.popup_title }}</h3>
+      <h3 id="beforebuy-modal-title">{{ block.settings.popup_title }}</h3>
       <button id="beforebuy-close-btn" class="beforebuy-close-btn" type="button">&times;</button>
     </div>
 
-    <div id="beforebuy-modal-body" class="beforebuy-modal-body">
-      <p class="beforebuy-subtitle">{{ block.settings.popup_subtitle }}</p>
-
-      <!-- Email Group Placed At The Top -->
-      <div id="beforebuy-email-group" class="beforebuy-email-group" style="margin-bottom: 16px;">
-        <label id="beforebuy-email-label" for="beforebuy-customer-email">Your Email Address (Optional):</label>
-        <input
-          type="email"
-          id="beforebuy-customer-email"
-          class="beforebuy-input"
-          placeholder="name@example.com"
-          value="{% if customer %}{{ customer.email }}{% endif %}"
-        >
-        <p id="beforebuy-email-error" class="beforebuy-error-msg" style="display: none;">Please enter a valid email address.</p>
-      </div>
-
-      <!-- Phone Group -->
-      <div id="beforebuy-phone-group" class="beforebuy-phone-group" style="margin-bottom: 16px; display: none;">
-        <label id="beforebuy-phone-label" for="beforebuy-customer-phone">Your Phone Number (Optional):</label>
-        <div class="beforebuy-phone-input-container">
-          <select id="beforebuy-country-code" class="beforebuy-country-select" aria-label="Country Code">
-            <option value="+1">🇺🇸 +1 (US)</option>
-            <option value="+1">🇨🇦 +1 (CA)</option>
-            <option value="+44">🇬🇧 +44 (UK)</option>
-            <option value="+880" selected>🇧🇩 +880 (BD)</option>
-            <option value="+91">🇮🇳 +91 (IN)</option>
-            <option value="+92">🇵🇰 +92 (PK)</option>
-            <option value="+61">🇦🇺 +61 (AU)</option>
-            <option value="+971">🇦🇪 +971 (AE)</option>
-            <option value="+966">🇸🇦 +966 (SA)</option>
-            <option value="+49">🇩🇪 +49 (DE)</option>
-            <option value="+33">🇫🇷 +33 (FR)</option>
-            <option value="+39">🇮🇹 +39 (IT)</option>
-            <option value="+34">🇪🇸 +34 (ES)</option>
-            <option value="+31">🇳🇱 +31 (NL)</option>
-            <option value="+46">🇸🇪 +46 (SE)</option>
-            <option value="+47">🇳🇴 +47 (NO)</option>
-            <option value="+45">🇩🇰 +45 (DK)</option>
-            <option value="+358">🇫🇮 +358 (FI)</option>
-            <option value="+351">🇵🇹 +351 (PT)</option>
-            <option value="+32">🇧🇪 +32 (BE)</option>
-            <option value="+41">🇨🇭 +41 (CH)</option>
-            <option value="+43">🇦🇹 +43 (AT)</option>
-            <option value="+48">🇵🇱 +48 (PL)</option>
-            <option value="+353">🇮🇪 +353 (IE)</option>
-            <option value="+30">🇬🇷 +30 (GR)</option>
-            <option value="+90">🇹🇷 +90 (TR)</option>
-            <option value="+55">🇧🇷 +55 (BR)</option>
-            <option value="+52">🇲🇽 +52 (MX)</option>
-            <option value="+54">🇦🇷 +54 (AR)</option>
-            <option value="+56">🇨🇱 +56 (CL)</option>
-            <option value="+57">🇨🇴 +57 (CO)</option>
-            <option value="+81">🇯🇵 +81 (JP)</option>
-            <option value="+82">🇰🇷 +82 (KR)</option>
-            <option value="+86">🇨🇳 +86 (CN)</option>
-            <option value="+852">🇭🇰 +852 (HK)</option>
-            <option value="+65">🇸🇬 +65 (SG)</option>
-            <option value="+60">🇲🇾 +60 (MY)</option>
-            <option value="+62">🇮🇩 +62 (ID)</option>
-            <option value="+63">🇵🇭 +63 (PH)</option>
-            <option value="+66">🇹🇭 +66 (TH)</option>
-            <option value="+84">🇻🇳 +84 (VN)</option>
-            <option value="+64">🇳🇿 +64 (NZ)</option>
-            <option value="+27">🇿🇦 +27 (ZA)</option>
-            <option value="+20">🇪🇬 +20 (EG)</option>
-            <option value="+234">🇳🇬 +234 (NG)</option>
-            <option value="+254">🇰🇪 +254 (KE)</option>
-            <option value="+974">🇶🇦 +974 (QA)</option>
-            <option value="+965">🇰🇼 +965 (KW)</option>
-            <option value="+968">🇴🇲 +968 (OM)</option>
-            <option value="+973">🇧🇭 +973 (BH)</option>
-            <option value="+962">🇯🇴 +962 (JO)</option>
-            <option value="+961">🇱🇧 +961 (LB)</option>
-            <option value="+964">🇮🇶 +964 (IQ)</option>
-            <option value="+94">🇱🇰 +94 (LK)</option>
-            <option value="+977">🇳🇵 +977 (NP)</option>
-            <option value="+95">🇲🇲 +95 (MM)</option>
-          </select>
-          <input
-            type="tel"
-            id="beforebuy-customer-phone"
-            class="beforebuy-input"
-            placeholder="1700 000 000"
-            value="{% if customer %}{{ customer.phone }}{% endif %}"
-          >
-        </div>
-        <p id="beforebuy-phone-error" class="beforebuy-error-msg" style="display: none;">Please enter a valid phone number.</p>
-      </div>
-
-      <!-- Reasons Grid Below Email Field -->
-      <div class="beforebuy-reasons-grid">
-        <label class="beforebuy-reason-item beforebuy-selected" data-reason="Price is higher than expected">
-          <input type="radio" name="beforebuy_reason" value="Price is higher than expected" class="beforebuy-reason-radio" checked>
-          <span>Price is higher than expected</span>
-        </label>
-
-        <label class="beforebuy-reason-item" data-reason="Unsure about size / fit / dimensions">
-          <input type="radio" name="beforebuy_reason" value="Unsure about size / fit / dimensions" class="beforebuy-reason-radio">
-          <span>Unsure about size / fit / dimensions</span>
-        </label>
-
-        <label class="beforebuy-reason-item" data-reason="Shipping fee or delivery time is too high">
-          <input type="radio" name="beforebuy_reason" value="Shipping fee or delivery time is too high" class="beforebuy-reason-radio">
-          <span>Shipping fee or delivery time is too high</span>
-        </label>
-
-        <label class="beforebuy-reason-item" data-reason="Product information or reviews missing">
-          <input type="radio" name="beforebuy_reason" value="Product information or reviews missing" class="beforebuy-reason-radio">
-          <span>Product information or reviews missing</span>
-        </label>
-
-        <label class="beforebuy-reason-item" data-reason="Other reason">
-          <input type="radio" name="beforebuy_reason" value="Other reason" class="beforebuy-reason-radio">
-          <span>Other reason</span>
-        </label>
-      </div>
-
-      <div class="beforebuy-comment-group" style="margin-top: 16px;">
-        <label for="beforebuy-custom-comment">Additional Details (Optional):</label>
-        <textarea id="beforebuy-custom-comment" class="beforebuy-textarea" placeholder="Tell us what would help you make a decision..."></textarea>
-      </div>
-
-      <button
-        id="beforebuy-submit-btn"
-        class="beforebuy-submit-btn"
-        type="button"
-        style="background-color: {{ block.settings.popup_submit_bg_color | default: block.settings.btn_bg_color }}; color: {{ block.settings.popup_submit_text_color | default: block.settings.btn_text_color }};"
-      >
-        {{ block.settings.popup_submit_text | default: "Submit Feedback" }}
+    <!-- Segmented Control / Tab Switcher (Visible if WhatsApp Inquiry is enabled) -->
+    <div id="beforebuy-modal-tabs" class="beforebuy-modal-tabs" style="display: none;">
+      <button id="beforebuy-tab-feedback" class="beforebuy-tab-btn beforebuy-tab-active" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <span>Feedback</span>
+      </button>
+      <button id="beforebuy-tab-inquiry" class="beforebuy-tab-btn" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        <span>Question / Chat</span>
       </button>
     </div>
 
-    <!-- Success Message Box -->
-    <div id="beforebuy-success-box" class="beforebuy-success-box" style="display: none;">
-      <div class="beforebuy-success-icon">🎉</div>
-      <h4>Thank you for your feedback!</h4>
-      <p>We appreciate your input to help us improve.</p>
+    <!-- View 1: Feedback Form View -->
+    <div id="beforebuy-view-feedback" class="beforebuy-modal-view">
+      <div id="beforebuy-modal-body" class="beforebuy-modal-body">
+        <p class="beforebuy-subtitle">{{ block.settings.popup_subtitle }}</p>
+
+        <!-- Email Group Placed At The Top -->
+        <div id="beforebuy-email-group" class="beforebuy-email-group" style="margin-bottom: 16px;">
+          <label id="beforebuy-email-label" for="beforebuy-customer-email">Your Email Address (Optional):</label>
+          <input
+            type="email"
+            id="beforebuy-customer-email"
+            class="beforebuy-input"
+            placeholder="name@example.com"
+            value="{% if customer %}{{ customer.email }}{% endif %}"
+          >
+          <p id="beforebuy-email-error" class="beforebuy-error-msg" style="display: none;">Please enter a valid email address.</p>
+        </div>
+
+        <!-- Phone Group -->
+        <div id="beforebuy-phone-group" class="beforebuy-phone-group" style="margin-bottom: 16px; display: none;">
+          <label id="beforebuy-phone-label" for="beforebuy-customer-phone">Your Phone Number (Optional):</label>
+          <div class="beforebuy-phone-input-container">
+            <select id="beforebuy-country-code" class="beforebuy-country-select" aria-label="Country Code">
+              <option value="+1">🇺🇸 +1 (US)</option>
+              <option value="+1">🇨🇦 +1 (CA)</option>
+              <option value="+44">🇬🇧 +44 (UK)</option>
+              <option value="+880" selected>🇧🇩 +880 (BD)</option>
+              <option value="+91">🇮🇳 +91 (IN)</option>
+              <option value="+92">🇵🇰 +92 (PK)</option>
+              <option value="+61">🇦🇺 +61 (AU)</option>
+              <option value="+971">🇦🇪 +971 (AE)</option>
+              <option value="+966">🇸🇦 +966 (SA)</option>
+              <option value="+49">🇩🇪 +49 (DE)</option>
+              <option value="+33">🇫🇷 +33 (FR)</option>
+              <option value="+39">🇮🇹 +39 (IT)</option>
+              <option value="+34">🇪🇸 +34 (ES)</option>
+              <option value="+31">🇳🇱 +31 (NL)</option>
+              <option value="+46">🇸🇪 +46 (SE)</option>
+              <option value="+47">🇳🇴 +47 (NO)</option>
+              <option value="+45">🇩🇰 +45 (DK)</option>
+              <option value="+358">🇫🇮 +358 (FI)</option>
+              <option value="+351">🇵🇹 +351 (PT)</option>
+              <option value="+32">🇧🇪 +32 (BE)</option>
+              <option value="+41">🇨🇭 +41 (CH)</option>
+              <option value="+43">🇦🇹 +43 (AT)</option>
+              <option value="+48">🇵🇱 +48 (PL)</option>
+              <option value="+353">🇮🇪 +353 (IE)</option>
+              <option value="+30">🇬🇷 +30 (GR)</option>
+              <option value="+90">🇹🇷 +90 (TR)</option>
+              <option value="+55">🇧🇷 +55 (BR)</option>
+              <option value="+52">🇲🇽 +52 (MX)</option>
+              <option value="+54">🇦🇷 +54 (AR)</option>
+              <option value="+56">🇨🇱 +56 (CL)</option>
+              <option value="+57">🇨🇴 +57 (CO)</option>
+              <option value="+81">🇯🇵 +81 (JP)</option>
+              <option value="+82">🇰🇷 +82 (KR)</option>
+              <option value="+86">🇨🇳 +86 (CN)</option>
+              <option value="+852">🇭🇰 +852 (HK)</option>
+              <option value="+65">🇸🇬 +65 (SG)</option>
+              <option value="+60">🇲🇾 +60 (MY)</option>
+              <option value="+62">🇮🇩 +62 (ID)</option>
+              <option value="+63">🇵🇭 +63 (PH)</option>
+              <option value="+66">🇹🇭 +66 (TH)</option>
+              <option value="+84">🇻🇳 +84 (VN)</option>
+              <option value="+64">🇳🇿 +64 (NZ)</option>
+              <option value="+27">🇿🇦 +27 (ZA)</option>
+              <option value="+20">🇪🇬 +20 (EG)</option>
+              <option value="+234">🇳🇬 +234 (NG)</option>
+              <option value="+254">🇰🇪 +254 (KE)</option>
+              <option value="+974">🇶🇦 +974 (QA)</option>
+              <option value="+965">🇰🇼 +965 (KW)</option>
+              <option value="+968">🇴🇲 +968 (OM)</option>
+              <option value="+973">🇧🇭 +973 (BH)</option>
+              <option value="+962">🇯🇴 +962 (JO)</option>
+              <option value="+961">🇱🇧 +961 (LB)</option>
+              <option value="+964">🇮🇶 +964 (IQ)</option>
+              <option value="+94">🇱kB +94 (LK)</option>
+              <option value="+977">🇳🇵 +977 (NP)</option>
+              <option value="+95">🇲🇲 +95 (MM)</option>
+            </select>
+            <input
+              type="tel"
+              id="beforebuy-customer-phone"
+              class="beforebuy-input"
+              placeholder="1700 000 000"
+              value="{% if customer %}{{ customer.phone }}{% endif %}"
+            >
+          </div>
+          <p id="beforebuy-phone-error" class="beforebuy-error-msg" style="display: none;">Please enter a valid phone number.</p>
+        </div>
+
+        <!-- Reasons Grid Below Email Field -->
+        <div class="beforebuy-reasons-grid">
+          <label class="beforebuy-reason-item beforebuy-selected" data-reason="Price is higher than expected">
+            <input type="radio" name="beforebuy_reason" value="Price is higher than expected" class="beforebuy-reason-radio" checked>
+            <span>Price is higher than expected</span>
+          </label>
+
+          <label class="beforebuy-reason-item" data-reason="Unsure about size / fit / dimensions">
+            <input type="radio" name="beforebuy_reason" value="Unsure about size / fit / dimensions" class="beforebuy-reason-radio">
+            <span>Unsure about size / fit / dimensions</span>
+          </label>
+
+          <label class="beforebuy-reason-item" data-reason="Shipping fee or delivery time is too high">
+            <input type="radio" name="beforebuy_reason" value="Shipping fee or delivery time is too high" class="beforebuy-reason-radio">
+            <span>Shipping fee or delivery time is too high</span>
+          </label>
+
+          <label class="beforebuy-reason-item" data-reason="Product information or reviews missing">
+            <input type="radio" name="beforebuy_reason" value="Product information or reviews missing" class="beforebuy-reason-radio">
+            <span>Product information or reviews missing</span>
+          </label>
+
+          <label class="beforebuy-reason-item" data-reason="Other reason">
+            <input type="radio" name="beforebuy_reason" value="Other reason" class="beforebuy-reason-radio">
+            <span>Other reason</span>
+          </label>
+        </div>
+
+        <div class="beforebuy-comment-group" style="margin-top: 16px;">
+          <label for="beforebuy-custom-comment">Additional Details (Optional):</label>
+          <textarea id="beforebuy-custom-comment" class="beforebuy-textarea" placeholder="Tell us what would help you make a decision..."></textarea>
+        </div>
+
+        <button
+          id="beforebuy-submit-btn"
+          class="beforebuy-submit-btn"
+          type="button"
+          style="background-color: {{ block.settings.popup_submit_bg_color | default: block.settings.btn_bg_color }}; color: {{ block.settings.popup_submit_text_color | default: block.settings.btn_text_color }};"
+        >
+          {{ block.settings.popup_submit_text | default: "Submit Feedback" }}
+        </button>
+      </div>
+
+      <!-- Success Message Box -->
+      <div id="beforebuy-success-box" class="beforebuy-success-box" style="display: none;">
+        <div class="beforebuy-success-icon">🎉</div>
+        <h4>Thank you for your feedback!</h4>
+        <p>We appreciate your input to help us improve.</p>
+      </div>
     </div>
+
+    <!-- View 2: Inquiry / Question View -->
+    <div id="beforebuy-view-inquiry" class="beforebuy-modal-view" style="display: none;">
+      <div class="beforebuy-inquiry-container">
+        <div class="beforebuy-inquiry-header">
+          <div class="beforebuy-inquiry-badge">Direct Merchant Chat</div>
+          <h4>Have a question about this item?</h4>
+          <p>Chat directly with our team on WhatsApp for instant assistance regarding size, stock, or custom inquiries.</p>
+        </div>
+
+        <div class="beforebuy-inquiry-preview">
+          <span class="beforebuy-preview-label">Prefilled Message Preview:</span>
+          <div id="beforebuy-inquiry-msg-preview" class="beforebuy-preview-box">
+            Hi! I have a question about {{ product.title | escape }}: {{ shop.url }}{{ product.url }}
+          </div>
+        </div>
+
+        <button id="beforebuy-inquiry-wa-btn" class="beforebuy-wa-inquiry-btn" type="button">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+          </svg>
+          <span id="beforebuy-wa-btn-label">Chat on WhatsApp</span>
+        </button>
+      </div>
+    </div>
+
   </div>
 </div>
 

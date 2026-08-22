@@ -511,3 +511,152 @@
   border-color: #6366f1;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
 }
+
+/* ---------------------------------------------------- */
+/* SEGMENTED TAB SWITCHER & INQUIRY VIEW STYLES         */
+/* ---------------------------------------------------- */
+.beforebuy-modal-tabs {
+  display: flex;
+  background-color: #f3f4f6;
+  padding: 4px;
+  border-radius: 10px;
+  margin: 14px 20px 0 20px;
+  gap: 4px;
+}
+
+.beforebuy-tab-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.beforebuy-tab-btn:hover {
+  color: #111827;
+}
+
+.beforebuy-tab-btn.beforebuy-tab-active {
+  background-color: #ffffff;
+  color: #111827;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+/* Dark mode tab overrides */
+.beforebuy-modal-overlay.beforebuy-preset-dark .beforebuy-modal-tabs {
+  background-color: #1e293b;
+}
+
+.beforebuy-modal-overlay.beforebuy-preset-dark .beforebuy-tab-btn {
+  color: #94a3b8;
+}
+
+.beforebuy-modal-overlay.beforebuy-preset-dark .beforebuy-tab-btn:hover {
+  color: #f8fafc;
+}
+
+.beforebuy-modal-overlay.beforebuy-preset-dark .beforebuy-tab-btn.beforebuy-tab-active {
+  background-color: #334155;
+  color: #ffffff;
+}
+
+/* Inquiry View Layout */
+.beforebuy-inquiry-container {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.beforebuy-inquiry-header {
+  text-align: center;
+}
+
+.beforebuy-inquiry-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #059669;
+  background-color: #ecfdf5;
+  padding: 3px 12px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.beforebuy-inquiry-header h4 {
+  margin: 0 0 6px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.beforebuy-inquiry-header p {
+  margin: 0;
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.45;
+}
+
+.beforebuy-inquiry-preview {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.beforebuy-preview-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.beforebuy-preview-box {
+  font-size: 13px;
+  color: #374151;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 10px 12px;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.beforebuy-wa-inquiry-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 20px;
+  background-color: #25d366;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 4px 6px -1px rgba(37, 211, 102, 0.25);
+}
+
+.beforebuy-wa-inquiry-btn:hover {
+  background-color: #1ebc57;
+  transform: translateY(-1px);
+}
+
