@@ -67,8 +67,10 @@
 }
 
 .beforebuy-modal-overlay.beforebuy-is-open {
-  opacity: 1;
-  visibility: visible;
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: flex !important;
+  pointer-events: auto !important;
 }
 
 /* Modal Content Card (Default Modern Preset) */

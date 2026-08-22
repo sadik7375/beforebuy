@@ -276,26 +276,43 @@ if (!window.beforebuyFeedbackInitialized) {
     autoFillCustomerEmail();
     fetchSettings();
 
-    // Open Modal
-    triggerBtn.addEventListener('click', function () {
-      modalOverlay.classList.add('beforebuy-is-open');
-      if (emailError) emailError.style.display = 'none';
-      if (emailInput) emailInput.classList.remove('beforebuy-invalid');
-      if (phoneError) phoneError.style.display = 'none';
-      if (phoneInput) phoneInput.classList.remove('beforebuy-invalid');
-      autoFillCustomerEmail();
-      fetchSettings();
+    // Global Delegated Open & Close Modal Handlers (Handles dynamic Theme DOM changes)
+    document.addEventListener('click', function (e) {
+      const trigger = e.target.closest('#beforebuy-trigger-btn, .beforebuy-trigger-btn');
+      if (trigger && !trigger.classList.contains('beforebuy-whatsapp-btn') && trigger.id !== 'beforebuy-whatsapp-btn') {
+        e.preventDefault();
+        e.stopPropagation();
+        const modal = document.getElementById('beforebuy-modal-overlay');
+        if (modal) {
+          modal.classList.add('beforebuy-is-open');
+          const emailErr = document.getElementById('beforebuy-email-error');
+          const emailInp = document.getElementById('beforebuy-customer-email');
+          const phoneErr = document.getElementById('beforebuy-phone-error');
+          const phoneInp = document.getElementById('beforebuy-customer-phone');
+          if (emailErr) emailErr.style.display = 'none';
+          if (emailInp) emailInp.classList.remove('beforebuy-invalid');
+          if (phoneErr) phoneErr.style.display = 'none';
+          if (phoneInp) phoneInp.classList.remove('beforebuy-invalid');
+          autoFillCustomerEmail();
+          fetchSettings();
+        }
+        return;
+      }
+
+      const closeBtnEl = e.target.closest('#beforebuy-close-btn');
+      if (closeBtnEl) {
+        e.preventDefault();
+        const modal = document.getElementById('beforebuy-modal-overlay');
+        if (modal) modal.classList.remove('beforebuy-is-open');
+        return;
+      }
     });
 
-    // Close Modal
-    function closeModal() {
-      modalOverlay.classList.remove('beforebuy-is-open');
-    }
-
-    if (closeBtn) closeBtn.addEventListener('click', closeModal);
-
+    // Close Modal when clicking background overlay
     modalOverlay.addEventListener('click', function (e) {
-      if (e.target === modalOverlay) closeModal();
+      if (e.target === modalOverlay) {
+        modalOverlay.classList.remove('beforebuy-is-open');
+      }
     });
 
     // Submit Feedback
