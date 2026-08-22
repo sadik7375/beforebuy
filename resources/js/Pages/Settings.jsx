@@ -248,7 +248,7 @@ function ProductSearchSelector({ label, helpText, selectedItems, onUpdateItems }
     );
 }
 
-export default function Settings({ reasons = [], enable_email = true, require_email = false, enable_phone = false, require_phone = false, enable_whatsapp = false, whatsapp_number = '', whatsapp_button_text = 'I have a question', whatsapp_message_template = 'Hi! I have a question about {product_title}: {product_url}', popup_theme = 'modern', product_targeting_mode = 'all', excluded_products = [], included_products = [], plan = 'free', currentPlan = 'free', shopDomain = '' }) {
+export default function Settings({ reasons = [], enable_email = true, require_email = false, enable_phone = false, require_phone = false, enable_whatsapp = false, whatsapp_number = '', whatsapp_button_text = 'I have a question', whatsapp_message_template = 'Hi! I have a question about {product_title}: {product_url}', enable_messenger = false, messenger_username = '', messenger_button_text = 'Chat on Messenger', popup_theme = 'modern', product_targeting_mode = 'all', excluded_products = [], included_products = [], plan = 'free', currentPlan = 'free', shopDomain = '' }) {
     const isPro = (currentPlan === 'pro' || plan === 'pro');
 
     const defaultReasons = [
@@ -270,6 +270,11 @@ export default function Settings({ reasons = [], enable_email = true, require_em
     const [whatsappNumber, setWhatsappNumber] = useState(whatsapp_number);
     const [whatsappButtonText, setWhatsappButtonText] = useState(whatsapp_button_text);
     const [whatsappMsgTemplate, setWhatsappMsgTemplate] = useState(whatsapp_message_template);
+
+    // Facebook Messenger Inquiry state
+    const [enableMessenger, setEnableMessenger] = useState(enable_messenger);
+    const [messengerUsername, setMessengerUsername] = useState(messenger_username);
+    const [messengerButtonText, setMessengerButtonText] = useState(messenger_button_text);
 
     const [selectedTheme, setSelectedTheme] = useState(popup_theme || 'modern');
 
@@ -357,6 +362,9 @@ export default function Settings({ reasons = [], enable_email = true, require_em
             whatsapp_number: whatsappNumber,
             whatsapp_button_text: whatsappButtonText,
             whatsapp_message_template: whatsappMsgTemplate,
+            enable_messenger: enableMessenger,
+            messenger_username: messengerUsername,
+            messenger_button_text: messengerButtonText,
             popup_theme: selectedTheme,
             product_targeting_mode: targetingMode,
             excluded_products: extractHandles(excludedItems),
@@ -523,7 +531,7 @@ export default function Settings({ reasons = [], enable_email = true, require_em
 
                                         <TextField
                                             label="WhatsApp Button Label"
-                                            placeholder="e.g. I have a question"
+                                            placeholder="e.g. Chat on WhatsApp"
                                             value={whatsappButtonText}
                                             onChange={(val) => setWhatsappButtonText(val)}
                                             autoComplete="off"
@@ -538,6 +546,47 @@ export default function Settings({ reasons = [], enable_email = true, require_em
                                             multiline={2}
                                             autoComplete="off"
                                             helpText="Placeholders available: {product_title} and {product_url}"
+                                        />
+                                    </div>
+                                )}
+                            </BlockStack>
+                        </BlockStack>
+                    </Card>
+
+                    {/* Facebook Messenger Inquiry & Direct Chat Settings Card */}
+                    <Card>
+                        <BlockStack gap="400">
+                            <Text variant="headingMd" as="h2">Facebook Messenger Instant Chat</Text>
+                            <Text tone="subdued" variant="bodySm">
+                                Allow store visitors to send direct messages to your Facebook Business Page on Messenger via m.me link.
+                            </Text>
+
+                            <BlockStack gap="400">
+                                <Checkbox
+                                    label="Enable Facebook Messenger Inquiry option on storefront widget"
+                                    checked={enableMessenger}
+                                    onChange={(newVal) => setEnableMessenger(newVal)}
+                                    helpText="When enabled, a Facebook Messenger chat button will appear in the inquiry tab."
+                                />
+
+                                {enableMessenger && (
+                                    <div style={{ paddingLeft: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                        <TextField
+                                            label="Facebook Page Username or ID"
+                                            placeholder="e.g. mybrandpage or 100012345678"
+                                            value={messengerUsername}
+                                            onChange={(val) => setMessengerUsername(val)}
+                                            autoComplete="off"
+                                            helpText="Your Facebook Page username or Numeric ID (found in your Facebook Page URL, e.g. facebook.com/mybrandpage)."
+                                        />
+
+                                        <TextField
+                                            label="Messenger Button Label"
+                                            placeholder="e.g. Chat on Messenger"
+                                            value={messengerButtonText}
+                                            onChange={(val) => setMessengerButtonText(val)}
+                                            autoComplete="off"
+                                            helpText="Text shown on the Facebook Messenger inquiry button."
                                         />
                                     </div>
                                 )}

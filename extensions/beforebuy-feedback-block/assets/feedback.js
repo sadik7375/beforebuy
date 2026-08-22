@@ -8,6 +8,7 @@ if (!window.beforebuyFeedbackInitialized) {
   let isPhoneRequired = false;
   let whatsappNumberGlobal = '';
   let whatsappTemplateGlobal = 'Hi! I have a question about {product_title}: {product_url}';
+  let messengerUsernameGlobal = '';
 
   function escapeHtml(text) {
     const div = document.createElement('div');
@@ -83,6 +84,18 @@ if (!window.beforebuyFeedbackInitialized) {
     window.open(waUrl, '_blank');
   }
 
+  function triggerMessengerChat() {
+    let cleanHandle = (messengerUsernameGlobal || '').trim();
+    cleanHandle = cleanHandle.replace(/^(https?:\/\/)?(www\.)?(facebook\.com\/|m\.me\/|@)?/i, '').replace(/\/$/, '');
+    if (!cleanHandle) {
+      alert('Merchant Facebook Messenger username is not configured yet.');
+      return;
+    }
+
+    const msgrUrl = `https://m.me/${cleanHandle}`;
+    window.open(msgrUrl, '_blank');
+  }
+
   // GLOBAL CLICK DELEGATION: Handles modal open, tab switching, close, and WhatsApp chat
   document.addEventListener('click', function (e) {
     // 1. Storefront Feedback Trigger Button Click -> Open Modal
@@ -134,6 +147,14 @@ if (!window.beforebuyFeedbackInitialized) {
     if (waInquiryBtn) {
       e.preventDefault();
       triggerWhatsAppChat();
+      return;
+    }
+
+    // 4. Facebook Messenger Action Button Inside Inquiry Tab
+    const msgrInquiryBtn = e.target.closest('#beforebuy-inquiry-msgr-btn');
+    if (msgrInquiryBtn) {
+      e.preventDefault();
+      triggerMessengerChat();
       return;
     }
 
@@ -248,7 +269,7 @@ if (!window.beforebuyFeedbackInitialized) {
           }
         }
 
-        // WhatsApp Inquiry settings
+        // WhatsApp & Messenger Inquiry settings
         const isWhatsappEnabled = Boolean(data.enable_whatsapp);
         whatsappNumberGlobal = (data.whatsapp_number || '').trim();
         const whatsappLabelText = (data.whatsapp_button_text || 'Chat on WhatsApp').trim();
@@ -256,19 +277,30 @@ if (!window.beforebuyFeedbackInitialized) {
           whatsappTemplateGlobal = data.whatsapp_message_template;
         }
 
-        if (modalTabs) {
-          if (isWhatsappEnabled && whatsappNumberGlobal) {
-            modalTabs.style.display = 'flex';
-            if (waBtnLabel) waBtnLabel.innerText = whatsappLabelText;
+        const isMessengerEnabled = Boolean(data.enable_messenger);
+        messengerUsernameGlobal = (data.messenger_username || '').trim();
+        const messengerLabelText = (data.messenger_button_text || 'Chat on Messenger').trim();
 
-            if (waMsgPreview && triggerBtn) {
-              const prodTitle = triggerBtn.dataset.productTitle || '';
-              const prodUrl = triggerBtn.dataset.productUrl || window.location.href;
-              const formattedPreview = whatsappTemplateGlobal
-                .replace('{product_title}', prodTitle)
-                .replace('{product_url}', prodUrl);
-              waMsgPreview.innerText = formattedPreview;
-            }
+        const waInquiryBtn = document.getElementById('beforebuy-inquiry-wa-btn');
+        const msgrInquiryBtn = document.getElementById('beforebuy-inquiry-msgr-btn');
+        const msgrBtnLabel = document.getElementById('beforebuy-msgr-btn-label');
+
+        const showWa = Boolean(isWhatsappEnabled && whatsappNumberGlobal);
+        const showMsgr = Boolean(isMessengerEnabled && messengerUsernameGlobal);
+
+        if (waInquiryBtn) {
+          waInquiryBtn.style.display = showWa ? 'flex' : 'none';
+          if (waBtnLabel) waBtnLabel.innerText = whatsappLabelText;
+        }
+
+        if (msgrInquiryBtn) {
+          msgrInquiryBtn.style.display = showMsgr ? 'flex' : 'none';
+          if (msgrBtnLabel) msgrBtnLabel.innerText = messengerLabelText;
+        }
+
+        if (modalTabs) {
+          if (showWa || showMsgr) {
+            modalTabs.style.display = 'flex';
           } else {
             modalTabs.style.display = 'none';
             switchTab('feedback');
