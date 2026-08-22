@@ -18,6 +18,9 @@ if (!window.beforebuyFeedbackInitialized) {
     const phoneLabel = document.getElementById('beforebuy-phone-label');
     const phoneError = document.getElementById('beforebuy-phone-error');
 
+    const whatsappBtn = document.getElementById('beforebuy-whatsapp-btn');
+    const whatsappText = document.getElementById('beforebuy-whatsapp-text');
+
     const modalBody = document.getElementById('beforebuy-modal-body');
     const successBox = document.getElementById('beforebuy-success-box');
     const reasonsContainer = document.querySelector('.beforebuy-reasons-grid');
@@ -143,8 +146,37 @@ if (!window.beforebuyFeedbackInitialized) {
                   ? 'Your Phone Number * (Required):'
                   : 'Your Phone Number (Optional):';
               }
+          }
+
+          // WhatsApp Inquiry settings
+          const isWhatsappEnabled = Boolean(data.enable_whatsapp);
+          const whatsappNum = (data.whatsapp_number || '').trim();
+          const whatsappLabelText = (data.whatsapp_button_text || 'I have a question').trim();
+          const whatsappTemplate = data.whatsapp_message_template || 'Hi! I have a question about {product_title}: {product_url}';
+
+          if (whatsappBtn) {
+            if (isWhatsappEnabled && whatsappNum) {
+              whatsappBtn.style.display = 'inline-flex';
+              if (whatsappText) whatsappText.innerText = whatsappLabelText;
+
+              whatsappBtn.onclick = function() {
+                let cleanNum = whatsappNum.replace(/[^0-9+]/g, '');
+                if (cleanNum.startsWith('+')) {
+                  cleanNum = cleanNum.substring(1);
+                }
+
+                const prodTitle = whatsappBtn.dataset.productTitle || '';
+                const prodUrl = whatsappBtn.dataset.productUrl || window.location.href;
+
+                let msg = whatsappTemplate
+                  .replace('{product_title}', prodTitle)
+                  .replace('{product_url}', prodUrl);
+
+                const waUrl = `https://wa.me/${cleanNum}?text=${encodeURIComponent(msg)}`;
+                window.open(waUrl, '_blank');
+              };
             } else {
-              phoneGroup.style.display = 'none';
+              whatsappBtn.style.display = 'none';
             }
           }
 

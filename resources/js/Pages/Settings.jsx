@@ -248,7 +248,7 @@ function ProductSearchSelector({ label, helpText, selectedItems, onUpdateItems }
     );
 }
 
-export default function Settings({ reasons = [], enable_email = true, require_email = false, enable_phone = false, require_phone = false, popup_theme = 'modern', product_targeting_mode = 'all', excluded_products = [], included_products = [], plan = 'free', currentPlan = 'free', shopDomain = '' }) {
+export default function Settings({ reasons = [], enable_email = true, require_email = false, enable_phone = false, require_phone = false, enable_whatsapp = false, whatsapp_number = '', whatsapp_button_text = 'I have a question', whatsapp_message_template = 'Hi! I have a question about {product_title}: {product_url}', popup_theme = 'modern', product_targeting_mode = 'all', excluded_products = [], included_products = [], plan = 'free', currentPlan = 'free', shopDomain = '' }) {
     const isPro = (currentPlan === 'pro' || plan === 'pro');
 
     const defaultReasons = [
@@ -264,6 +264,13 @@ export default function Settings({ reasons = [], enable_email = true, require_em
     const [isEmailRequired, setIsEmailRequired] = useState(require_email);
     const [collectPhone, setCollectPhone] = useState(enable_phone);
     const [isPhoneRequired, setIsPhoneRequired] = useState(require_phone);
+    
+    // WhatsApp Inquiry state
+    const [enableWhatsapp, setEnableWhatsapp] = useState(enable_whatsapp);
+    const [whatsappNumber, setWhatsappNumber] = useState(whatsapp_number);
+    const [whatsappButtonText, setWhatsappButtonText] = useState(whatsapp_button_text);
+    const [whatsappMsgTemplate, setWhatsappMsgTemplate] = useState(whatsapp_message_template);
+
     const [selectedTheme, setSelectedTheme] = useState(popup_theme || 'modern');
 
     // Product Targeting / Display Rules state
@@ -346,6 +353,10 @@ export default function Settings({ reasons = [], enable_email = true, require_em
             require_email: isEmailRequired,
             enable_phone: collectPhone,
             require_phone: isPhoneRequired,
+            enable_whatsapp: enableWhatsapp,
+            whatsapp_number: whatsappNumber,
+            whatsapp_button_text: whatsappButtonText,
+            whatsapp_message_template: whatsappMsgTemplate,
             popup_theme: selectedTheme,
             product_targeting_mode: targetingMode,
             excluded_products: extractHandles(excludedItems),
@@ -479,6 +490,57 @@ export default function Settings({ reasons = [], enable_email = true, require_em
                                         </div>
                                     )}
                                 </BlockStack>
+                            </BlockStack>
+                        </BlockStack>
+                    </Card>
+
+                    {/* WhatsApp Inquiry & Direct Chat Settings Card */}
+                    <Card>
+                        <BlockStack gap="400">
+                            <Text variant="headingMd" as="h2">WhatsApp Instant Inquiry Chat</Text>
+                            <Text tone="subdued" variant="bodySm">
+                                Allow store visitors to ask pre-purchase questions directly on WhatsApp with prefilled product title & website link.
+                            </Text>
+
+                            <BlockStack gap="400">
+                                <Checkbox
+                                    label="Enable WhatsApp Inquiry option on storefront widget"
+                                    checked={enableWhatsapp}
+                                    onChange={(newVal) => setEnableWhatsapp(newVal)}
+                                    helpText="When enabled, a WhatsApp chat button will appear alongside or within the feedback widget."
+                                />
+
+                                {enableWhatsapp && (
+                                    <div style={{ paddingLeft: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                        <TextField
+                                            label="Merchant WhatsApp Phone Number"
+                                            placeholder="e.g. +8801700000000 or 15551234567"
+                                            value={whatsappNumber}
+                                            onChange={(val) => setWhatsappNumber(val)}
+                                            autoComplete="off"
+                                            helpText="Include country code (e.g. +880 for BD, +1 for US). Do not include spaces or hyphens."
+                                        />
+
+                                        <TextField
+                                            label="WhatsApp Button Label"
+                                            placeholder="e.g. I have a question"
+                                            value={whatsappButtonText}
+                                            onChange={(val) => setWhatsappButtonText(val)}
+                                            autoComplete="off"
+                                            helpText="Text shown on the WhatsApp inquiry button."
+                                        />
+
+                                        <TextField
+                                            label="Default Prefilled WhatsApp Message"
+                                            placeholder="Hi! I have a question about {product_title}: {product_url}"
+                                            value={whatsappMsgTemplate}
+                                            onChange={(val) => setWhatsappMsgTemplate(val)}
+                                            multiline={2}
+                                            autoComplete="off"
+                                            helpText="Placeholders available: {product_title} and {product_url}"
+                                        />
+                                    </div>
+                                )}
                             </BlockStack>
                         </BlockStack>
                     </Card>
