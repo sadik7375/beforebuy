@@ -285,8 +285,8 @@ if (!window.beforebuyFeedbackInitialized) {
         const msgrInquiryBtn = document.getElementById('beforebuy-inquiry-msgr-btn');
         const msgrBtnLabel = document.getElementById('beforebuy-msgr-btn-label');
 
-        const showWa = Boolean(isWhatsappEnabled && whatsappNumberGlobal);
-        const showMsgr = Boolean(isMessengerEnabled && messengerUsernameGlobal);
+        const showWa = Boolean(isWhatsappEnabled || whatsappNumberGlobal);
+        const showMsgr = Boolean(isMessengerEnabled || messengerUsernameGlobal);
 
         if (waInquiryBtn) {
           waInquiryBtn.style.display = showWa ? 'flex' : 'none';
